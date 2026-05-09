@@ -43,7 +43,7 @@ export default function Welcome({ auth }) {
                 setLang={setLang}
             />
 
-            <main className="pb-32 lg:pb-0">
+            <main>
                 <Hero activeService={activeService} lang={lang} />
                 <Highlights />
                 <SignatureRituals lang={lang} />
