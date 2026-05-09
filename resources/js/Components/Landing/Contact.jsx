@@ -7,10 +7,10 @@ export default function Contact() {
                     <div className="flex-1 p-10 md:p-20 flex flex-col justify-center">
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4 block">Hubungi Kami</span>
                         <p className="text-sm md:text-base text-gray-500 leading-relaxed mb-10 max-w-md">
-                            Jadwalkan dengan terapis kami dengan reservasi sekarang! 
+                            Jadwalkan dengan terapis kami dengan reservasi sekarang!
                             Nikmati kemudahan perawatan spa premium tanpa harus keluar dari kenyamanan hunian Anda.
                         </p>
-                        
+
                         <div>
                             <button className="inline-flex items-center gap-x-3 bg-orange-600 text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-orange-600/30 hover:bg-orange-500 transition-all transform hover:-translate-y-1">
                                 <span className="material-symbols-outlined text-sm">calendar_month</span>
@@ -21,8 +21,8 @@ export default function Contact() {
 
                     {/* Right Image with Fade */}
                     <div className="flex-1 relative min-h-[300px]">
-                        <img 
-                            src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=1000" 
+                        <img
+                            src="/images/pijat ibu hamil.JPG"
                             alt="Massage Treatment"
                             className="absolute inset-0 w-full h-full object-cover"
                         />

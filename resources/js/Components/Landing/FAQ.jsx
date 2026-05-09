@@ -32,8 +32,8 @@ export default function FAQ() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
                     {/* Left Column: Image */}
                     <div className="rounded-[2.5rem] overflow-hidden h-[600px] shadow-2xl">
-                        <img 
-                            src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=80&w=800" 
+                        <img
+                            src="/images/pijat tradisional.JPG"
                             alt="Spa Treatment"
                             className="w-full h-full object-cover"
                         />
@@ -42,13 +42,12 @@ export default function FAQ() {
                     {/* Right Column: Accordion */}
                     <div className="space-y-4">
                         {faqs.map((faq, i) => (
-                            <div 
-                                key={i} 
-                                className={`rounded-3xl bg-white transition-all duration-500 overflow-hidden shadow-sm hover:shadow-md border border-orange-50 ${
-                                    openIndex === i ? 'ring-1 ring-orange-200' : ''
-                                }`}
+                            <div
+                                key={i}
+                                className={`rounded-3xl bg-white transition-all duration-500 overflow-hidden shadow-sm hover:shadow-md border border-orange-50 ${openIndex === i ? 'ring-1 ring-orange-200' : ''
+                                    }`}
                             >
-                                <button 
+                                <button
                                     onClick={() => setOpenIndex(openIndex === i ? null : i)}
                                     className="w-full px-8 py-6 flex items-center justify-between text-left group"
                                 >
@@ -57,10 +56,9 @@ export default function FAQ() {
                                         expand_more
                                     </span>
                                 </button>
-                                
-                                <div className={`transition-all duration-500 ease-in-out ${
-                                    openIndex === i ? 'max-h-96 opacity-100 pb-8 px-8' : 'max-h-0 opacity-0 pointer-events-none'
-                                }`}>
+
+                                <div className={`transition-all duration-500 ease-in-out ${openIndex === i ? 'max-h-96 opacity-100 pb-8 px-8' : 'max-h-0 opacity-0 pointer-events-none'
+                                    }`}>
                                     <p className="text-sm text-gray-500 leading-relaxed font-sans border-t border-orange-50/50 pt-6">
                                         {faq.a}
                                     </p>

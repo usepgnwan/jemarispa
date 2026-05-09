@@ -25,22 +25,22 @@ export default function Welcome({ auth }) {
     return (
         <div className="font-sans text-zenith-charcoal antialiased selection:bg-orange-100 selection:text-orange-900 bg-zenith-surface pb-32 lg:pb-0">
             <Head title="Jemari Spa - Luxury Wellness Sanctuary" />
-            
-            <Navbar 
-                auth={auth} 
-                activeService={activeService} 
+
+            <Navbar
+                auth={auth}
+                activeService={activeService}
                 setActiveService={setActiveService}
                 lang={lang}
                 setLang={setLang}
             />
-            
+
             <main>
                 <Hero activeService={activeService} lang={lang} />
                 <Highlights />
                 <SignatureRituals lang={lang} />
                 <Pricing />
                 <Testimonials />
-                
+
                 {/* Multi-Platform Booking Section */}
                 <section className="py-section bg-white overflow-hidden">
                     <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -63,15 +63,15 @@ export default function Welcome({ auth }) {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div className="relative flex justify-center">
                                 <div className="bg-orange-500/10 absolute inset-0 blur-[120px] rounded-full scale-150"></div>
-                                
+
                                 {/* Refined Mobile Mockup */}
                                 <div className="relative w-[320px] h-[650px] bg-zenith-charcoal rounded-[3.5rem] border-[10px] border-zenith-charcoal shadow-2xl overflow-hidden ring-4 ring-orange-500/10">
                                     {/* Notch */}
                                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-7 bg-zenith-charcoal rounded-b-2xl z-20"></div>
-                                    
+
                                     {/* Phone Screen Content */}
                                     <div className="absolute inset-0 bg-zenith-surface z-10 p-6 flex flex-col">
                                         <div className="flex justify-between items-center mb-8 mt-4">
@@ -79,12 +79,12 @@ export default function Welcome({ auth }) {
                                             <span className="font-bold text-orange-600 tracking-[0.2em] text-[10px]">JEMARI SPA</span>
                                             <span className="material-symbols-outlined text-orange-600">account_circle</span>
                                         </div>
-                                        
+
                                         <div className="bg-white rounded-2xl p-5 shadow-sm mb-6 border border-orange-100">
                                             <p className="text-[9px] text-gray-400 mb-1 uppercase tracking-wider font-bold">Selamat Datang,</p>
                                             <p className="font-bold text-zenith-charcoal text-sm">Mau Booking Ritual Apa Hari Ini?</p>
                                         </div>
-                                        
+
                                         <div className="space-y-4">
                                             <div className="bg-white rounded-2xl p-4 flex gap-4 border border-orange-50 shadow-sm">
                                                 <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
@@ -95,7 +95,7 @@ export default function Welcome({ auth }) {
                                                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Home Service</p>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="bg-white rounded-2xl p-4 flex gap-4 border border-orange-50 shadow-sm">
                                                 <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
                                                     <span className="material-symbols-outlined text-lg">spa</span>
@@ -105,19 +105,19 @@ export default function Welcome({ auth }) {
                                                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">90 Minutes</p>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="relative h-36 rounded-2xl overflow-hidden mt-4 group">
-                                                <img 
-                                                    alt="App Preview" 
-                                                    className="w-full h-full object-cover" 
-                                                    src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800"
+                                                <img
+                                                    alt="App Preview"
+                                                    className="w-full h-full object-cover"
+                                                    src="/images/services.jpg"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-orange-900/60 to-transparent flex items-end p-4">
                                                     <p className="text-[10px] text-white font-bold bg-orange-600 px-3 py-1 rounded-full uppercase tracking-widest">Promo Bandung</p>
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="mt-auto pb-4">
                                             <button className="w-full bg-orange-600 text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-orange-600/30">
                                                 Pesan Sekarang
@@ -133,7 +133,7 @@ export default function Welcome({ auth }) {
                 <Contact />
                 <FAQ />
             </main>
-            
+
             <FloatingWhatsApp />
             <MobileNav />
             <Footer />
