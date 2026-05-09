@@ -12,7 +12,7 @@ import FloatingWhatsApp from '@/Components/Landing/FloatingWhatsApp';
 import MobileNav from '@/Components/Landing/MobileNav';
 import Footer from '@/Components/Landing/Footer';
 
-export default function Welcome({ auth }) {
+export default function Welcome({ auth, packages = [], testimonials = [] }) {
     const [activeService, setActiveService] = useState('Default');
     const [lang, setLang] = useState(() => {
         return localStorage.getItem('app_lang') || 'ID';
@@ -47,8 +47,8 @@ export default function Welcome({ auth }) {
                 <Hero activeService={activeService} lang={lang} />
                 <Highlights />
                 <SignatureRituals lang={lang} />
-                <Pricing />
-                <Testimonials />
+                <Pricing packages={packages} lang={lang} />
+                <Testimonials testimonials={testimonials} lang={lang} />
 
                 {/* Multi-Platform Booking Section */}
                 <section className="py-section bg-white overflow-hidden">

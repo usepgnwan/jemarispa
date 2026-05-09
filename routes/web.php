@@ -11,6 +11,8 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'packages' => \App\Models\Package::with('durations')->latest()->get(),
+        'testimonials' => \App\Models\Testimoni::latest()->get()
     ]);
 });
 
