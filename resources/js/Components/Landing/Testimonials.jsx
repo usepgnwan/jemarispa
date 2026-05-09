@@ -41,7 +41,7 @@ export default function Testimonials() {
                                     <StarIcon key={i} className="h-6 w-6 text-zenith-gold drop-shadow-sm" />
                                 ))}
                             </div>
-                            
+
                             <p className="text-zenith-charcoal text-lg md:text-xl font-serif italic leading-relaxed mb-12 relative z-10">
                                 "{review.content}"
                             </p>
@@ -55,11 +55,10 @@ export default function Testimonials() {
                                     <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center mb-3 group-hover:bg-orange-500 group-hover:text-white transition-all duration-500">
                                         <span className="material-symbols-outlined text-lg">format_quote</span>
                                     </div>
-                                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm ${
-                                        review.source === 'Traveloka' ? 'bg-blue-50 text-blue-600' :
-                                        review.source === 'Tiket.com' ? 'bg-yellow-50 text-yellow-600' :
-                                        'bg-green-50 text-green-600'
-                                    }`}>
+                                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm ${review.source === 'Traveloka' ? 'bg-blue-50 text-blue-600' :
+                                            review.source === 'Tiket.com' ? 'bg-yellow-50 text-yellow-600' :
+                                                'bg-green-50 text-green-600'
+                                        }`}>
                                         {review.source}
                                     </span>
                                 </div>

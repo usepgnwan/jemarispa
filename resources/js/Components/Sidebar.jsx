@@ -13,51 +13,51 @@ import {
     Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 
-const navigation = [
-    { 
-        section: 'UTAMA',
-        items: [
-            { name: 'Dashboard', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard') },
-            { name: 'Analitik', href: '#', icon: ChartBarIcon, current: false },
-        ]
-    },
-    { 
-        section: 'PENGGUNA',
-        items: [
-            { name: 'Fitur POS', href: '#', icon: CalculatorIcon, current: false },
-            { name: 'Pesanan', href: '#', icon: ShoppingCartIcon, current: false },
-        ]
-    },
-    { 
-        section: 'KONTEN',
-        items: [
-            { name: 'Paket', href: '#', icon: Square3Stack3DIcon, current: false },
-            { name: 'Testimoni', href: '#', icon: StarIcon, current: false },
-            { name: 'Blog', href: '#', icon: DocumentTextIcon, current: false },
-            { name: 'FAQ', href: route('faq.index'), icon: QuestionMarkCircleIcon, current: route().current('faq.*') },
-        ]
-    },
-    { 
-        section: 'MASTER',
-        items: [
-            { name: 'Data Karyawan', href: '#', icon: UsersIcon, current: false },
-            { name: 'Platform', href: route('platform.index'), icon: GlobeAltIcon, current: route().current('platform.*') },
-        ]
-    },
-    { 
-        section: 'SETTING',
-        items: [
-            { name: 'Setting', href: '#', icon: Cog6ToothIcon, current: false },
-        ]
-    }
-];
-
 function classNames(...classes) {
     return classes.filter(Boolean).join(' ');
 }
 
 export default function Sidebar({ collapsed }) {
     const user = usePage().props.auth.user;
+
+    const navigation = [
+        { 
+            section: 'UTAMA',
+            items: [
+                { name: 'Dashboard', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard') },
+                { name: 'Analitik', href: '#', icon: ChartBarIcon, current: false },
+            ]
+        },
+        { 
+            section: 'PENGGUNA',
+            items: [
+                { name: 'Fitur POS', href: '#', icon: CalculatorIcon, current: false },
+                { name: 'Pesanan', href: '#', icon: ShoppingCartIcon, current: false },
+            ]
+        },
+        { 
+            section: 'KONTEN',
+            items: [
+                { name: 'Paket', href: '#', icon: Square3Stack3DIcon, current: false },
+                { name: 'Testimoni', href: route('testimoni.index'), icon: StarIcon, current: route().current('testimoni.*') },
+                { name: 'Blog', href: '#', icon: DocumentTextIcon, current: false },
+                { name: 'FAQ', href: route('faq.index'), icon: QuestionMarkCircleIcon, current: route().current('faq.*') },
+            ]
+        },
+        { 
+            section: 'MASTER',
+            items: [
+                { name: 'Data Karyawan', href: '#', icon: UsersIcon, current: false },
+                { name: 'Platform', href: route('platform.index'), icon: GlobeAltIcon, current: route().current('platform.*') },
+            ]
+        },
+        { 
+            section: 'SETTING',
+            items: [
+                { name: 'Setting', href: '#', icon: Cog6ToothIcon, current: false },
+            ]
+        }
+    ];
 
     return (
         <div className="flex grow flex-col h-full bg-white border-r border-gray-200 transition-all duration-300 overflow-hidden">
