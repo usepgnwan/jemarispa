@@ -38,9 +38,9 @@ export default function Sidebar({ collapsed }) {
         { 
             section: 'KONTEN',
             items: [
-                { name: 'Paket', href: '#', icon: Square3Stack3DIcon, current: false },
+                { name: 'Paket', href: route('admin.package.index'), icon: Square3Stack3DIcon, current: route().current('admin.package.*') },
                 { name: 'Testimoni', href: route('testimoni.index'), icon: StarIcon, current: route().current('testimoni.*') },
-                { name: 'Blog', href: '#', icon: DocumentTextIcon, current: false },
+                { name: 'Blog', href: route('admin.blog.index'), icon: DocumentTextIcon, current: route().current('admin.blog.*') },
                 { name: 'FAQ', href: route('faq.index'), icon: QuestionMarkCircleIcon, current: route().current('faq.*') },
             ]
         },

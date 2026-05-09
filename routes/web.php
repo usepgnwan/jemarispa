@@ -21,6 +21,8 @@ Route::get('/dashboard', function () {
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\TestimoniController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\PackageController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -31,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('platform', PlatformController::class)->except(['show']);
     Route::resource('faq', FaqController::class)->except(['show']);
     Route::resource('testimoni', TestimoniController::class)->except(['show']);
+    Route::resource('admin/blog', BlogController::class)->names('admin.blog')->except(['show']);
+    Route::resource('admin/package', PackageController::class)->names('admin.package')->except(['show']);
 });
 
 Route::get('/blog', function () {
