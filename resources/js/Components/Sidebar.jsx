@@ -47,7 +47,7 @@ export default function Sidebar({ collapsed }) {
         { 
             section: 'MASTER',
             items: [
-                { name: 'Data Karyawan', href: '#', icon: UsersIcon, current: false },
+                { name: 'Data Karyawan', href: route('admin.employee.index'), icon: UsersIcon, current: route().current('admin.employee.*') },
                 { name: 'Platform', href: route('platform.index'), icon: GlobeAltIcon, current: route().current('platform.*') },
             ]
         },

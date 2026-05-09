@@ -23,6 +23,7 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\TestimoniController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\EmployeeController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -35,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('testimoni', TestimoniController::class)->except(['show']);
     Route::resource('admin/blog', BlogController::class)->names('admin.blog')->except(['show']);
     Route::resource('admin/package', PackageController::class)->names('admin.package')->except(['show']);
+    Route::resource('admin/employee', EmployeeController::class)->names('admin.employee')->except(['show']);
 });
 
 Route::get('/blog', function () {
