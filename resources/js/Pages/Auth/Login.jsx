@@ -74,17 +74,17 @@ export default function Login({ status, canResetPassword }) {
                                 setData('remember', e.target.checked)
                             }
                         />
-                        <span className="ms-2 text-sm text-gray-600">
+                        <span className="ms-2 text-sm text-zenith-charcoal/60">
                             Remember me
                         </span>
                     </label>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
+                <div className="mt-6 flex items-center justify-end">
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            className="rounded-md text-sm text-zenith-charcoal/60 underline hover:text-zenith-orange focus:outline-none focus:ring-2 focus:ring-zenith-orange focus:ring-offset-2"
                         >
                             Forgot your password?
                         </Link>

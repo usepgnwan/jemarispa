@@ -3,8 +3,8 @@ import Sidebar from '@/Components/Sidebar';
 import { usePage } from '@inertiajs/react';
 import { useState, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { 
-    Bars3CenterLeftIcon, 
+import {
+    Bars3CenterLeftIcon,
     XMarkIcon,
     BellIcon,
     MoonIcon
@@ -16,7 +16,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
-        <div className="bg-[#F8FAFC] min-h-screen">
+        <div className="bg-zenith-surface min-h-screen">
             {/* Mobile Sidebar (Always full width when open) */}
             <Transition.Root show={sidebarOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
@@ -76,9 +76,9 @@ export default function AuthenticatedLayout({ header, children }) {
                     <button type="button" className="-m-2.5 p-2.5 text-gray-700 lg:hidden" onClick={() => setSidebarOpen(true)}>
                         <Bars3CenterLeftIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
-                    
-                    <button 
-                        type="button" 
+
+                    <button
+                        type="button"
                         onClick={() => setIsCollapsed(!isCollapsed)}
                         className="hidden lg:block -m-2.5 p-2.5 text-gray-400 hover:text-gray-600 transition-colors"
                     >
@@ -91,7 +91,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             <button type="button" className="text-gray-400 hover:text-gray-600">
                                 <MoonIcon className="h-5 w-5" />
                             </button>
-                            
+
                             <div className="relative">
                                 <button type="button" className="text-gray-400 hover:text-gray-600 relative">
                                     <BellIcon className="h-5 w-5" />
@@ -104,7 +104,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <button className="flex items-center gap-x-3 p-1.5 focus:outline-none group">
-                                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 overflow-hidden group-hover:ring-2 group-hover:ring-blue-600 transition-all">
+                                        <div className="h-8 w-8 rounded-full bg-zenith-orange/10 flex items-center justify-center text-zenith-orange overflow-hidden group-hover:ring-2 group-hover:ring-zenith-orange transition-all">
                                             <span className="text-xs font-bold">{user.name.charAt(0)}</span>
                                         </div>
                                         {!isCollapsed && (
@@ -126,8 +126,8 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
                 </div>
 
-                <main className="py-10">
-                    <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                <main>
+                    <div className="px-4 sm:px-6 lg:px-5 max-w-7xl mx-auto">
                         {children}
                     </div>
                 </main>

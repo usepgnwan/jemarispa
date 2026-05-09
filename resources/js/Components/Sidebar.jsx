@@ -2,39 +2,52 @@ import { Link, usePage } from '@inertiajs/react';
 import { 
     HomeIcon, 
     ChartBarIcon, 
+    CalculatorIcon,
+    ShoppingCartIcon,
     Square3Stack3DIcon, 
+    StarIcon,
     DocumentTextIcon, 
-    TicketIcon, 
+    QuestionMarkCircleIcon,
     UsersIcon, 
-    ShoppingCartIcon
+    GlobeAltIcon,
+    Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
     { 
         section: 'UTAMA',
         items: [
-            { name: 'Overview', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard') },
+            { name: 'Dashboard', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard') },
             { name: 'Analitik', href: '#', icon: ChartBarIcon, current: false },
-        ]
-    },
-    { 
-        section: 'KONTEN',
-        items: [
-            { name: 'Paket & Soal', href: '#', icon: Square3Stack3DIcon, current: false },
-            { name: 'Blog', href: '#', icon: DocumentTextIcon, current: false },
-        ]
-    },
-    { 
-        section: 'MARKETING',
-        items: [
-            { name: 'Voucher & Promo', href: '#', icon: TicketIcon, current: false },
         ]
     },
     { 
         section: 'PENGGUNA',
         items: [
-            { name: 'Pengguna', href: '#', icon: UsersIcon, current: false },
+            { name: 'Fitur POS', href: '#', icon: CalculatorIcon, current: false },
             { name: 'Pesanan', href: '#', icon: ShoppingCartIcon, current: false },
+        ]
+    },
+    { 
+        section: 'KONTEN',
+        items: [
+            { name: 'Paket', href: '#', icon: Square3Stack3DIcon, current: false },
+            { name: 'Testimoni', href: '#', icon: StarIcon, current: false },
+            { name: 'Blog', href: '#', icon: DocumentTextIcon, current: false },
+            { name: 'FAQ', href: route('faq.index'), icon: QuestionMarkCircleIcon, current: route().current('faq.*') },
+        ]
+    },
+    { 
+        section: 'MASTER',
+        items: [
+            { name: 'Data Karyawan', href: '#', icon: UsersIcon, current: false },
+            { name: 'Platform', href: route('platform.index'), icon: GlobeAltIcon, current: route().current('platform.*') },
+        ]
+    },
+    { 
+        section: 'SETTING',
+        items: [
+            { name: 'Setting', href: '#', icon: Cog6ToothIcon, current: false },
         ]
     }
 ];
@@ -50,13 +63,13 @@ export default function Sidebar({ collapsed }) {
         <div className="flex grow flex-col h-full bg-white border-r border-gray-200 transition-all duration-300 overflow-hidden">
             {/* Logo Section */}
             <div className="flex h-20 shrink-0 items-center px-6 gap-x-3 overflow-hidden">
-                <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl shrink-0">
-                    K
+                <div className="h-10 w-10 flex items-center justify-center shrink-0">
+                    <img src="/images/Jemari Logo - 1.png" alt="Jemari Spa" className="h-full w-full object-contain drop-shadow-sm" />
                 </div>
                 {!collapsed && (
                     <div className="transition-opacity duration-300">
-                        <h1 className="text-lg font-bold text-gray-900 leading-tight">Kantan</h1>
-                        <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">ADMIN PANEL</p>
+                        <h1 className="text-lg font-bold text-zenith-charcoal leading-tight font-serif italic">Jemari Spa</h1>
+                        <p className="text-[10px] font-bold text-zenith-orange tracking-widest uppercase">ADMIN PANEL</p>
                     </div>
                 )}
             </div>
@@ -78,8 +91,8 @@ export default function Sidebar({ collapsed }) {
                                             href={item.href}
                                             className={classNames(
                                                 item.current
-                                                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                                                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50',
+                                                    ? 'bg-zenith-orange text-white shadow-lg shadow-zenith-orange/20'
+                                                    : 'text-gray-600 hover:text-zenith-orange hover:bg-zenith-orange/5',
                                                 'group flex gap-x-3 rounded-xl p-2.5 text-sm leading-6 font-semibold transition-all duration-200',
                                                 collapsed ? 'justify-center' : ''
                                             )}
@@ -87,7 +100,7 @@ export default function Sidebar({ collapsed }) {
                                         >
                                             <item.icon
                                                 className={classNames(
-                                                    item.current ? 'text-white' : 'text-gray-400 group-hover:text-blue-600',
+                                                    item.current ? 'text-white' : 'text-gray-400 group-hover:text-zenith-orange',
                                                     'h-5 w-5 shrink-0 transition-colors'
                                                 )}
                                                 aria-hidden="true"
@@ -112,7 +125,7 @@ export default function Sidebar({ collapsed }) {
                     "flex items-center gap-x-3 rounded-xl p-2 hover:bg-gray-50 transition-colors cursor-pointer",
                     collapsed ? 'justify-center' : ''
                 )}>
-                    <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 overflow-hidden shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-zenith-orange/10 flex items-center justify-center text-zenith-orange overflow-hidden shrink-0">
                         <span className="font-bold text-sm uppercase">{user.name.charAt(0)}</span>
                     </div>
                     {!collapsed && (
