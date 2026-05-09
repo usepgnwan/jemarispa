@@ -7,7 +7,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
-import { PlusIcon, PencilSquareIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, MagnifyingGlassIcon, LanguageIcon } from '@heroicons/react/24/outline';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -43,14 +43,16 @@ export default function Index({ faqs, filters }) {
     const [limit, setLimit] = useState(filters?.limit || 10);
 
     const { data, setData, post, put, delete: destroy, reset, processing, errors, clearErrors } = useForm({
-        title: '',
-        description: '',
+        title_id: '',
+        description_id: '',
+        title_en: '',
+        description_en: '',
     });
 
     const openCreateModal = () => {
         setIsEditing(false);
         setCurrentFaqId(null);
-        setData({ title: '', description: '' });
+        setData({ title_id: '', description_id: '', title_en: '', description_en: '' });
         clearErrors();
         setIsModalOpen(true);
     };
@@ -59,8 +61,10 @@ export default function Index({ faqs, filters }) {
         setIsEditing(true);
         setCurrentFaqId(faq.id);
         setData({
-            title: faq.title,
-            description: faq.description || '',
+            title_id: faq.title_id || '',
+            description_id: faq.description_id || '',
+            title_en: faq.title_en || '',
+            description_en: faq.description_en || '',
         });
         clearErrors();
         setIsModalOpen(true);
@@ -69,7 +73,7 @@ export default function Index({ faqs, filters }) {
     const closeModal = () => {
         setIsModalOpen(false);
         setTimeout(() => {
-            setData({ title: '', description: '' });
+            setData({ title_id: '', description_id: '', title_en: '', description_en: '' });
             reset();
             clearErrors();
         }, 300);
@@ -209,10 +213,10 @@ export default function Index({ faqs, filters }) {
                                             No
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
-                                            Judul/Pertanyaan
+                                            Judul (ID & EN)
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
-                                            Deskripsi
+                                            Deskripsi (ID & EN)
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-right text-[13px] font-bold text-gray-700 capitalize tracking-wide rounded-r-xl">
                                             Aksi
@@ -222,19 +226,40 @@ export default function Index({ faqs, filters }) {
                                 <tbody className="bg-white divide-y divide-gray-50">
                                     {faqs.data.map((faq, index) => (
                                         <tr key={faq.id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500 font-medium">
+                                            <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500 font-medium align-top">
                                                 {(faqs.current_page - 1) * faqs.per_page + index + 1}
                                             </td>
-                                            <td className="px-6 py-5 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {faq.title}
+                                            <td className="px-6 py-5 whitespace-nowrap text-sm font-medium text-gray-900 align-top">
+                                                <div className="mb-2">
+                                                    <span className="inline-block px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs mr-2 font-bold">ID</span>
+                                                    {faq.title_id}
+                                                </div>
+                                                <div className="text-gray-500">
+                                                    <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs mr-2 font-bold">EN</span>
+                                                    {faq.title_en || <span className="italic">Belum diisi</span>}
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-5 text-sm text-gray-500 max-w-sm">
-                                                <div 
-                                                    className="line-clamp-2 prose prose-sm max-w-none text-gray-500"
-                                                    dangerouslySetInnerHTML={{ __html: faq.description }}
-                                                />
+                                            <td className="px-6 py-5 text-sm text-gray-500 max-w-md align-top">
+                                                <div className="mb-3">
+                                                    <span className="inline-block px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs mb-1 font-bold">ID</span>
+                                                    <div 
+                                                        className="line-clamp-2 prose prose-sm max-w-none text-gray-700"
+                                                        dangerouslySetInnerHTML={{ __html: faq.description_id }}
+                                                    />
+                                                </div>
+                                                <div className="text-gray-500">
+                                                    <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs mb-1 font-bold">EN</span>
+                                                    {faq.description_en ? (
+                                                        <div 
+                                                            className="line-clamp-2 prose prose-sm max-w-none text-gray-500"
+                                                            dangerouslySetInnerHTML={{ __html: faq.description_en }}
+                                                        />
+                                                    ) : (
+                                                        <div><span className="italic">Belum diisi</span></div>
+                                                    )}
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
+                                            <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium align-top">
                                                 <div className="flex items-center justify-end gap-x-4">
                                                     <button
                                                         onClick={() => openEditModal(faq)}
@@ -297,43 +322,89 @@ export default function Index({ faqs, filters }) {
             </div>
 
             {/* Create/Edit Modal */}
-            <Modal show={isModalOpen} onClose={closeModal} maxWidth="2xl">
-                <form onSubmit={submit} className="p-6">
-                    <h2 className="text-lg font-bold text-gray-900 mb-6">
-                        {isEditing ? 'Edit Data FAQ' : 'Tambah FAQ Baru'}
-                    </h2>
-
-                    <div className="space-y-6">
-                        <div>
-                            <InputLabel htmlFor="title" value="Judul / Pertanyaan" />
-                            <TextInput
-                                id="title"
-                                type="text"
-                                name="title"
-                                value={data.title}
-                                className="mt-1 block w-full"
-                                onChange={(e) => setData('title', e.target.value)}
-                                required
-                                isFocused
-                            />
-                            <InputError message={errors.title} className="mt-2" />
-                        </div>
-
-                        <div>
-                            <InputLabel htmlFor="description" value="Deskripsi / Jawaban" />
-                            <div className="mt-1">
-                                <ReactQuill 
-                                    theme="snow" 
-                                    value={data.description} 
-                                    onChange={(content) => setData('description', content)}
-                                    className="bg-white rounded-md h-48 mb-12"
-                                />
-                            </div>
-                            <InputError message={errors.description} className="mt-2" />
-                        </div>
+            <Modal show={isModalOpen} onClose={closeModal} maxWidth="4xl">
+                <form onSubmit={submit} className="p-0">
+                    <div className="p-6 border-b border-gray-100">
+                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <LanguageIcon className="w-5 h-5 text-[#0057B8]" />
+                            {isEditing ? 'Edit Data FAQ' : 'Tambah FAQ Baru'}
+                        </h2>
                     </div>
 
-                    <div className="mt-6 flex justify-end gap-x-3">
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-50/50">
+                        
+                        {/* Versi Indonesia */}
+                        <div className="space-y-6 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="flex items-center justify-center w-6 h-6 rounded bg-red-100 text-red-600 font-bold text-xs">ID</span>
+                                <h3 className="font-bold text-gray-900">Versi Indonesia</h3>
+                            </div>
+
+                            <div>
+                                <InputLabel htmlFor="title_id" value="Judul / Pertanyaan (Wajib)" />
+                                <TextInput
+                                    id="title_id"
+                                    type="text"
+                                    name="title_id"
+                                    value={data.title_id}
+                                    className="mt-1 block w-full"
+                                    onChange={(e) => setData('title_id', e.target.value)}
+                                    required
+                                />
+                                <InputError message={errors.title_id} className="mt-2" />
+                            </div>
+
+                            <div>
+                                <InputLabel htmlFor="description_id" value="Deskripsi / Jawaban (Wajib)" />
+                                <div className="mt-1">
+                                    <ReactQuill 
+                                        theme="snow" 
+                                        value={data.description_id} 
+                                        onChange={(content) => setData('description_id', content)}
+                                        className="bg-white rounded-md h-48 mb-10"
+                                    />
+                                </div>
+                                <InputError message={errors.description_id} className="mt-2" />
+                            </div>
+                        </div>
+
+                        {/* English Version */}
+                        <div className="space-y-6 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="flex items-center justify-center w-6 h-6 rounded bg-blue-100 text-blue-600 font-bold text-xs">EN</span>
+                                <h3 className="font-bold text-gray-900">English Version</h3>
+                            </div>
+
+                            <div>
+                                <InputLabel htmlFor="title_en" value="Title / Question" />
+                                <TextInput
+                                    id="title_en"
+                                    type="text"
+                                    name="title_en"
+                                    value={data.title_en}
+                                    className="mt-1 block w-full"
+                                    onChange={(e) => setData('title_en', e.target.value)}
+                                />
+                                <InputError message={errors.title_en} className="mt-2" />
+                            </div>
+
+                            <div>
+                                <InputLabel htmlFor="description_en" value="Description / Answer" />
+                                <div className="mt-1">
+                                    <ReactQuill 
+                                        theme="snow" 
+                                        value={data.description_en} 
+                                        onChange={(content) => setData('description_en', content)}
+                                        className="bg-white rounded-md h-48 mb-10"
+                                    />
+                                </div>
+                                <InputError message={errors.description_en} className="mt-2" />
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div className="p-6 flex justify-end gap-x-3 border-t border-gray-100">
                         <SecondaryButton onClick={closeModal} disabled={processing}>
                             Batal
                         </SecondaryButton>
@@ -351,7 +422,7 @@ export default function Index({ faqs, filters }) {
                         Hapus FAQ
                     </h2>
                     <p className="text-sm text-gray-600 mb-6">
-                        Apakah Anda yakin ingin menghapus FAQ <span className="font-semibold">{faqToDelete?.title}</span>? 
+                        Apakah Anda yakin ingin menghapus FAQ <span className="font-semibold">{faqToDelete?.title_id}</span>? 
                         Data yang dihapus tidak dapat dikembalikan.
                     </p>
                     <div className="flex justify-end gap-x-3">

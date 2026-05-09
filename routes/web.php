@@ -57,4 +57,8 @@ Route::get('/cart', function () {
     return Inertia::render('Cart/Index');
 })->name('cart.index');
 
+Route::get('/api/faqs', function () {
+    return response()->json(\App\Models\Faq::latest()->get());
+});
+
 require __DIR__.'/auth.php';

@@ -15,8 +15,10 @@ class FaqController extends Controller
 
         $faqs = Faq::query()
             ->when($search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
+                $query->where('title_id', 'like', "%{$search}%")
+                      ->orWhere('title_en', 'like', "%{$search}%")
+                      ->orWhere('description_id', 'like', "%{$search}%")
+                      ->orWhere('description_en', 'like', "%{$search}%");
             })
             ->latest()
             ->paginate($limit)
@@ -31,8 +33,10 @@ class FaqController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'title_id' => 'required|string|max:255',
+            'description_id' => 'required|string',
+            'title_en' => 'nullable|string|max:255',
+            'description_en' => 'nullable|string',
         ]);
 
         Faq::create($validated);
@@ -43,8 +47,10 @@ class FaqController extends Controller
     public function update(Request $request, Faq $faq)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'title_id' => 'required|string|max:255',
+            'description_id' => 'required|string',
+            'title_en' => 'nullable|string|max:255',
+            'description_en' => 'nullable|string',
         ]);
 
         $faq->update($validated);

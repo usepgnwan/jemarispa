@@ -140,7 +140,7 @@ export default function Welcome({ auth }) {
                 </section>
 
                 <Contact />
-                <FAQ />
+                <FAQ lang={lang} />
             </main>
 
             <FloatingWhatsApp />
