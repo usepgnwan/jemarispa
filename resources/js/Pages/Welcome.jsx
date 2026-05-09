@@ -91,7 +91,7 @@ export default function Welcome({ auth, packages = [], testimonials = [] }) {
 
                                         <div className="bg-white rounded-2xl p-5 shadow-sm mb-6 border border-zenith-orange/10">
                                             <p className="text-[9px] text-gray-400 mb-1 uppercase tracking-wider font-bold">Selamat Datang,</p>
-                                            <p className="font-bold text-zenith-charcoal text-sm">Mau Booking Ritual Apa Hari Ini?</p>
+                                            <p className="font-bold text-zenith-charcoal text-sm">Mau Booking Paket Apa Hari Ini?</p>
                                         </div>
 
                                         <div className="space-y-4">

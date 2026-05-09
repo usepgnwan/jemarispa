@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage, router } from '@inertiajs/react';
+import axios from 'axios';
 import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
@@ -98,13 +99,13 @@ export default function Index({ auth, packages = [] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
-    
+
     // Initial State loading from LocalStorage
     const [pax, setPax] = useState(() => {
         const saved = localStorage.getItem('jemari_checkout_pax');
         return saved ? parseInt(saved) : 1;
     });
-    
+
     const [formData, setFormData] = useState(() => {
         const saved = localStorage.getItem('jemari_checkout_form');
         return saved ? JSON.parse(saved) : {
@@ -118,13 +119,13 @@ export default function Index({ auth, packages = [] }) {
             notes: ''
         };
     });
-    
+
     const [guests, setGuests] = useState(() => {
         const saved = localStorage.getItem('jemari_checkout_guests');
-        return saved ? JSON.parse(saved) : [{ 
-            guestGender: 'wanita', 
+        return saved ? JSON.parse(saved) : [{
+            guestGender: 'wanita',
             therapistGender: 'wanita',
-            packages: [] 
+            packages: []
         }];
     });
 
@@ -137,7 +138,7 @@ export default function Index({ auth, packages = [] }) {
             localStorage.setItem('jemari_checkout_pax', pax);
             localStorage.setItem('jemari_checkout_form', JSON.stringify(formData));
             localStorage.setItem('jemari_checkout_guests', JSON.stringify(guests));
-            
+
             // Trigger reactivity for Navbar/MobileNav
             window.dispatchEvent(new Event('cart-updated'));
         }
@@ -146,7 +147,7 @@ export default function Index({ auth, packages = [] }) {
     // Handle items from Pricing Page (spa_cart)
     useEffect(() => {
         const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
-        
+
         if (savedCart.length > 0) {
             setGuests(prevGuests => {
                 const newGuests = [...prevGuests];
@@ -154,7 +155,7 @@ export default function Index({ auth, packages = [] }) {
                 if (newGuests.length === 0) {
                     newGuests.push({ guestGender: 'wanita', therapistGender: 'wanita', packages: [] });
                 }
-                
+
                 // Map spa_cart items to Orang 1 (index 0)
                 const formattedPackages = savedCart.map(item => ({
                     name: item.name,
@@ -162,16 +163,16 @@ export default function Index({ auth, packages = [] }) {
                     price: parseFloat(item.price),
                     duration: item.duration
                 }));
-                
+
                 newGuests[0].packages = [...newGuests[0].packages, ...formattedPackages];
                 return newGuests;
             });
-            
+
             localStorage.removeItem('spa_cart');
             localStorage.removeItem('pending_service');
             isFirstRender.current = false; // Mark as dirty to trigger persistence
         }
-        
+
         if (isFirstRender.current) {
             isFirstRender.current = false;
         }
@@ -180,14 +181,14 @@ export default function Index({ auth, packages = [] }) {
     const handlePaxChange = (newPax) => {
         const count = parseInt(newPax);
         setPax(count);
-        
+
         const newGuests = [...guests];
         if (count > guests.length) {
             for (let i = guests.length; i < count; i++) {
-                newGuests.push({ 
-                    guestGender: 'wanita', 
+                newGuests.push({
+                    guestGender: 'wanita',
                     therapistGender: 'wanita',
-                    packages: [] 
+                    packages: []
                 });
             }
         } else {
@@ -211,23 +212,23 @@ export default function Index({ auth, packages = [] }) {
 
     const addPackageToGuest = (pkg) => {
         if (activeGuestIndex === null) return;
-        
+
         const durationIndex = selectedDurations[pkg.id] || 0;
         const d = pkg.durations[durationIndex];
-        
+
         const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
-        
+
         const packageToAdd = {
             name: `${title} ${d.duration}`,
             groupName: title,
             price: parseFloat(d.price),
             duration: d.duration
         };
-        
+
         const newGuests = [...guests];
         newGuests[activeGuestIndex].packages.push(packageToAdd);
         setGuests(newGuests);
-        
+
         showToast(t.toastAdd.replace('{n}', activeGuestIndex + 1).replace('{name}', packageToAdd.name));
     };
 
@@ -236,7 +237,7 @@ export default function Index({ auth, packages = [] }) {
         const removedPkg = newGuests[guestIndex].packages[pkgIndex];
         newGuests[guestIndex].packages.splice(pkgIndex, 1);
         setGuests(newGuests);
-        
+
         showToast(t.toastRemove.replace('{n}', guestIndex + 1).replace('{name}', removedPkg.name));
     };
 
@@ -254,8 +255,8 @@ export default function Index({ auth, packages = [] }) {
     const filteredPackages = packages.filter(p => {
         const title = lang === 'EN' ? (p.title_en || p.title_id) : p.title_id;
         const category = lang === 'EN' ? (p.category_en || p.category_id) : p.category_id;
-        return title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-               (category && category.toLowerCase().includes(searchQuery.toLowerCase()));
+        return title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (category && category.toLowerCase().includes(searchQuery.toLowerCase()));
     });
 
     const formatDuration = (d) => {
@@ -266,7 +267,9 @@ export default function Index({ auth, packages = [] }) {
         return `${durationStr} ${t.minute}`;
     };
 
-    const handleCheckout = (e) => {
+    const { app_settings } = usePage().props;
+
+    const handleCheckout = async (e) => {
         e.preventDefault();
         const hasPackages = guests.some(g => g.packages.length > 0);
         if (!hasPackages) {
@@ -274,22 +277,87 @@ export default function Index({ auth, packages = [] }) {
             return;
         }
 
+        const totalPrice = calculateTotal();
         const guestDetails = guests.map((g, i) => {
-            const pkgs = g.packages.map(p => `- ${p.name}`).join('\n  ');
-            return `Orang ${i + 1}:\n  Gender: ${g.guestGender === 'pria' ? t.pria : t.wanita}\n  Terapis: ${g.therapistGender === 'pria' ? t.pria : t.wanita}\n  Paket:\n  ${pkgs || '(Belum pilih paket)'}`;
+            const pkgs = g.packages.map(p => `${p.name} @ Rp ${p.price.toLocaleString('id-ID')}`).join('\n    ');
+            return `Orang ${i + 1}:\n  Gender: ${g.guestGender === 'pria' ? t.pria : t.wanita}\n  Terapis: ${g.therapistGender === 'pria' ? t.pria : t.wanita}\n  Treatment:\n    ${pkgs || '(Belum pilih paket)'}`;
         }).join('\n\n');
 
-        const message = `Halo Jemari Spa, saya ingin memesan untuk ${pax} orang:\n\n` + 
-            guestDetails + 
-            `\n\nTotal Bayar: Rp ${calculateTotal().toLocaleString('id-ID')}` +
-            `\n\nData Penanggung Jawab:\nNama: ${formData.name}\nWhatsApp: ${formData.phone}\nAlamat: ${formData.address}` +
-            `\n\nDetail Kedatangan:\nTanggal: ${formData.date}\nJam: ${formData.time}\nBayar via: ${formData.paymentMethod === 'cash' ? t.cash : t.transfer}\nSumber: ${formData.source}\nCatatan: ${formData.notes}`;
-        
-        window.open(`https://wa.me/628123456789?text=${encodeURIComponent(message)}`, '_blank');
-        
-        // Optionally clear state after checkout?
-        // localStorage.removeItem('jemari_checkout_pax');
-        // ...
+        const payload = {
+            customer_name: formData.name,
+            phone: formData.phone,
+            address: formData.address,
+            schedule_date: formData.date,
+            schedule_time: formData.time,
+            payment_method: formData.paymentMethod === 'cash' ? t.cash : t.transfer,
+            source: formData.source,
+            notes: formData.notes,
+            total_price: totalPrice,
+            guests: guests,
+        };
+
+        try {
+            const response = await axios.post(route('transactions.store'), payload);
+
+            if (response.data.success) {
+                const transaction = response.data.transaction;
+
+                // Open WhatsApp
+                const phone = app_settings?.phone || '6289516166090';
+                const rawTemplate = app_settings?.template_order || `Halo Jemari Spa, saya ingin memesan untuk [pax] orang:\n\n[details]\n\nTotal Bayar: [total]\n\nData Penanggung Jawab:\nNama: [name]\nWhatsApp: [phone]\nAlamat: [address]\n\nDetail Kedatangan:\nTanggal: [date]\nJam: [time]\nBayar via: [payment]\nSumber: [source]\nCatatan: [notes]`;
+
+                // Complex groupings for WA tags
+                const allGenders = guests.map((g, i) => `Orang ${i + 1}: ${g.guestGender === 'pria' ? t.pria : t.wanita}`).join(', ');
+                const allTherapistGenders = guests.map((g, i) => `Orang ${i + 1}: ${g.therapistGender === 'pria' ? t.pria : t.wanita}`).join(', ');
+                const groupedPackages = guests.map((g, i) => {
+                    const pkgs = g.packages.map(p => `${p.name} @ Rp ${p.price.toLocaleString('id-ID')}`).join('\n  - ');
+                    return `Orang ${i + 1}:\n  - ${pkgs}`;
+                }).join('\n');
+
+                const waData = {
+                    name: formData.name,
+                    phone: formData.phone,
+                    address: formData.address,
+                    date: formData.date,
+                    time: formData.time,
+                    schedule: `${formData.date}, ${formData.time}`,
+                    payment: payload.payment_method,
+                    pax: pax,
+                    details: guestDetails, // Keeping this for backward compatibility
+                    gender: allGenders,
+                    package: `\n${groupedPackages}`,
+                    therapist_pax: pax,
+                    therapist_gender: allTherapistGenders,
+                    total: `Rp ${totalPrice.toLocaleString('id-ID')}`,
+                    source: formData.source,
+                    notes: formData.notes || '-',
+                    order_number: transaction.order_number
+                };
+
+                let message = rawTemplate.replace(/<[^>]*>?/gm, ''); // Strip HTML
+                for (const key in waData) {
+                    message = message.replace(new RegExp(`\\[${key}\\]`, 'g'), waData[key]);
+                }
+
+                const encodedMessage = encodeURIComponent(message);
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                const waUrl = isMobile
+                    ? `https://wa.me/${phone}?text=${encodedMessage}`
+                    : `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+
+                window.open(waUrl, '_blank');
+
+                // Clear cart and state
+                localStorage.removeItem('jemari_checkout_pax');
+                localStorage.removeItem('jemari_checkout_form');
+                localStorage.removeItem('jemari_checkout_guests');
+
+                router.visit('/');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast(lang === 'ID' ? 'Terjadi kesalahan saat memproses pesanan.' : 'An error occurred while processing your order.');
+        }
     };
 
     return (
@@ -307,7 +375,7 @@ export default function Index({ auth, packages = [] }) {
                                 <h1 className="text-[10px] font-bold text-zenith-orange uppercase tracking-[0.3em] mb-1">{t.step1}</h1>
                                 <h2 className="text-3xl font-serif italic text-zenith-charcoal">{t.title}</h2>
                             </div>
-                            
+
                             <div className="space-y-8">
                                 {guests.map((guest, gIndex) => (
                                     <div key={gIndex} className="bg-white rounded-[2.5rem] shadow-2xl border border-zenith-orange/5 overflow-hidden">
@@ -318,7 +386,7 @@ export default function Index({ auth, packages = [] }) {
                                                     {t.guestTitle.replace('{n}', gIndex + 1)}
                                                 </h3>
                                                 {guest.packages.length > 0 && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             setActiveGuestIndex(gIndex);
                                                             setShowAddModal(true);
@@ -334,7 +402,7 @@ export default function Index({ auth, packages = [] }) {
                                             {guest.packages.length === 0 ? (
                                                 <div className="py-12 px-6 text-center bg-zenith-surface/30 rounded-[2rem] border-2 border-dashed border-zenith-orange/10">
                                                     <p className="text-zenith-charcoal/40 text-sm font-medium mb-8 leading-relaxed max-w-xs mx-auto">{t.empty}</p>
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             setActiveGuestIndex(gIndex);
                                                             setShowAddModal(true);
@@ -358,7 +426,7 @@ export default function Index({ auth, packages = [] }) {
                                                                 <h4 className="text-sm font-serif italic text-zenith-charcoal">{pkg.groupName || pkg.name}</h4>
                                                                 <p className="md:hidden text-[10px] font-bold text-zenith-orange mt-1">{formatDuration(pkg.duration)} • Rp {pkg.price.toLocaleString('id-ID')}</p>
                                                             </div>
-                                                            
+
                                                             <div className="hidden md:flex items-center gap-x-0">
                                                                 <div className="w-24 text-center">
                                                                     <span className="text-[10px] font-bold text-zenith-orange bg-white px-2 py-1 rounded-lg border border-zenith-orange/10">{formatDuration(pkg.duration)}</span>
@@ -368,7 +436,7 @@ export default function Index({ auth, packages = [] }) {
                                                                 </div>
                                                             </div>
 
-                                                            <button 
+                                                            <button
                                                                 onClick={() => removePackageFromGuest(gIndex, pIndex)}
                                                                 className="h-8 w-8 rounded-full bg-white text-zenith-charcoal/20 hover:text-red-500 flex items-center justify-center transition-all shadow-sm ml-2 md:ml-10"
                                                             >
@@ -403,32 +471,32 @@ export default function Index({ auth, packages = [] }) {
                                     <div className="space-y-6">
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.fullName}</label>
-                                            <input 
+                                            <input
                                                 required type="text" placeholder="Nama penanggung jawab"
                                                 className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange"
                                                 value={formData.name}
-                                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             />
                                         </div>
-                                        
+
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.phone}</label>
-                                            <input 
+                                            <input
                                                 required type="tel" placeholder="081..."
                                                 className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange"
                                                 value={formData.phone}
-                                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                             />
                                         </div>
 
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.pax}</label>
-                                            <select 
+                                            <select
                                                 className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange appearance-none cursor-pointer"
                                                 value={pax}
                                                 onChange={(e) => handlePaxChange(e.target.value)}
                                             >
-                                                {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
                                                     <option key={n} value={n}>{n} {t.pax.split('(')[0]}</option>
                                                 ))}
                                             </select>
@@ -442,7 +510,7 @@ export default function Index({ auth, packages = [] }) {
                                                     <span className="h-4 w-4 bg-zenith-orange text-white rounded-full flex items-center justify-center text-[8px] font-sans not-italic">{index + 1}</span>
                                                     {t.guestTitle.replace('{n}', index + 1)}
                                                 </h4>
-                                                
+
                                                 <div className="space-y-4">
                                                     <div>
                                                         <label className="text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest block mb-2">{t.guestGender}</label>
@@ -455,7 +523,7 @@ export default function Index({ auth, packages = [] }) {
                                                             ))}
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <div>
                                                         <label className="text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest block mb-2">{t.therapistGender}</label>
                                                         <div className="flex gap-2">
@@ -475,31 +543,31 @@ export default function Index({ auth, packages = [] }) {
                                     <div className="space-y-6">
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.address}</label>
-                                            <textarea 
+                                            <textarea
                                                 required placeholder="Alamat lengkap lokasi spa..."
                                                 className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange h-24"
                                                 value={formData.address}
-                                                onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                             ></textarea>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.date}</label>
-                                                <input 
+                                                <input
                                                     required type="date"
                                                     className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange"
                                                     value={formData.date}
-                                                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                                 />
                                             </div>
                                             <div>
                                                 <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.time}</label>
-                                                <input 
+                                                <input
                                                     required type="time"
                                                     className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange"
                                                     value={formData.time}
-                                                    onChange={(e) => setFormData({...formData, time: e.target.value})}
+                                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                                                 />
                                             </div>
                                         </div>
@@ -510,7 +578,7 @@ export default function Index({ auth, packages = [] }) {
                                                 <div className="flex gap-2">
                                                     {['cash', 'transfer'].map((p) => (
                                                         <label key={p} className="flex-1 cursor-pointer">
-                                                            <input type="radio" name="paymentMethod" className="hidden peer" value={p} checked={formData.paymentMethod === p} onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} />
+                                                            <input type="radio" name="paymentMethod" className="hidden peer" value={p} checked={formData.paymentMethod === p} onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })} />
                                                             <div className="text-center py-3 rounded-xl bg-zenith-surface text-[9px] font-bold uppercase peer-checked:bg-zenith-orange peer-checked:text-white transition-all border border-transparent">{t[p]}</div>
                                                         </label>
                                                     ))}
@@ -518,10 +586,10 @@ export default function Index({ auth, packages = [] }) {
                                             </div>
                                             <div>
                                                 <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.source}</label>
-                                                <select 
+                                                <select
                                                     className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange appearance-none cursor-pointer"
                                                     value={formData.source}
-                                                    onChange={(e) => setFormData({...formData, source: e.target.value})}
+                                                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                                                 >
                                                     {t.sourceOptions.map(opt => (
                                                         <option key={opt} value={opt}>{opt}</option>
@@ -532,15 +600,15 @@ export default function Index({ auth, packages = [] }) {
 
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.notes}</label>
-                                            <textarea 
+                                            <textarea
                                                 className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange h-24"
                                                 placeholder={t.notesPlaceholder}
                                                 value={formData.notes}
-                                                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                             ></textarea>
                                         </div>
 
-                                        <button 
+                                        <button
                                             type="submit"
                                             className="w-full py-5 bg-zenith-orange text-white rounded-full text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-orange/40 hover:bg-zenith-charcoal transition-all transform active:scale-95"
                                         >
@@ -578,7 +646,7 @@ export default function Index({ auth, packages = [] }) {
                                     <h3 className="text-xl font-serif italic text-zenith-charcoal">{t.modalTitle.replace('{n}', activeGuestIndex + 1)}</h3>
                                     <p className="text-zenith-charcoal/40 text-[9px] font-bold uppercase tracking-widest mt-1">{t.modalDesc}</p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => {
                                         setShowAddModal(false);
                                         setSearchQuery('');
@@ -588,12 +656,12 @@ export default function Index({ auth, packages = [] }) {
                                     <span className="material-symbols-outlined">close</span>
                                 </button>
                             </div>
-                            
+
                             {/* Search Bar */}
                             <div className="relative group">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-zenith-charcoal/20 group-focus-within:text-zenith-orange transition-colors">search</span>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     placeholder={t.searchPlaceholder}
                                     className="w-full bg-zenith-surface border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange transition-all"
                                     value={searchQuery}
@@ -614,7 +682,7 @@ export default function Index({ auth, packages = [] }) {
                                 filteredPackages.map((pkg) => {
                                     const durationIndex = selectedDurations[pkg.id] || 0;
                                     const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
-                                    
+
                                     const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
                                     const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
 
@@ -624,11 +692,11 @@ export default function Index({ auth, packages = [] }) {
                                                 <h4 className="text-lg font-serif italic text-zenith-charcoal">{title}</h4>
                                                 <p className="text-[10px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{category}</p>
                                             </div>
-                                            
+
                                             <div className="flex items-center gap-4 w-full md:w-auto">
                                                 <div className="w-full md:w-32">
                                                     {pkg.durations && pkg.durations.length > 1 ? (
-                                                        <select 
+                                                        <select
                                                             className="w-full bg-white border border-zenith-orange/10 rounded-xl px-3 py-2 text-xs font-bold text-zenith-charcoal focus:ring-1 focus:ring-zenith-orange"
                                                             value={durationIndex}
                                                             onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
@@ -645,12 +713,12 @@ export default function Index({ auth, packages = [] }) {
                                                         </div>
                                                     )}
                                                 </div>
-                                                
+
                                                 <div className="text-right min-w-[100px] md:w-32">
                                                     <p className="text-sm font-bold text-zenith-charcoal">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                                 </div>
 
-                                                <button 
+                                                <button
                                                     onClick={() => addPackageToGuest(pkg)}
                                                     className="h-10 w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20 shrink-0"
                                                 >
@@ -667,9 +735,9 @@ export default function Index({ auth, packages = [] }) {
                                 </div>
                             )}
                         </div>
-                        
+
                         <div className="p-6 bg-zenith-surface/50 border-t border-zenith-orange/5 text-center">
-                            <button 
+                            <button
                                 onClick={() => {
                                     setShowAddModal(false);
                                     setSearchQuery('');

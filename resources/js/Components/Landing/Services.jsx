@@ -1,7 +1,7 @@
 const items = [
     { title: 'Stone Massage', img: 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=80&w=800' },
     { title: 'Aroma Therapy', img: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800' },
-    { title: 'Skin Rituals', img: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=800' },
+    { title: 'Skin Packages', img: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=800' },
     { title: 'Deep Tissue', img: 'https://images.unsplash.com/photo-1519415510236-8a199360b39d?auto=format&fit=crop&q=80&w=800' },
     { title: 'Sauna Session', img: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=80&w=800' },
     { title: 'Zen Meditation', img: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800' },
@@ -12,7 +12,7 @@ export default function Gallery() {
         <section id="services" className="py-section bg-white">
             <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center mb-20">
                 <span className="text-orange-600 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block underline underline-offset-8 decoration-orange-200">The Collection</span>
-                <h2 className="text-4xl md:text-5xl font-serif text-zenith-charcoal italic leading-tight">Signature Rituals</h2>
+                <h2 className="text-4xl md:text-5xl font-serif text-zenith-charcoal italic leading-tight">Signature Packages</h2>
             </div>
             
             <div className="mx-auto max-w-7xl px-6 lg:px-8">

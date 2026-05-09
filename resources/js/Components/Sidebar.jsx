@@ -32,7 +32,7 @@ export default function Sidebar({ collapsed }) {
             section: 'PENGGUNA',
             items: [
                 { name: 'Fitur POS', href: '#', icon: CalculatorIcon, current: false },
-                { name: 'Pesanan', href: '#', icon: ShoppingCartIcon, current: false },
+                { name: 'Pesanan', href: route('admin.transaction.index'), icon: ShoppingCartIcon, current: route().current('admin.transaction.*') },
             ]
         },
         { 
@@ -54,7 +54,7 @@ export default function Sidebar({ collapsed }) {
         { 
             section: 'SETTING',
             items: [
-                { name: 'Setting', href: '#', icon: Cog6ToothIcon, current: false },
+                { name: 'Setting', href: route('admin.settings.index'), icon: Cog6ToothIcon, current: route().current('admin.settings.*') },
             ]
         }
     ];

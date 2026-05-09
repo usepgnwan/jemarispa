@@ -62,13 +62,13 @@ export default function SignatureRituals({ lang }) {
     const [activeTab, setActiveTab] = useState(null);
 
     return (
-        <section id="rituals" className="py-24 md:py-32 bg-white overflow-hidden">
+        <section id="packages" className="py-24 md:py-32 bg-white overflow-hidden">
             <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center mb-16 md:mb-24">
                 <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block underline underline-offset-8 decoration-zenith-orange/20">
                     {lang === 'ID' ? 'Koleksi Kami' : 'The Collection'}
                 </span>
                 <h2 className="text-4xl md:text-6xl font-serif text-zenith-charcoal italic leading-tight">
-                    {lang === 'ID' ? 'Signature Rituals' : 'Signature Rituals'}
+                    {lang === 'ID' ? 'Paket Unggulan' : 'Signature Packages'}
                 </h2>
             </div>
             
