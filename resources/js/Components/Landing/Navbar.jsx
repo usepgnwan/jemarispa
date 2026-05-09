@@ -15,12 +15,32 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
         'Pijat Tradisional'
     ];
 
+    const serviceLabels = {
+        'ID': {
+            'Bekam': 'Bekam',
+            'Kerokan': 'Kerokan',
+            'Totok Wajah': 'Totok Wajah',
+            'Pijat Refleksi': 'Pijat Refleksi',
+            'Pijat Ibu Hamil': 'Pijat Ibu Hamil',
+            'Pijat Tradisional': 'Pijat Tradisional'
+        },
+        'EN': {
+            'Bekam': 'Professional Cupping',
+            'Kerokan': 'Scraping Therapy',
+            'Totok Wajah': 'Face Acupressure',
+            'Pijat Refleksi': 'Reflexology',
+            'Pijat Ibu Hamil': 'Pregnancy Massage',
+            'Pijat Tradisional': 'Traditional Massage'
+        }
+    };
+
     const menuItems = {
         'ID': { home: 'Beranda', service: 'Layanan', testimonial: 'Testimoni', pricing: 'Harga', blog: 'Blog', contact: 'Kontak', login: 'Masuk', book: 'Pesan Sekarang' },
         'EN': { home: 'Home', service: 'Service', testimonial: 'Testimonial', pricing: 'Pricing', blog: 'Blog', contact: 'Contact', login: 'Log in', book: 'Book Now' }
     };
 
     const t = menuItems[lang];
+    const sLabel = serviceLabels[lang];
 
     useEffect(() => {
         const handleScroll = () => {
@@ -66,7 +86,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                             }}
                                             className={`w-full text-left px-4 py-3 rounded-xl transition-all text-zenith-charcoal/60 hover:text-orange-600 hover:bg-orange-50/50 ${activeService === s ? 'text-orange-600 bg-orange-50/50 font-bold' : ''}`}
                                         >
-                                            {s}
+                                            {sLabel[s]}
                                         </button>
                                     ))}
                                 </div>
@@ -155,7 +175,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                         }}
                                         className={`w-full text-left px-4 py-3 rounded-xl transition-all text-zenith-charcoal/60 hover:text-orange-600 hover:bg-orange-50/50 ${activeService === s ? 'text-orange-600 bg-orange-50/50 font-bold' : ''}`}
                                     >
-                                        <p className="text-[10px] font-bold uppercase tracking-widest">{s}</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest">{sLabel[s]}</p>
                                     </button>
                                 ))}
                             </div>

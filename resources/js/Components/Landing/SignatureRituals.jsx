@@ -8,7 +8,7 @@ const rituals = [
             ID: 'Layanan pijat panggilan profesional untuk relaksasi tubuh dan pikiran. Terapis bersertifikat siap datang ke lokasi Anda.', 
             EN: 'Professional on-call massage service for body and mind relaxation. Certified therapists ready to come to your location.' 
         },
-        img: 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=80&w=800'
+        img: '/images/pijat tradisional.jpg'
     },
     {
         id: 'Bekam',
@@ -17,7 +17,7 @@ const rituals = [
             ID: 'Terapi bekam steril untuk detoksifikasi dan melancarkan peredaran darah. Aman dan ditangani oleh ahli.', 
             EN: 'Sterile cupping therapy for detoxification and blood circulation. Safe and handled by experts.' 
         },
-        img: 'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&q=80&w=800'
+        img: '/images/bekam.webp'
     },
     {
         id: 'Kerokan',
@@ -26,7 +26,7 @@ const rituals = [
             ID: 'Teknik tradisional yang efektif untuk meredakan masuk angin dan pegal-pegal dengan peralatan higienis.', 
             EN: 'Effective traditional technique to relieve colds and muscle aches with hygienic equipment.' 
         },
-        img: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=80&w=800'
+        img: '/images/kerokan.jpg'
     },
     {
         id: 'Totok Wajah',
@@ -35,7 +35,7 @@ const rituals = [
             ID: 'Membantu wajah lebih segar, bercahaya (glowing), dan rileks. Solusi kecantikan tanpa macet.', 
             EN: 'Helps the face look fresher, glowing, and relaxed. Beauty solution without the traffic.' 
         },
-        img: 'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?auto=format&fit=crop&q=80&w=800'
+        img: '/images/totok wajah.jpg'
     },
     {
         id: 'Pijat Refleksi',
@@ -44,7 +44,7 @@ const rituals = [
             ID: 'Melancarkan peredaran darah dan mengembalikan keseimbangan energi tubuh Anda.', 
             EN: 'Improves blood circulation and restores your body\'s energy balance.' 
         },
-        img: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&q=80&w=800'
+        img: '/images/pijat refleksi.jpg'
     },
     {
         id: 'Pijat Ibu Hamil',
@@ -53,7 +53,7 @@ const rituals = [
             ID: 'Relaksasi khusus untuk meredakan stres dan nyeri punggung selama masa kehamilan.', 
             EN: 'Specialized relaxation to relieve stress and back pain during pregnancy.' 
         },
-        img: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=80&w=800'
+        img: '/images/pijat ibu hamil.jpg'
     }
 ];
 
