@@ -19,10 +19,10 @@ export default {
             colors: {
                 zenith: {
                     surface: '#fef8f7',
-                    dim: '#ded9d8',
-                    charcoal: '#1d1b1b',
-                    primary: '#984800',
-                    orange: '#ff7d00',
+                    dim: '#DCDDDD',
+                    charcoal: '#5F5D5D',
+                    gold: '#FBBB59',
+                    orange: '#F47C51',
                 }
             },
             spacing: {

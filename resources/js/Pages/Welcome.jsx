@@ -23,7 +23,7 @@ export default function Welcome({ auth }) {
     }, [lang]);
 
     return (
-        <div className="font-sans text-zenith-charcoal antialiased selection:bg-orange-100 selection:text-orange-900 bg-zenith-surface pb-32 lg:pb-0">
+        <div className="font-sans text-zenith-charcoal antialiased selection:bg-zenith-orange/20 selection:text-zenith-orange bg-zenith-surface">
             <Head title="Jemari Spa - Luxury Wellness Sanctuary" />
 
             <Navbar
@@ -34,7 +34,7 @@ export default function Welcome({ auth }) {
                 setLang={setLang}
             />
 
-            <main>
+            <main className="pb-32 lg:pb-0">
                 <Hero activeService={activeService} lang={lang} />
                 <Highlights />
                 <SignatureRituals lang={lang} />
@@ -46,7 +46,7 @@ export default function Welcome({ auth }) {
                     <div className="mx-auto max-w-7xl px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                             <div>
-                                <span className="text-orange-600 font-bold tracking-[0.3em] uppercase text-[10px] mb-6 block">Seamless Booking</span>
+                                <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-6 block">Seamless Booking</span>
                                 <h2 className="text-4xl md:text-6xl font-serif text-zenith-charcoal italic mb-8 leading-tight">Book Your Escape <br />From Any Platform.</h2>
                                 <p className="text-lg text-gray-500 mb-12 max-w-md font-sans leading-relaxed">
                                     Jemari Spa kini tersedia di platform perjalanan favorit Anda. Nikmati kemudahan pemesanan dan konfirmasi instan di mana pun Anda berada.
@@ -65,29 +65,29 @@ export default function Welcome({ auth }) {
                             </div>
 
                             <div className="relative flex justify-center">
-                                <div className="bg-orange-500/10 absolute inset-0 blur-[120px] rounded-full scale-150"></div>
+                                <div className="bg-zenith-orange/10 absolute inset-0 blur-[120px] rounded-full scale-150"></div>
 
                                 {/* Refined Mobile Mockup */}
-                                <div className="relative w-[320px] h-[650px] bg-zenith-charcoal rounded-[3.5rem] border-[10px] border-zenith-charcoal shadow-2xl overflow-hidden ring-4 ring-orange-500/10">
+                                <div className="relative w-[320px] h-[650px] bg-zenith-charcoal rounded-[3.5rem] border-[10px] border-zenith-charcoal shadow-2xl overflow-hidden ring-4 ring-zenith-orange/10">
                                     {/* Notch */}
                                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-7 bg-zenith-charcoal rounded-b-2xl z-20"></div>
 
                                     {/* Phone Screen Content */}
                                     <div className="absolute inset-0 bg-zenith-surface z-10 p-6 flex flex-col">
                                         <div className="flex justify-between items-center mb-8 mt-4">
-                                            <span className="material-symbols-outlined text-orange-600">menu</span>
-                                            <span className="font-bold text-orange-600 tracking-[0.2em] text-[10px]">JEMARI SPA</span>
-                                            <span className="material-symbols-outlined text-orange-600">account_circle</span>
+                                            <span className="material-symbols-outlined text-zenith-orange">menu</span>
+                                            <span className="font-bold text-zenith-orange tracking-[0.2em] text-[10px]">JEMARI SPA</span>
+                                            <span className="material-symbols-outlined text-zenith-orange">account_circle</span>
                                         </div>
 
-                                        <div className="bg-white rounded-2xl p-5 shadow-sm mb-6 border border-orange-100">
+                                        <div className="bg-white rounded-2xl p-5 shadow-sm mb-6 border border-zenith-orange/10">
                                             <p className="text-[9px] text-gray-400 mb-1 uppercase tracking-wider font-bold">Selamat Datang,</p>
                                             <p className="font-bold text-zenith-charcoal text-sm">Mau Booking Ritual Apa Hari Ini?</p>
                                         </div>
 
                                         <div className="space-y-4">
-                                            <div className="bg-white rounded-2xl p-4 flex gap-4 border border-orange-50 shadow-sm">
-                                                <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
+                                            <div className="bg-white rounded-2xl p-4 flex gap-4 border border-zenith-orange/5 shadow-sm">
+                                                <div className="w-10 h-10 bg-zenith-orange/5 rounded-xl flex items-center justify-center text-zenith-orange">
                                                     <span className="material-symbols-outlined text-lg">medical_services</span>
                                                 </div>
                                                 <div>
@@ -96,8 +96,8 @@ export default function Welcome({ auth }) {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-white rounded-2xl p-4 flex gap-4 border border-orange-50 shadow-sm">
-                                                <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
+                                            <div className="bg-white rounded-2xl p-4 flex gap-4 border border-zenith-orange/5 shadow-sm">
+                                                <div className="w-10 h-10 bg-zenith-orange/5 rounded-xl flex items-center justify-center text-zenith-orange">
                                                     <span className="material-symbols-outlined text-lg">spa</span>
                                                 </div>
                                                 <div>
@@ -112,14 +112,14 @@ export default function Welcome({ auth }) {
                                                     className="w-full h-full object-cover"
                                                     src="/images/services.jpg"
                                                 />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-orange-900/60 to-transparent flex items-end p-4">
-                                                    <p className="text-[10px] text-white font-bold bg-orange-600 px-3 py-1 rounded-full uppercase tracking-widest">Promo Bandung</p>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                                                    <p className="text-[10px] text-white font-bold bg-zenith-orange px-3 py-1 rounded-full uppercase tracking-widest">Promo Bandung</p>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="mt-auto pb-4">
-                                            <button className="w-full bg-orange-600 text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-orange-600/30">
+                                            <button className="w-full bg-zenith-orange text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-zenith-orange/30">
                                                 Pesan Sekarang
                                             </button>
                                         </div>

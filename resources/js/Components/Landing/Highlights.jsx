@@ -13,7 +13,7 @@ export default function Highlights() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-12">
                     {items.map((item) => (
                         <div key={item.id} className="group">
-                            <span className="text-5xl font-serif italic text-orange-500/20 group-hover:text-orange-500/40 transition-colors duration-500 mb-6 block">
+                            <span className="text-5xl font-serif italic text-zenith-orange/20 group-hover:text-zenith-orange/40 transition-colors duration-500 mb-6 block">
                                 {item.id}
                             </span>
                             <h3 className="text-sm font-bold text-zenith-charcoal mb-3 uppercase tracking-[0.1em]">{item.title}</h3>

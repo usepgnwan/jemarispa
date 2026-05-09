@@ -3,43 +3,43 @@ import { useEffect, useState } from 'react';
 const serviceContent = {
     'ID': {
         'Default': {
-            title: <>Nikmati Hidup Sehat <br /><span className="italic text-orange-500 font-normal">Tanpa Keluar Rumah</span></>,
+            title: <>Nikmati Hidup Sehat <br /><span className="italic text-zenith-orange font-normal">Tanpa Keluar Rumah</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Nikmati perawatan spa profesional di kenyamanan rumah Anda. Terapis bersertifikat, peralatan higienis, dan pengalaman relaksasi yang menenangkan. Kami hadir untuk Anda.",
             bg: "/images/services.jpg"
         },
         'Pijat Tradisional': {
-            title: <>Ingin Pijat Tradisional <br /><span className="italic text-orange-500 font-normal">Tanpa Harus Keluar Rumah?</span></>,
+            title: <>Ingin Pijat Tradisional <br /><span className="italic text-zenith-orange font-normal">Tanpa Harus Keluar Rumah?</span></>,
             subtitle: "Jemari Home Spa Bandung",
-            desc: "Menghadirkan layanan jasa Pijat panggilan Profesional. Terapis bersertifikat dan peralatan higienis. Kami siap datang ke rumah, hotel, atau kantor Anda untuk memberikan perawatan yang aman dan nyaman.",
+            desc: "Menghadirkan layanan jasa Pijat panggilan Profesional. Terapis bersertifikat and peralatan higienis. Kami siap datang ke rumah, hotel, atau kantor Anda untuk memberikan perawatan yang aman dan nyaman.",
             bg: "/images/pijat tradisional.jpg"
         },
         'Bekam': {
-            title: <>Layanan Bekam Profesional <br /><span className="italic text-orange-500 font-normal">Langsung di Rumah Anda</span></>,
+            title: <>Layanan Bekam Profesional <br /><span className="italic text-zenith-orange font-normal">Langsung di Rumah Anda</span></>,
             subtitle: "Jemari Home Spa Bandung",
-            desc: "Layanan jasa bekam panggilan Profesional. Terapis bersertifikat dan peralatan higienis. Kami siap datang ke rumah, hotel, atau kantor Anda untuk memberikan perawatan bekam yang aman dan menenangkan.",
+            desc: "Layanan jasa bekam panggilan Profesional. Terapis bersertifikat and peralatan higienis. Kami siap datang ke rumah, hotel, atau kantor Anda untuk memberikan perawatan bekam yang aman dan menenangkan.",
             bg: "/images/bekam.webp"
         },
         'Kerokan': {
-            title: <>Layanan Kerokan Panggilan <br /><span className="italic text-orange-500 font-normal">Tradisional & Higienis</span></>,
+            title: <>Layanan Kerokan Panggilan <br /><span className="italic text-zenith-orange font-normal">Tradisional & Higienis</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Ingin kerokan tanpa harus keluar rumah? Jemari Home Spa hadir sebagai solusi kesehatan Anda. Terapi kerokan profesional untuk meredakan masuk angin dan pegal-pegal dengan teknik yang aman.",
             bg: "/images/kerokan.jpg"
         },
         'Totok Wajah': {
-            title: <>Ingin Totok Wajah <br /><span className="italic text-orange-500 font-normal">Agar Wajah Lebih Glowing?</span></>,
+            title: <>Ingin Totok Wajah <br /><span className="italic text-zenith-orange font-normal">Agar Wajah Lebih Glowing?</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Jemari Home Spa hadir sebagai solusi kecantikan Anda. Terapi totok wajah profesional untuk membantu wajah lebih segar, bercahaya, dan rileks tanpa perlu menembus kemacetan kota.",
             bg: "/images/totok wajah.jpg"
         },
         'Pijat Refleksi': {
-            title: <>Pulihkan Keseimbangan Tubuh <br /><span className="italic text-orange-500 font-normal">Dengan Pijat Refleksi</span></>,
+            title: <>Pulihkan Keseimbangan Tubuh <br /><span className="italic text-zenith-orange font-normal">Dengan Pijat Refleksi</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Tubuh terasa lelah atau kaki pegal? Layanan panggilan ke rumah pijat refleksi profesional untuk melancarkan peredaran darah dan mengembalikan keseimbangan energi tubuh Anda.",
             bg: "/images/pijat refleksi.jpg"
         },
         'Pijat Ibu Hamil': {
-            title: <>Relaksasi Khusus Ibu Hamil <br /><span className="italic text-orange-500 font-normal">Aman & Menenangkan</span></>,
+            title: <>Relaksasi Khusus Ibu Hamil <br /><span className="italic text-zenith-orange font-normal">Aman & Menenangkan</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Dirancang khusus untuk meredakan pegal dan stres selama kehamilan. Dengan terapis wanita bersertifikat dan teknik pijat yang lembut, Anda bisa menikmati pijat aman di rumah.",
             bg: "/images/pijat ibu hamil.jpg"
@@ -47,43 +47,43 @@ const serviceContent = {
     },
     'EN': {
         'Default': {
-            title: <>Enjoy Healthy Living <br /><span className="italic text-orange-500 font-normal">Without Leaving Home</span></>,
+            title: <>Enjoy Healthy Living <br /><span className="italic text-zenith-orange font-normal">Without Leaving Home</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Professional spa treatments in the comfort of your home. Certified therapists, hygienic equipment, and a soothing relaxation experience. We are here for you.",
             bg: "/images/services.jpg"
         },
         'Pijat Tradisional': {
-            title: <>Traditional Massage <br /><span className="italic text-orange-500 font-normal">At Your Doorstep</span></>,
+            title: <>Traditional Massage <br /><span className="italic text-zenith-orange font-normal">At Your Doorstep</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Professional on-call massage services. Certified therapists and hygienic equipment. Ready to visit your home, hotel, or office for a safe and comfortable treatment.",
             bg: "/images/pijat tradisional.jpg"
         },
         'Bekam': {
-            title: <>Professional Cupping <br /><span className="italic text-orange-500 font-normal">Service at Your Home</span></>,
+            title: <>Professional Cupping <br /><span className="italic text-zenith-orange font-normal">Service at Your Home</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Professional mobile cupping services. Certified therapists and hygienic equipment. Safe, sterile, and soothing treatments at your preferred location.",
             bg: "/images/bekam.webp"
         },
         'Kerokan': {
-            title: <>Traditional Scraping <br /><span className="italic text-orange-500 font-normal">Therapy & Hygiene</span></>,
+            title: <>Traditional Scraping <br /><span className="italic text-zenith-orange font-normal">Therapy & Hygiene</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Relieve colds and muscle aches with our professional scraping therapy. Safe techniques delivered directly to your home by experienced therapists.",
             bg: "/images/kerokan.jpg"
         },
         'Totok Wajah': {
-            title: <>Face Acupressure <br /><span className="italic text-orange-500 font-normal">For a Glowing Look</span></>,
+            title: <>Face Acupressure <br /><span className="italic text-zenith-orange font-normal">For a Glowing Look</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Professional facial acupressure to help your face look fresher, glowing, and relaxed without needing to face city traffic.",
             bg: "/images/totok wajah.jpg"
         },
         'Pijat Refleksi': {
-            title: <>Restore Your Balance <br /><span className="italic text-orange-500 font-normal">With Reflexology</span></>,
+            title: <>Restore Your Balance <br /><span className="italic text-zenith-orange font-normal">With Reflexology</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Feeling tired or sore? Our professional mobile reflexology service improves blood circulation and restores your body's energy balance.",
             bg: "/images/pijat refleksi.jpg"
         },
         'Pijat Ibu Hamil': {
-            title: <>Specialized Pregnancy <br /><span className="italic text-orange-500 font-normal">Safe & Soothing Relaxation</span></>,
+            title: <>Specialized Pregnancy <br /><span className="italic text-zenith-orange font-normal">Safe & Soothing Relaxation</span></>,
             subtitle: "Jemari Home Spa Bandung",
             desc: "Specifically designed to relieve aches and stress during pregnancy. Safe home treatments with certified female therapists and gentle techniques.",
             bg: "/images/pijat ibu hamil.jpg"
@@ -122,8 +122,12 @@ export default function Hero({ activeService, lang }) {
             </div>
 
             <div className={`relative mx-auto max-w-5xl px-6 lg:px-8 text-center pt-32 pb-40 lg:pb-60 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <div className="flex justify-center mb-12">
+                    <img src="/images/Jemari Logo - 2.png" alt="Jemari Spa Logo" className="h-24 md:h-32 w-auto brightness-0 invert opacity-90" />
+                </div>
+
                 <div className="inline-flex items-center gap-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 mb-8">
-                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                    <span className="h-1.5 w-1.5 rounded-full bg-zenith-orange animate-pulse"></span>
                     <span className="text-[10px] font-bold text-white tracking-[0.2em] uppercase">{content.subtitle}</span>
                 </div>
 
@@ -136,7 +140,7 @@ export default function Hero({ activeService, lang }) {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <button className="w-full sm:w-auto rounded-full bg-orange-600 px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-orange-600/40 hover:bg-orange-500 transition-all transform hover:scale-105 active:scale-95">
+                    <button className="w-full sm:w-auto rounded-full bg-zenith-orange px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-zenith-orange/40 hover:bg-zenith-orange/80 transition-all transform hover:scale-105 active:scale-95">
                         {b.book}
                     </button>
                     <button className="w-full sm:w-auto rounded-full border border-white/30 backdrop-blur-md px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all">
@@ -157,7 +161,7 @@ export default function Hero({ activeService, lang }) {
                         <div className="text-center">
                             <div className="flex items-center justify-center gap-1">
                                 <p className="text-white text-2xl font-serif italic">4.9</p>
-                                <span className="material-symbols-outlined text-orange-500 text-lg">star</span>
+                                <span className="material-symbols-outlined text-zenith-gold text-lg">star</span>
                             </div>
                             <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Rating Member' : 'Member Rating'}</p>
                         </div>

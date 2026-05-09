@@ -2,7 +2,7 @@ export default function Contact() {
     return (
         <section id="contact" className="py-section bg-zenith-surface">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-orange-900/5 flex flex-col md:flex-row items-stretch border border-orange-100/50">
+                <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-zenith-charcoal/5 flex flex-col md:flex-row items-stretch border border-zenith-orange/10">
                     {/* Left Content */}
                     <div className="flex-1 p-10 md:p-20 flex flex-col justify-center">
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4 block">Hubungi Kami</span>
@@ -12,7 +12,7 @@ export default function Contact() {
                         </p>
 
                         <div>
-                            <button className="inline-flex items-center gap-x-3 bg-orange-600 text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-orange-600/30 hover:bg-orange-500 transition-all transform hover:-translate-y-1">
+                            <button className="inline-flex items-center gap-x-3 bg-zenith-orange text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-zenith-orange/30 hover:bg-zenith-orange/80 transition-all transform hover:-translate-y-1">
                                 <span className="material-symbols-outlined text-sm">calendar_month</span>
                                 Pesan Sekarang
                             </button>

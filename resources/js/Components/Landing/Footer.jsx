@@ -4,28 +4,35 @@ export default function Footer() {
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                     <div className="md:col-span-2">
-                        <div className="flex items-center gap-x-2 mb-6">
-                            <span className="text-xl font-bold tracking-tighter uppercase">Jemari Spa</span>
+                        <div className="flex gap-x-8">
+                            <div className="flex-shrink-0">
+                                <img src="/images/logo-jemari.jpg" alt="Jemari Spa Logo" className="h-28 w-auto rounded-2xl shadow-2xl border border-white/10" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold tracking-[0.2em] uppercase text-white mb-2">Jemari Spa</h3>
+                                <p className="text-zenith-orange text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Home Spa Sanctuary</p>
+                                <p className="text-white/40 max-w-sm text-sm leading-relaxed mb-6 font-sans">
+                                    A sanctuary dedicated to the restoration of body, mind, and spirit.
+                                    Experience the art of living well through our curated rituals, 
+                                    delivered directly to the comfort of your sanctuary.
+                                </p>
+                            </div>
                         </div>
-                        <p className="text-white/40 max-w-sm text-sm leading-relaxed mb-8">
-                            A sanctuary dedicated to the restoration of body, mind, and spirit.
-                            Experience the art of living well through our curated rituals.
-                        </p>
                         <div className="flex gap-x-4">
-                            <div className="h-10 w-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-orange-600 hover:border-orange-600 transition-all cursor-pointer">
+                            <div className="h-10 w-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-zenith-orange hover:border-zenith-orange transition-all cursor-pointer">
                                 <span className="font-bold">IG</span>
                             </div>
-                            <div className="h-10 w-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-orange-600 hover:border-orange-600 transition-all cursor-pointer">
+                            <div className="h-10 w-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-zenith-orange hover:border-zenith-orange transition-all cursor-pointer">
                                 <span className="font-bold">FB</span>
                             </div>
-                            <div className="h-10 w-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-orange-600 hover:border-orange-600 transition-all cursor-pointer">
+                            <div className="h-10 w-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-zenith-orange hover:border-zenith-orange transition-all cursor-pointer">
                                 <span className="font-bold">X</span>
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-8 text-orange-500">Explore</h4>
+                        <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-8 text-zenith-orange">Explore</h4>
                         <ul className="space-y-4 text-sm text-white/40 font-medium">
                             <li><a href="#" className="hover:text-white transition-colors">Treatments</a></li>
                             <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
@@ -35,7 +42,7 @@ export default function Footer() {
                     </div>
 
                     <div>
-                        <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-8 text-orange-500">Sanctuary</h4>
+                        <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-8 text-zenith-orange">Sanctuary</h4>
                         <ul className="space-y-4 text-sm text-white/40 font-medium">
                             <li>123 Serenity Way, <br />Zenith Valley, CA 90210</li>
                             <li>Open Daily: 09:00 - 22:00</li>

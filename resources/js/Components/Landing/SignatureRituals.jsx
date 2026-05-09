@@ -8,7 +8,7 @@ const rituals = [
             ID: 'Layanan pijat panggilan profesional untuk relaksasi tubuh dan pikiran. Terapis bersertifikat siap datang ke lokasi Anda.', 
             EN: 'Professional on-call massage service for body and mind relaxation. Certified therapists ready to come to your location.' 
         },
-        img: '/images/pijat tradisional.jpg'
+        img: '/images/pijat tradisional.JPG'
     },
     {
         id: 'Bekam',
@@ -26,7 +26,7 @@ const rituals = [
             ID: 'Teknik tradisional yang efektif untuk meredakan masuk angin dan pegal-pegal dengan peralatan higienis.', 
             EN: 'Effective traditional technique to relieve colds and muscle aches with hygienic equipment.' 
         },
-        img: '/images/kerokan.jpg'
+        img: '/images/kerokan.JPG'
     },
     {
         id: 'Totok Wajah',
@@ -44,7 +44,7 @@ const rituals = [
             ID: 'Melancarkan peredaran darah dan mengembalikan keseimbangan energi tubuh Anda.', 
             EN: 'Improves blood circulation and restores your body\'s energy balance.' 
         },
-        img: '/images/pijat refleksi.jpg'
+        img: '/images/pijat refleksi.JPG'
     },
     {
         id: 'Pijat Ibu Hamil',
@@ -53,7 +53,7 @@ const rituals = [
             ID: 'Relaksasi khusus untuk meredakan stres dan nyeri punggung selama masa kehamilan.', 
             EN: 'Specialized relaxation to relieve stress and back pain during pregnancy.' 
         },
-        img: '/images/pijat ibu hamil.jpg'
+        img: '/images/pijat ibu hamil.JPG'
     }
 ];
 
@@ -63,7 +63,7 @@ export default function SignatureRituals({ lang }) {
     return (
         <section id="rituals" className="py-24 md:py-32 bg-white overflow-hidden">
             <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center mb-16 md:mb-24">
-                <span className="text-orange-600 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block underline underline-offset-8 decoration-orange-200">
+                <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block underline underline-offset-8 decoration-zenith-orange/20">
                     {lang === 'ID' ? 'Koleksi Kami' : 'The Collection'}
                 </span>
                 <h2 className="text-4xl md:text-6xl font-serif text-zenith-charcoal italic leading-tight">
@@ -94,7 +94,7 @@ export default function SignatureRituals({ lang }) {
                             <div className={`absolute inset-x-0 bottom-0 p-8 md:p-12 transition-all duration-700 ease-out 
                                 ${activeTab === i || 'md:group-hover:translate-y-0 translate-y-12'}
                             `}>
-                                <span className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.3em] mb-4 block">
+                                <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-[0.3em] mb-4 block">
                                     {lang === 'ID' ? 'Layanan Unggulan' : 'Signature Service'}
                                 </span>
                                 <h3 className="text-3xl md:text-4xl font-serif text-white mb-6 italic">
@@ -109,7 +109,7 @@ export default function SignatureRituals({ lang }) {
                                     <p className="text-white/70 text-sm md:text-base leading-relaxed mb-8 font-sans">
                                         {ritual.desc[lang]}
                                     </p>
-                                    <button className="rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white hover:text-orange-600 transition-all">
+                                    <button className="rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white hover:text-zenith-orange transition-all">
                                         {lang === 'ID' ? 'Pesan Sekarang' : 'Book Now'}
                                     </button>
                                 </div>

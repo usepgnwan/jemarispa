@@ -44,7 +44,7 @@ export default function FAQ() {
                         {faqs.map((faq, i) => (
                             <div
                                 key={i}
-                                className={`rounded-3xl bg-white transition-all duration-500 overflow-hidden shadow-sm hover:shadow-md border border-orange-50 ${openIndex === i ? 'ring-1 ring-orange-200' : ''
+                                className={`rounded-3xl bg-white transition-all duration-500 overflow-hidden shadow-sm hover:shadow-md border border-zenith-orange/5 ${openIndex === i ? 'ring-1 ring-zenith-orange/20' : ''
                                     }`}
                             >
                                 <button
@@ -52,14 +52,14 @@ export default function FAQ() {
                                     className="w-full px-8 py-6 flex items-center justify-between text-left group"
                                 >
                                     <span className="font-bold text-zenith-charcoal tracking-tight text-sm pr-4">{faq.q}</span>
-                                    <span className={`material-symbols-outlined transition-transform duration-500 text-orange-500 text-sm ${openIndex === i ? 'rotate-180' : ''}`}>
+                                    <span className={`material-symbols-outlined transition-transform duration-500 text-zenith-orange text-sm ${openIndex === i ? 'rotate-180' : ''}`}>
                                         expand_more
                                     </span>
                                 </button>
 
                                 <div className={`transition-all duration-500 ease-in-out ${openIndex === i ? 'max-h-96 opacity-100 pb-8 px-8' : 'max-h-0 opacity-0 pointer-events-none'
                                     }`}>
-                                    <p className="text-sm text-gray-500 leading-relaxed font-sans border-t border-orange-50/50 pt-6">
+                                    <p className="text-sm text-gray-500 leading-relaxed font-sans border-t border-zenith-orange/10 pt-6">
                                         {faq.a}
                                     </p>
                                 </div>

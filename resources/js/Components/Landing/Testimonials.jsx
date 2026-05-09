@@ -38,7 +38,7 @@ export default function Testimonials() {
                         <div key={i} className="bg-white rounded-[3rem] p-10 md:p-12 border border-orange-100/50 shadow-[0_20px_50px_rgba(154,113,94,0.15)] hover:-translate-y-3 transition-all duration-700 group relative">
                             <div className="flex items-center gap-x-1 mb-8">
                                 {[...Array(review.rating)].map((_, i) => (
-                                    <StarIcon key={i} className="h-6 w-6 text-[#FFB800] drop-shadow-sm" />
+                                    <StarIcon key={i} className="h-6 w-6 text-zenith-gold drop-shadow-sm" />
                                 ))}
                             </div>
                             
