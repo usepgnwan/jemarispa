@@ -1,0 +1,168 @@
+import { Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+
+export default function Navbar({ auth, activeService, setActiveService, lang, setLang }) {
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [showServices, setShowServices] = useState(false);
+    const [showMobileServices, setShowMobileServices] = useState(false);
+
+    const services = [
+        'Bekam',
+        'Kerokan',
+        'Totok Wajah',
+        'Pijat Refleksi',
+        'Pijat Ibu Hamil',
+        'Pijat Tradisional'
+    ];
+
+    const menuItems = {
+        'ID': { home: 'Beranda', service: 'Layanan', testimonial: 'Testimoni', pricing: 'Harga', blog: 'Blog', contact: 'Kontak', login: 'Masuk', book: 'Pesan Sekarang' },
+        'EN': { home: 'Home', service: 'Service', testimonial: 'Testimonial', pricing: 'Pricing', blog: 'Blog', contact: 'Contact', login: 'Log in', book: 'Book Now' }
+    };
+
+    const t = menuItems[lang];
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 50);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    return (
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${isScrolled ? 'py-2 md:py-4' : 'py-4 md:py-8'}`}>
+            <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
+                {/* Desktop Navbar */}
+                <div className={`hidden md:flex items-center justify-between px-10 rounded-full border transition-all duration-700 ${isScrolled
+                    ? 'h-16 bg-white/80 backdrop-blur-xl border-orange-100 shadow-xl shadow-orange-900/5'
+                    : 'h-20 bg-white/5 backdrop-blur-md border-white/10'
+                    }`}>
+                    <div className="flex items-center gap-x-2">
+                        <span className={`text-xl font-bold tracking-[0.2em] uppercase transition-colors duration-500 ${isScrolled ? 'text-zenith-charcoal' : 'text-white'}`}>
+                            Jemari Spa
+                        </span>
+                    </div>
+
+                    <div className={`flex items-center gap-x-10 text-[10px] font-bold tracking-[0.2em] uppercase transition-colors duration-500 ${isScrolled ? 'text-zenith-charcoal/60' : 'text-white/60'
+                        }`}>
+                        <a href="/" className="hover:text-orange-500 transition-colors">{t.home}</a>
+                        
+                        {/* Services Dropdown */}
+                        <div className="relative" onMouseEnter={() => setShowServices(true)} onMouseLeave={() => setShowServices(false)}>
+                            <button className="flex items-center gap-x-1 hover:text-orange-500 transition-colors uppercase">
+                                {t.service} <span className="material-symbols-outlined text-[12px]">expand_more</span>
+                            </button>
+                            
+                            {/* Dropdown Menu */}
+                            <div className={`absolute top-full left-0 pt-4 transition-all duration-300 ${showServices ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+                                <div className="bg-white rounded-2xl shadow-2xl border-t-4 border-t-sky-400 border border-orange-50 p-4 min-w-[220px]">
+                                    {services.map((s) => (
+                                        <button 
+                                            key={s} 
+                                            onClick={() => {
+                                                setActiveService(s);
+                                                setShowServices(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-3 rounded-xl transition-all text-zenith-charcoal/60 hover:text-orange-600 hover:bg-orange-50/50 ${activeService === s ? 'text-orange-600 bg-orange-50/50 font-bold' : ''}`}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="#testimonials" className="hover:text-orange-500 transition-colors">{t.testimonial}</a>
+                        <a href="#pricing" className="hover:text-orange-500 transition-colors">{t.pricing}</a>
+                        <a href="/blog" className="hover:text-orange-500 transition-colors">{t.blog}</a>
+                        <a href="#contact" className="hover:text-orange-500 transition-colors">{t.contact}</a>
+                    </div>
+
+                    <div className="flex items-center gap-x-6">
+                        {/* Desktop Language Switch */}
+                        <div className={`flex items-center gap-x-2 text-[10px] font-bold tracking-widest ${isScrolled ? 'text-zenith-charcoal/40' : 'text-white/40'}`}>
+                            <button onClick={() => setLang('ID')} className={`${lang === 'ID' ? 'text-orange-600' : ''} hover:text-orange-500 transition-colors`}>ID</button>
+                            <span className="opacity-20">|</span>
+                            <button onClick={() => setLang('EN')} className={`${lang === 'EN' ? 'text-orange-600' : ''} hover:text-orange-500 transition-colors`}>EN</button>
+                        </div>
+
+                        {/* Cart Icon */}
+                        <div className="relative group cursor-pointer">
+                            <span className={`material-symbols-outlined transition-colors duration-500 ${isScrolled ? 'text-zenith-charcoal' : 'text-white'} group-hover:text-orange-500`}>
+                                shopping_bag
+                            </span>
+                            <span className="absolute -top-2 -right-2 bg-orange-600 text-white text-[8px] font-bold h-4 w-4 rounded-full flex items-center justify-center border-2 border-white">0</span>
+                        </div>
+
+                        {auth.user ? (
+                            <Link href={route('dashboard')} className="rounded-full bg-orange-600 px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-lg shadow-orange-600/20 hover:bg-orange-500 transition-all">
+                                Member Area
+                            </Link>
+                        ) : (
+                            <div className="flex items-center gap-x-6">
+                                <Link href={route('login')} className={`text-[10px] font-bold uppercase tracking-[0.2em] transition-colors duration-500 ${isScrolled ? 'text-zenith-charcoal' : 'text-white'} hover:text-orange-500`}>{t.login}</Link>
+                                <Link href={route('register')} className="rounded-full bg-orange-600 px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-lg shadow-orange-600/20 hover:bg-orange-500 transition-all">{t.book}</Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Mobile Navbar */}
+                <div className={`md:hidden flex items-center justify-between px-6 rounded-full border transition-all duration-500 ${isScrolled
+                    ? 'h-14 bg-white/80 backdrop-blur-xl border-orange-100 shadow-lg'
+                    : 'h-16 bg-white/10 backdrop-blur-md border-white/10'
+                    }`}>
+                    
+                    {/* Left: Lang & Cart */}
+                    <div className="flex items-center gap-x-4">
+                        <div className={`flex items-center gap-x-1 text-[8px] font-bold tracking-widest ${isScrolled ? 'text-zenith-charcoal/40' : 'text-white/40'}`}>
+                            <button onClick={() => setLang('ID')} className={lang === 'ID' ? 'text-orange-600' : ''}>ID</button>
+                            <span className="opacity-20">|</span>
+                            <button onClick={() => setLang('EN')} className={lang === 'EN' ? 'text-orange-600' : ''}>EN</button>
+                        </div>
+                        <div className="relative">
+                            <span className={`material-symbols-outlined text-lg ${isScrolled ? 'text-orange-600' : 'text-white'}`}>shopping_bag</span>
+                            <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-[7px] font-bold h-3 w-3 rounded-full flex items-center justify-center border border-white">0</span>
+                        </div>
+                    </div>
+
+                    {/* Center: Title */}
+                    <div className="absolute left-1/2 -translate-x-1/2">
+                        <span className={`text-[10px] font-bold tracking-[0.4em] uppercase ${isScrolled ? 'text-orange-600' : 'text-white'}`}>
+                            JEMARI SPA
+                        </span>
+                    </div>
+
+                    {/* Right: Service Dropdown Trigger */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowMobileServices(!showMobileServices)}
+                            className={`flex items-center justify-center h-10 w-10 rounded-full transition-all ${showMobileServices ? 'bg-orange-600 text-white' : (isScrolled ? 'text-orange-600' : 'text-white')}`}
+                        >
+                            <span className="material-symbols-outlined text-xl">spa</span>
+                        </button>
+
+                        {/* Mobile Dropdown Content */}
+                        <div className={`absolute top-full right-0 mt-4 transition-all duration-300 ${showMobileServices ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+                            <div className="bg-white rounded-2xl shadow-2xl border-t-4 border-t-sky-400 border border-orange-50 p-4 min-w-[200px]">
+                                {services.map((s) => (
+                                    <button 
+                                        key={s} 
+                                        onClick={() => {
+                                            setActiveService(s);
+                                            setShowMobileServices(false);
+                                        }}
+                                        className={`w-full text-left px-4 py-3 rounded-xl transition-all text-zenith-charcoal/60 hover:text-orange-600 hover:bg-orange-50/50 ${activeService === s ? 'text-orange-600 bg-orange-50/50 font-bold' : ''}`}
+                                    >
+                                        <p className="text-[10px] font-bold uppercase tracking-widest">{s}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    );
+}
