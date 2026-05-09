@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/react';
 import Navbar from '@/Components/Landing/Navbar';
 import Hero from '@/Components/Landing/Hero';
 import Highlights from '@/Components/Landing/Highlights';
-import Gallery from '@/Components/Landing/Services';
+import SignatureRituals from '@/Components/Landing/SignatureRituals';
 import Pricing from '@/Components/Landing/Pricing';
 import Testimonials from '@/Components/Landing/Testimonials';
 import Contact from '@/Components/Landing/Contact';
@@ -37,7 +37,7 @@ export default function Welcome({ auth }) {
             <main>
                 <Hero activeService={activeService} lang={lang} />
                 <Highlights />
-                <Gallery />
+                <SignatureRituals lang={lang} />
                 <Pricing />
                 <Testimonials />
                 
