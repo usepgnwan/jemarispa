@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import Navbar from '@/Components/Landing/Navbar';
 import Hero from '@/Components/Landing/Hero';
 import Highlights from '@/Components/Landing/Highlights';
@@ -21,6 +21,15 @@ export default function Welcome({ auth }) {
     useEffect(() => {
         localStorage.setItem('app_lang', lang);
     }, [lang]);
+
+    // Handle pending service from navbar redirection
+    useEffect(() => {
+        const pending = localStorage.getItem('pending_service');
+        if (pending) {
+            setActiveService(pending);
+            localStorage.removeItem('pending_service');
+        }
+    }, []);
 
     return (
         <div className="font-sans text-zenith-charcoal antialiased selection:bg-zenith-orange/20 selection:text-zenith-orange bg-zenith-surface">
@@ -119,9 +128,9 @@ export default function Welcome({ auth }) {
                                         </div>
 
                                         <div className="mt-auto pb-4">
-                                            <button className="w-full bg-zenith-orange text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-zenith-orange/30">
+                                            <Link href="/cart" className="w-full bg-zenith-orange text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-zenith-orange/30 block text-center">
                                                 Pesan Sekarang
-                                            </button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>

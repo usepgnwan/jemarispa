@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from '@inertiajs/react';
 
 const rituals = [
     {
@@ -109,9 +110,9 @@ export default function SignatureRituals({ lang }) {
                                     <p className="text-white/70 text-sm md:text-base leading-relaxed mb-8 font-sans">
                                         {ritual.desc[lang]}
                                     </p>
-                                    <button className="rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white hover:text-zenith-orange transition-all">
+                                    <Link href="/cart" className="inline-block rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white hover:text-zenith-orange transition-all text-center">
                                         {lang === 'ID' ? 'Pesan Sekarang' : 'Book Now'}
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
 

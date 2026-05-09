@@ -24,4 +24,22 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('/blog', function () {
+    return Inertia::render('Blog/Index');
+})->name('blog.index');
+
+Route::get('/blog/{id}', function ($id) {
+    return Inertia::render('Blog/Show', [
+        'blogId' => $id
+    ]);
+})->name('blog.show');
+
+Route::get('/pricing', function () {
+    return Inertia::render('Pricing/Index');
+})->name('pricing.index');
+
+Route::get('/cart', function () {
+    return Inertia::render('Cart/Index');
+})->name('cart.index');
+
 require __DIR__.'/auth.php';

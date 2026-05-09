@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from '@inertiajs/react';
 
 const serviceContent = {
     'ID': {
@@ -140,9 +141,9 @@ export default function Hero({ activeService, lang }) {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <button className="w-full sm:w-auto rounded-full bg-zenith-orange px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-zenith-orange/40 hover:bg-zenith-orange/80 transition-all transform hover:scale-105 active:scale-95">
+                    <Link href="/cart" className="w-full sm:w-auto rounded-full bg-zenith-orange px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-zenith-orange/40 hover:bg-zenith-orange/80 transition-all transform hover:scale-105 active:scale-95 text-center">
                         {b.book}
-                    </button>
+                    </Link>
                     <button className="w-full sm:w-auto rounded-full border border-white/30 backdrop-blur-md px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all">
                         {b.contact}
                     </button>
