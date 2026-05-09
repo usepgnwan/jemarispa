@@ -10,7 +10,10 @@ export default function MobileNav() {
     useEffect(() => {
         const updateCartCount = () => {
             const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
-            setCartCount(savedCart.length);
+            const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
+            
+            const guestsCount = savedGuests.reduce((acc, guest) => acc + (guest.packages?.length || 0), 0);
+            setCartCount(savedCart.length + guestsCount);
         };
 
         const handleHashChange = () => {

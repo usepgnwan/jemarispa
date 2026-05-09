@@ -50,11 +50,15 @@ Route::get('/blog/{id}', function ($id) {
 })->name('blog.show');
 
 Route::get('/pricing', function () {
-    return Inertia::render('Pricing/Index');
+    return Inertia::render('Pricing/Index', [
+        'packages' => \App\Models\Package::with('durations')->latest()->get()
+    ]);
 })->name('pricing.index');
 
 Route::get('/cart', function () {
-    return Inertia::render('Cart/Index');
+    return Inertia::render('Cart/Index', [
+        'packages' => \App\Models\Package::with('durations')->latest()->get()
+    ]);
 })->name('cart.index');
 
 Route::get('/api/faqs', function () {

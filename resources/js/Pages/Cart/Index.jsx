@@ -1,71 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
-
-// Grouped services with duration variants
-const serviceGroups = [
-    { 
-        id: 'massage-trad', 
-        name: 'Pijat Tradisional', 
-        category: 'Massage',
-        variants: [
-            { duration: '60 Menit', price: 125000 },
-            { duration: '90 Menit', price: 175000 },
-            { duration: '120 Menit', price: 225000 },
-        ]
-    },
-    { 
-        id: 'bekam-medik', 
-        name: 'Bekam Medik', 
-        category: 'Therapy',
-        variants: [
-            { duration: '45 Menit', price: 150000 },
-            { duration: '60 Menit', price: 200000 },
-        ]
-    },
-    { 
-        id: 'totok-wajah', 
-        name: 'Totok Wajah Aura', 
-        category: 'Beauty',
-        variants: [
-            { duration: '45 Menit', price: 100000 }
-        ]
-    },
-    { 
-        id: 'refleksi', 
-        name: 'Pijat Refleksi Kaki', 
-        category: 'Massage',
-        variants: [
-            { duration: '60 Menit', price: 90000 }
-        ]
-    },
-    { 
-        id: 'bumil', 
-        name: 'Pijat Ibu Hamil', 
-        category: 'Specialty',
-        variants: [
-            { duration: '90 Menit', price: 200000 }
-        ]
-    },
-    { 
-        id: 'kerokan', 
-        name: 'Kerokan Tradisional', 
-        category: 'Therapy',
-        variants: [
-            { duration: '30 Menit', price: 50000 }
-        ]
-    },
-    { 
-        id: 'lulur', 
-        name: 'Lulur Seluruh Tubuh', 
-        category: 'Beauty',
-        variants: [
-            { duration: '60 Menit', price: 150000 }
-        ]
-    },
-];
 
 const translations = {
     'ID': {
@@ -107,7 +44,8 @@ const translations = {
         pria: 'Pria',
         wanita: 'Wanita',
         cash: 'Tunai',
-        transfer: 'Transfer'
+        transfer: 'Transfer',
+        minute: 'Menit'
     },
     'EN': {
         step1: '1. Review Order & Packages',
@@ -148,59 +86,94 @@ const translations = {
         pria: 'Male',
         wanita: 'Female',
         cash: 'Cash',
-        transfer: 'Transfer'
+        transfer: 'Transfer',
+        minute: 'Minutes'
     }
 };
 
-export default function Index({ auth }) {
+export default function Index({ auth, packages = [] }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
     const [showAddModal, setShowAddModal] = useState(false);
     const [activeGuestIndex, setActiveGuestIndex] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedDurations, setSelectedDurations] = useState({}); // { groupId: variantIndex }
+    const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
-    const [pax, setPax] = useState(1);
-    const [formData, setFormData] = useState({
-        name: '',
-        phone: '',
-        address: '',
-        paymentMethod: 'cash',
-        source: 'Instagram',
-        date: '',
-        time: '',
-        notes: ''
+    
+    // Initial State loading from LocalStorage
+    const [pax, setPax] = useState(() => {
+        const saved = localStorage.getItem('jemari_checkout_pax');
+        return saved ? parseInt(saved) : 1;
     });
     
-    const [guests, setGuests] = useState([{ 
-        guestGender: 'wanita', 
-        therapistGender: 'wanita',
-        packages: [] 
-    }]);
+    const [formData, setFormData] = useState(() => {
+        const saved = localStorage.getItem('jemari_checkout_form');
+        return saved ? JSON.parse(saved) : {
+            name: '',
+            phone: '',
+            address: '',
+            paymentMethod: 'cash',
+            source: 'Instagram',
+            date: '',
+            time: '',
+            notes: ''
+        };
+    });
+    
+    const [guests, setGuests] = useState(() => {
+        const saved = localStorage.getItem('jemari_checkout_guests');
+        return saved ? JSON.parse(saved) : [{ 
+            guestGender: 'wanita', 
+            therapistGender: 'wanita',
+            packages: [] 
+        }];
+    });
 
+    const isFirstRender = useRef(true);
     const t = translations[lang];
 
+    // Persist changes to LocalStorage
+    useEffect(() => {
+        if (!isFirstRender.current) {
+            localStorage.setItem('jemari_checkout_pax', pax);
+            localStorage.setItem('jemari_checkout_form', JSON.stringify(formData));
+            localStorage.setItem('jemari_checkout_guests', JSON.stringify(guests));
+            
+            // Trigger reactivity for Navbar/MobileNav
+            window.dispatchEvent(new Event('cart-updated'));
+        }
+    }, [pax, formData, guests]);
+
+    // Handle items from Pricing Page (spa_cart)
     useEffect(() => {
         const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
-        const pendingService = JSON.parse(localStorage.getItem('pending_service') || 'null');
         
-        let initialPackages = [];
         if (savedCart.length > 0) {
-            initialPackages = savedCart;
-        } else if (pendingService) {
-            // Flatten variants to find the initial one
-            const allVariants = serviceGroups.flatMap(g => g.variants.map(v => ({ ...v, name: `${g.name} ${v.duration}` })));
-            const service = allVariants.find(s => s.name.includes(pendingService.name));
-            if (service) initialPackages = [service];
-        }
-
-        if (initialPackages.length > 0) {
-            setGuests([{ 
-                guestGender: 'wanita', 
-                therapistGender: 'wanita',
-                packages: initialPackages 
-            }]);
+            setGuests(prevGuests => {
+                const newGuests = [...prevGuests];
+                // Ensure there is at least one guest
+                if (newGuests.length === 0) {
+                    newGuests.push({ guestGender: 'wanita', therapistGender: 'wanita', packages: [] });
+                }
+                
+                // Map spa_cart items to Orang 1 (index 0)
+                const formattedPackages = savedCart.map(item => ({
+                    name: item.name,
+                    groupName: item.category,
+                    price: parseFloat(item.price),
+                    duration: item.duration
+                }));
+                
+                newGuests[0].packages = [...newGuests[0].packages, ...formattedPackages];
+                return newGuests;
+            });
+            
             localStorage.removeItem('spa_cart');
             localStorage.removeItem('pending_service');
+            isFirstRender.current = false; // Mark as dirty to trigger persistence
+        }
+        
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
         }
     }, []);
 
@@ -229,24 +202,26 @@ export default function Index({ auth }) {
         setGuests(newGuests);
     };
 
-    const handleDurationChange = (groupId, variantIndex) => {
+    const handleDurationChange = (packageId, durationIndex) => {
         setSelectedDurations(prev => ({
             ...prev,
-            [groupId]: parseInt(variantIndex)
+            [packageId]: parseInt(durationIndex)
         }));
     };
 
-    const addPackageToGuest = (group) => {
+    const addPackageToGuest = (pkg) => {
         if (activeGuestIndex === null) return;
         
-        const variantIndex = selectedDurations[group.id] || 0;
-        const variant = group.variants[variantIndex];
+        const durationIndex = selectedDurations[pkg.id] || 0;
+        const d = pkg.durations[durationIndex];
+        
+        const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
         
         const packageToAdd = {
-            name: `${group.name} ${variant.duration}`,
-            groupName: group.name,
-            price: variant.price,
-            duration: variant.duration
+            name: `${title} ${d.duration}`,
+            groupName: title,
+            price: parseFloat(d.price),
+            duration: d.duration
         };
         
         const newGuests = [...guests];
@@ -276,10 +251,20 @@ export default function Index({ auth }) {
         }, 0);
     };
 
-    const filteredServiceGroups = serviceGroups.filter(group => 
-        group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        group.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredPackages = packages.filter(p => {
+        const title = lang === 'EN' ? (p.title_en || p.title_id) : p.title_id;
+        const category = lang === 'EN' ? (p.category_en || p.category_id) : p.category_id;
+        return title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+               (category && category.toLowerCase().includes(searchQuery.toLowerCase()));
+    });
+
+    const formatDuration = (d) => {
+        const durationStr = String(d);
+        if (durationStr.toLowerCase().includes('menit') || durationStr.toLowerCase().includes('min')) {
+            return durationStr;
+        }
+        return `${durationStr} ${t.minute}`;
+    };
 
     const handleCheckout = (e) => {
         e.preventDefault();
@@ -301,6 +286,10 @@ export default function Index({ auth }) {
             `\n\nDetail Kedatangan:\nTanggal: ${formData.date}\nJam: ${formData.time}\nBayar via: ${formData.paymentMethod === 'cash' ? t.cash : t.transfer}\nSumber: ${formData.source}\nCatatan: ${formData.notes}`;
         
         window.open(`https://wa.me/628123456789?text=${encodeURIComponent(message)}`, '_blank');
+        
+        // Optionally clear state after checkout?
+        // localStorage.removeItem('jemari_checkout_pax');
+        // ...
     };
 
     return (
@@ -357,7 +346,6 @@ export default function Index({ auth }) {
                                                 </div>
                                             ) : (
                                                 <div className="space-y-2">
-                                                    {/* Table Header */}
                                                     <div className="hidden md:flex items-center px-4 py-2 border-b border-zenith-orange/5">
                                                         <span className="flex-1 text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{t.pkgName}</span>
                                                         <span className="w-24 text-center text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{t.duration}</span>
@@ -367,13 +355,13 @@ export default function Index({ auth }) {
                                                     {guest.packages.map((pkg, pIndex) => (
                                                         <div key={pIndex} className="flex flex-col md:flex-row md:items-center bg-zenith-surface/50 p-4 rounded-2xl group transition-all hover:bg-zenith-orange/[0.03]">
                                                             <div className="flex-1">
-                                                                <h4 className="text-sm font-serif italic text-zenith-charcoal">{pkg.groupName || pkg.name.split(' ').slice(0, -2).join(' ') || pkg.name}</h4>
-                                                                <p className="md:hidden text-[10px] font-bold text-zenith-orange mt-1">{pkg.duration} • Rp {pkg.price.toLocaleString('id-ID')}</p>
+                                                                <h4 className="text-sm font-serif italic text-zenith-charcoal">{pkg.groupName || pkg.name}</h4>
+                                                                <p className="md:hidden text-[10px] font-bold text-zenith-orange mt-1">{formatDuration(pkg.duration)} • Rp {pkg.price.toLocaleString('id-ID')}</p>
                                                             </div>
                                                             
                                                             <div className="hidden md:flex items-center gap-x-0">
                                                                 <div className="w-24 text-center">
-                                                                    <span className="text-[10px] font-bold text-zenith-orange bg-white px-2 py-1 rounded-lg border border-zenith-orange/10">{pkg.duration}</span>
+                                                                    <span className="text-[10px] font-bold text-zenith-orange bg-white px-2 py-1 rounded-lg border border-zenith-orange/10">{formatDuration(pkg.duration)}</span>
                                                                 </div>
                                                                 <div className="w-24 text-right">
                                                                     <p className="text-[10px] font-bold text-zenith-charcoal/60">Rp {pkg.price.toLocaleString('id-ID')}</p>
@@ -622,45 +610,48 @@ export default function Index({ auth }) {
                                 <span className="w-32 text-right text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest pr-14">{t.price}</span>
                             </div>
 
-                            {filteredServiceGroups.length > 0 ? (
-                                filteredServiceGroups.map((group) => {
-                                    const variantIndex = selectedDurations[group.id] || 0;
-                                    const currentVariant = group.variants[variantIndex];
+                            {filteredPackages.length > 0 ? (
+                                filteredPackages.map((pkg) => {
+                                    const durationIndex = selectedDurations[pkg.id] || 0;
+                                    const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
+                                    
+                                    const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
+                                    const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
 
                                     return (
-                                        <div key={group.id} className="p-5 rounded-2xl bg-zenith-surface/50 border border-transparent hover:border-zenith-orange/20 transition-all flex flex-col md:flex-row gap-4 items-start md:items-center">
+                                        <div key={pkg.id} className="p-5 rounded-2xl bg-zenith-surface/50 border border-transparent hover:border-zenith-orange/20 transition-all flex flex-col md:flex-row gap-4 items-start md:items-center">
                                             <div className="flex-1 w-full">
-                                                <h4 className="text-lg font-serif italic text-zenith-charcoal">{group.name}</h4>
-                                                <p className="text-[10px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{group.category}</p>
+                                                <h4 className="text-lg font-serif italic text-zenith-charcoal">{title}</h4>
+                                                <p className="text-[10px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{category}</p>
                                             </div>
                                             
                                             <div className="flex items-center gap-4 w-full md:w-auto">
                                                 <div className="w-full md:w-32">
-                                                    {group.variants.length > 1 ? (
+                                                    {pkg.durations && pkg.durations.length > 1 ? (
                                                         <select 
                                                             className="w-full bg-white border border-zenith-orange/10 rounded-xl px-3 py-2 text-xs font-bold text-zenith-charcoal focus:ring-1 focus:ring-zenith-orange"
-                                                            value={variantIndex}
-                                                            onChange={(e) => handleDurationChange(group.id, e.target.value)}
+                                                            value={durationIndex}
+                                                            onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
                                                         >
-                                                            {group.variants.map((v, i) => (
-                                                                <option key={i} value={i}>{v.duration}</option>
+                                                            {pkg.durations.map((d, i) => (
+                                                                <option key={d.id} value={i}>{formatDuration(d.duration)}</option>
                                                             ))}
                                                         </select>
                                                     ) : (
                                                         <div className="text-center">
                                                             <span className="inline-block text-[10px] font-bold text-zenith-orange bg-zenith-orange/5 px-3 py-2 rounded-xl border border-zenith-orange/10">
-                                                                {currentVariant.duration}
+                                                                {formatDuration(currentDuration.duration)}
                                                             </span>
                                                         </div>
                                                     )}
                                                 </div>
                                                 
                                                 <div className="text-right min-w-[100px] md:w-32">
-                                                    <p className="text-sm font-bold text-zenith-charcoal">Rp {currentVariant.price.toLocaleString('id-ID')}</p>
+                                                    <p className="text-sm font-bold text-zenith-charcoal">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                                 </div>
 
                                                 <button 
-                                                    onClick={() => addPackageToGuest(group)}
+                                                    onClick={() => addPackageToGuest(pkg)}
                                                     className="h-10 w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20 shrink-0"
                                                 >
                                                     <span className="material-symbols-outlined text-[20px]">add</span>

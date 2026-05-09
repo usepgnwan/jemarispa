@@ -164,23 +164,31 @@ export default function Index({ packages, filters }) {
                                     </button>
                                 </div>
 
-                                {/* Content */}
-                                <div className="p-6 flex flex-col flex-1 mt-6">
-                                    {pkg.category && (
-                                        <div className="mb-3">
-                                            <span className="px-3 py-1 rounded-full bg-zenith-orange/10 text-[10px] font-bold text-zenith-orange uppercase tracking-wider">
-                                                {pkg.category}
-                                            </span>
-                                        </div>
-                                    )}
-                                    <h3 className="text-xl font-bold text-gray-900 mb-4 leading-tight">
-                                        {pkg.title}
-                                    </h3>
+                                 {/* Content */}
+                                 <div className="p-6 flex flex-col flex-1 mt-6">
+                                     <div className="flex flex-wrap gap-2 mb-3">
+                                         {pkg.category_id && (
+                                             <span className="px-3 py-1 rounded-full bg-zenith-orange/10 text-[10px] font-bold text-zenith-orange uppercase tracking-wider">
+                                                 ID: {pkg.category_id}
+                                             </span>
+                                         )}
+                                         {pkg.category_en && (
+                                             <span className="px-3 py-1 rounded-full bg-blue-50 text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                                                 EN: {pkg.category_en}
+                                             </span>
+                                         )}
+                                     </div>
+                                     <h3 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
+                                         {pkg.title_id}
+                                     </h3>
+                                     {pkg.title_en && (
+                                         <p className="text-sm font-medium text-gray-500 mb-4">{pkg.title_en}</p>
+                                     )}
 
-                                    <div
-                                        className="text-sm text-gray-500 line-clamp-3 mb-6 prose prose-sm"
-                                        dangerouslySetInnerHTML={{ __html: pkg.description }}
-                                    />
+                                     <div
+                                         className="text-sm text-gray-500 line-clamp-3 mb-6 prose prose-sm"
+                                         dangerouslySetInnerHTML={{ __html: pkg.description_id }}
+                                     />
 
                                     {/* Durations */}
                                     <div className="mt-auto space-y-2 border-t border-gray-100 pt-4">
@@ -247,7 +255,7 @@ export default function Index({ packages, filters }) {
                         Hapus Paket
                     </h2>
                     <p className="text-sm text-gray-600 mb-6 text-center">
-                        Apakah Anda yakin ingin menghapus paket <br />"<span className="font-semibold">{packageToDelete?.title}</span>"? <br /><br />
+                        Apakah Anda yakin ingin menghapus paket <br />"<span className="font-semibold">{packageToDelete?.title_id}</span>"? <br /><br />
                         Semua pilihan durasi & harga di dalamnya juga akan terhapus.
                     </p>
                     <div className="flex justify-center gap-x-3">

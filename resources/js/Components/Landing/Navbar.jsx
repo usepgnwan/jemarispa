@@ -53,7 +53,10 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
         
         const updateCartCount = () => {
             const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
-            setCartCount(savedCart.length);
+            const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
+            
+            const guestsCount = savedGuests.reduce((acc, guest) => acc + (guest.packages?.length || 0), 0);
+            setCartCount(savedCart.length + guestsCount);
         };
 
         const handleHashChange = () => {
@@ -184,14 +187,49 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                         <img src="/images/Jemari Logo - 1.png" alt="Jemari Spa" className={`h-8 w-auto transition-all duration-500 ${isSolid ? 'brightness-100' : 'brightness-0 invert'}`} />
                     </Link>
 
-                    <Link href="/cart" className={`relative h-10 w-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${currentPath === '/cart' ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange'}`}>
-                        <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
-                        {cartCount > 0 && (
-                            <span className="absolute -top-1 -right-1 h-4 w-4 bg-zenith-gold text-zenith-charcoal text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                                {cartCount}
-                            </span>
-                        )}
-                    </Link>
+                    <div className="flex items-center gap-x-2">
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowServices(!showServices)}
+                                className={`h-10 w-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${showServices ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange'}`}
+                            >
+                                <span className="material-symbols-outlined text-[20px]">spa</span>
+                            </button>
+                            
+                            {/* Mobile Services Dropdown */}
+                            <div className={`absolute top-full right-0 mt-4 transition-all duration-300 z-50 ${showServices ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+                                <div className="bg-white rounded-2xl shadow-2xl border-t-4 border-t-zenith-gold border border-zenith-orange/10 p-3 min-w-[200px]">
+                                    {services.map((s) => (
+                                        <button
+                                            key={s}
+                                            onClick={() => {
+                                                if (window.location.pathname === '/') {
+                                                    setActiveService(s);
+                                                } else {
+                                                    window.location.href = '/';
+                                                    localStorage.setItem('pending_service', s);
+                                                }
+                                                setShowServices(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-between group ${activeService === s ? 'bg-zenith-orange/5 text-zenith-orange' : 'text-zenith-charcoal/60 hover:text-zenith-orange hover:bg-zenith-orange/5'}`}
+                                        >
+                                            {sLabel[s]}
+                                            <span className={`material-symbols-outlined text-[14px] transition-opacity ${activeService === s ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>arrow_forward</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <Link href="/cart" className={`relative h-10 w-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${currentPath === '/cart' ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange'}`}>
+                            <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
+                            {cartCount > 0 && (
+                                <span className="absolute -top-1 -right-1 h-4 w-4 bg-zenith-gold text-zenith-charcoal text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </Link>
+                    </div>
                 </div>
             </div>
         </nav>

@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Package extends Model
 {
     protected $fillable = [
-        'title',
-        'category',
-        'description',
+        'title_id',
+        'title_en',
+        'category_id',
+        'category_en',
+        'description_id',
+        'description_en',
     ];
 
     public function durations()

@@ -17,8 +17,10 @@ class PackageController extends Controller
         $packages = Package::query()
             ->with('durations')
             ->when($search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%")
-                      ->orWhere('category', 'like', "%{$search}%");
+                $query->where('title_id', 'like', "%{$search}%")
+                      ->orWhere('title_en', 'like', "%{$search}%")
+                      ->orWhere('category_id', 'like', "%{$search}%")
+                      ->orWhere('category_en', 'like', "%{$search}%");
             })
             ->latest()
             ->paginate($limit)
@@ -38,9 +40,12 @@ class PackageController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'category' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+            'title_id' => 'required|string|max:255',
+            'title_en' => 'nullable|string|max:255',
+            'category_id' => 'nullable|string|max:255',
+            'category_en' => 'nullable|string|max:255',
+            'description_id' => 'nullable|string',
+            'description_en' => 'nullable|string',
             'durations' => 'required|array|min:1',
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
@@ -48,9 +53,12 @@ class PackageController extends Controller
 
         DB::transaction(function () use ($validated) {
             $package = Package::create([
-                'title' => $validated['title'],
-                'category' => $validated['category'],
-                'description' => $validated['description'],
+                'title_id' => $validated['title_id'],
+                'title_en' => $validated['title_en'],
+                'category_id' => $validated['category_id'],
+                'category_en' => $validated['category_en'],
+                'description_id' => $validated['description_id'],
+                'description_en' => $validated['description_en'],
             ]);
 
             foreach ($validated['durations'] as $durationData) {
@@ -76,9 +84,12 @@ class PackageController extends Controller
     public function update(Request $request, Package $package)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'category' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+            'title_id' => 'required|string|max:255',
+            'title_en' => 'nullable|string|max:255',
+            'category_id' => 'nullable|string|max:255',
+            'category_en' => 'nullable|string|max:255',
+            'description_id' => 'nullable|string',
+            'description_en' => 'nullable|string',
             'durations' => 'required|array|min:1',
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
@@ -86,9 +97,12 @@ class PackageController extends Controller
 
         DB::transaction(function () use ($request, $package, $validated) {
             $package->update([
-                'title' => $validated['title'],
-                'category' => $validated['category'],
-                'description' => $validated['description'],
+                'title_id' => $validated['title_id'],
+                'title_en' => $validated['title_en'],
+                'category_id' => $validated['category_id'],
+                'category_en' => $validated['category_en'],
+                'description_id' => $validated['description_id'],
+                'description_en' => $validated['description_en'],
             ]);
 
             // Sync durations by deleting old ones and inserting new ones
