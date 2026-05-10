@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Testimoni;
+use App\Models\Transaction;
 use Inertia\Inertia;
 
 class TestimoniController extends Controller
@@ -37,6 +38,7 @@ class TestimoniController extends Controller
             'packages_description' => 'nullable|string|max:255',
             'source' => 'nullable|string|max:255',
             'star' => 'required|integer|min:1|max:5',
+            'is_published' => 'boolean',
         ]);
 
         Testimoni::create($validated);
@@ -52,6 +54,7 @@ class TestimoniController extends Controller
             'packages_description' => 'nullable|string|max:255',
             'source' => 'nullable|string|max:255',
             'star' => 'required|integer|min:1|max:5',
+            'is_published' => 'boolean',
         ]);
 
         $testimoni->update($validated);
@@ -64,5 +67,75 @@ class TestimoniController extends Controller
         $testimoni->delete();
 
         return back();
+    }
+
+    /**
+     * Toggle the publish status of a testimonial.
+     */
+    public function togglePublish(Testimoni $testimoni)
+    {
+        $testimoni->update(['is_published' => !$testimoni->is_published]);
+        return back()->with('message', $testimoni->is_published ? 'Testimoni dipublikasikan' : 'Testimoni disembunyikan');
+    }
+
+    /**
+     * Show the customer-facing review form (public, token-gated).
+     */
+    public function showReviewForm(string $token)
+    {
+        $transaction = Transaction::where('review_token', $token)->firstOrFail();
+
+        if (!$transaction->isReviewTokenValid()) {
+            return Inertia::render('Review/Expired');
+        }
+
+        // Check if already submitted
+        $alreadyReviewed = $transaction->testimoni()->exists();
+
+        return Inertia::render('Review/Index', [
+            'transaction' => [
+                'customer_name' => $transaction->customer_name,
+                'order_number' => $transaction->order_number,
+                'packages' => $transaction->items->map(fn($i) => $i->package_name)->unique()->values(),
+            ],
+            'token' => $token,
+            'already_reviewed' => $alreadyReviewed,
+        ]);
+    }
+
+    /**
+     * Handle submission from the customer review form.
+     */
+    public function submitReview(Request $request, string $token)
+    {
+        $transaction = Transaction::where('review_token', $token)->firstOrFail();
+
+        if (!$transaction->isReviewTokenValid()) {
+            return back()->withErrors(['token' => 'Link review sudah kedaluwarsa.']);
+        }
+
+        if ($transaction->testimoni()->exists()) {
+            return back()->withErrors(['token' => 'Review sudah pernah dikirimkan.']);
+        }
+
+        $validated = $request->validate([
+            'description' => 'required|string|max:1000',
+            'star' => 'required|integer|min:1|max:5',
+        ]);
+
+        Testimoni::create([
+            'name' => $transaction->customer_name,
+            'description' => $validated['description'],
+            'packages_description' => $transaction->items->map(fn($i) => $i->package_name)->unique()->implode(', '),
+            'source' => 'Website',
+            'star' => $validated['star'],
+            'is_published' => false, // Admin must publish manually
+            'transaction_id' => $transaction->id,
+        ]);
+
+        // Invalidate the token so it can't be reused
+        $transaction->update(['review_token' => null, 'review_expires_at' => null]);
+
+        return back()->with('success', true);
     }
 }

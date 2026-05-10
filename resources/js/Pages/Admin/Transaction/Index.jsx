@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import axios from 'axios';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
@@ -15,7 +16,9 @@ import {
     TruckIcon,
     ChatBubbleLeftRightIcon,
     ArrowDownTrayIcon,
-    ShoppingBagIcon
+    ShoppingBagIcon,
+    StarIcon,
+    LinkIcon
 } from '@heroicons/react/24/outline';
 
 // Custom debounce function
@@ -52,18 +55,21 @@ export default function Index({ transactions, filters, counts, employees }) {
     const [search, setSearch] = useState(filters?.search || '');
     const [limit, setLimit] = useState(filters?.limit || 10);
     const [activeTab, setActiveTab] = useState(filters?.tab || 'recent');
+    const [dateFrom, setDateFrom] = useState(filters?.date_from || '');
+    const [dateTo, setDateTo] = useState(filters?.date_to || '');
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
+    const [reviewLinkCopied, setReviewLinkCopied] = useState(null);
     const { patch, delete: destroy, processing } = useForm();
 
     const fetchFilteredData = useCallback(
-        debounce((query, limitValue, tabValue) => {
+        debounce((query, limitValue, tabValue, fromVal, toVal) => {
             router.get(
                 route('admin.transaction.index'),
-                { search: query, limit: limitValue, tab: tabValue },
+                { search: query, limit: limitValue, tab: tabValue, date_from: fromVal, date_to: toVal },
                 { preserveState: true, replace: true }
             );
         }, 300),
@@ -72,17 +78,33 @@ export default function Index({ transactions, filters, counts, employees }) {
 
     const handleSearchChange = (e) => {
         setSearch(e.target.value);
-        fetchFilteredData(e.target.value, limit, activeTab);
+        fetchFilteredData(e.target.value, limit, activeTab, dateFrom, dateTo);
     };
 
     const handleLimitChange = (e) => {
         setLimit(e.target.value);
-        fetchFilteredData(search, e.target.value, activeTab);
+        fetchFilteredData(search, e.target.value, activeTab, dateFrom, dateTo);
     };
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
-        fetchFilteredData(search, limit, tab);
+        fetchFilteredData(search, limit, tab, dateFrom, dateTo);
+    };
+
+    const handleDateFrom = (e) => {
+        setDateFrom(e.target.value);
+        fetchFilteredData(search, limit, activeTab, e.target.value, dateTo);
+    };
+
+    const handleDateTo = (e) => {
+        setDateTo(e.target.value);
+        fetchFilteredData(search, limit, activeTab, dateFrom, e.target.value);
+    };
+
+    const clearDateFilter = () => {
+        setDateFrom('');
+        setDateTo('');
+        fetchFilteredData(search, limit, activeTab, '', '');
     };
 
     const saveTransaction = () => {
@@ -186,6 +208,32 @@ export default function Index({ transactions, filters, counts, employees }) {
         window.open(`https://wa.me/${waPhone}?text=${encodedMessage}`, '_blank');
     };
 
+    const generateReviewLink = async (transaction) => {
+        try {
+            const response = await axios.post(route('admin.transaction.review_link', transaction.id));
+            const data = response.data;
+
+            if (data.success) {
+                // Try modern clipboard API first, fall back to prompt() on HTTP
+                try {
+                    await navigator.clipboard.writeText(data.link);
+                    setReviewLinkCopied(transaction.id);
+                    setToastMessage('✅ Link review disalin! Berlaku 24 jam.');
+                } catch {
+                    // Fallback: show the link so admin can copy manually
+                    window.prompt('Salin link review ini (berlaku 24 jam):', data.link);
+                    setReviewLinkCopied(transaction.id);
+                    setToastMessage('Link review berhasil dibuat!');
+                }
+                setShowToast(true);
+                setTimeout(() => { setReviewLinkCopied(null); setShowToast(false); }, 4000);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Gagal membuat link review: ' + (e?.response?.data?.message || e.message));
+        }
+    };
+
     const openDetails = (transaction) => {
         setSelectedTransaction(transaction);
         setIsDetailModalOpen(true);
@@ -248,6 +296,7 @@ export default function Index({ transactions, filters, counts, employees }) {
 
                     {/* Filter & Search */}
                     <div className="bg-white shadow-sm sm:rounded-[2rem] overflow-hidden border border-gray-100 p-4 sm:p-6 mb-6">
+                        {/* Row 1: Search + Limit */}
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                             <div className="relative w-full sm:w-96">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -277,6 +326,51 @@ export default function Index({ transactions, filters, counts, employees }) {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Row 2: Date Range Filter */}
+                        <div className="mt-4 pt-4 border-t border-gray-50 flex flex-wrap items-center gap-3">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                Filter Tanggal
+                            </span>
+                            <div className="flex items-center gap-2 flex-1 flex-wrap">
+                                <div className="relative">
+                                    <input
+                                        type="date"
+                                        value={dateFrom}
+                                        onChange={handleDateFrom}
+                                        className="bg-gray-50 border-transparent focus:border-zenith-orange focus:ring-zenith-orange rounded-xl text-sm py-2 px-4 text-gray-700 cursor-pointer"
+                                    />
+                                </div>
+                                <span className="text-gray-300 font-bold">—</span>
+                                <div className="relative">
+                                    <input
+                                        type="date"
+                                        value={dateTo}
+                                        min={dateFrom || undefined}
+                                        onChange={handleDateTo}
+                                        className="bg-gray-50 border-transparent focus:border-zenith-orange focus:ring-zenith-orange rounded-xl text-sm py-2 px-4 text-gray-700 cursor-pointer"
+                                    />
+                                </div>
+                                {(dateFrom || dateTo) && (
+                                    <button
+                                        onClick={clearDateFilter}
+                                        className="text-[10px] font-bold text-red-400 hover:text-red-600 uppercase tracking-wider px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
+                                    >
+                                        ✕ Reset
+                                    </button>
+                                )}
+                                {(dateFrom || dateTo) && (
+                                    <span className="text-[10px] font-bold text-zenith-orange bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
+                                        {dateFrom && dateTo
+                                            ? `${new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} – ${new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                                            : dateFrom
+                                            ? `Dari ${new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                                            : `Sampai ${new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                                        }
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Transactions Table */}
@@ -303,8 +397,20 @@ export default function Index({ transactions, filters, counts, employees }) {
                                                     <span className="text-[10px] font-medium text-gray-400">{new Date(transaction.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                                 </td>
                                                 <td className="px-6 py-5">
-                                                    <span className="text-sm font-semibold text-gray-700 block">{transaction.customer_name}</span>
-                                                    <span className="text-[10px] font-medium text-gray-400">{transaction.phone}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <div>
+                                                            <span className="text-sm font-semibold text-gray-700 block">{transaction.customer_name}</span>
+                                                            <span className="text-[10px] font-medium text-gray-400">{transaction.phone}</span>
+                                                        </div>
+                                                        {transaction.testimoni && (
+                                                            <span
+                                                                title={`Sudah review · ${transaction.testimoni.star}⭐`}
+                                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+                                                            >
+                                                                ⭐ Reviewed
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-5">
                                                     <span className="text-sm font-medium text-gray-700 block">{new Date(transaction.schedule_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
@@ -344,6 +450,13 @@ export default function Index({ transactions, filters, counts, employees }) {
                                                             title="Detail"
                                                         >
                                                             <EyeIcon className="w-5 h-5" />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => generateReviewLink(transaction)}
+                                                            className={`p-2 transition-colors ${reviewLinkCopied === transaction.id ? 'text-amber-500' : 'text-gray-400 hover:text-amber-400'}`}
+                                                            title="Generate Link Review (1x24 jam)"
+                                                        >
+                                                            <StarIcon className="w-5 h-5" />
                                                         </button>
                                                         <button 
                                                             onClick={() => confirmDelete(transaction.id)}

@@ -11,6 +11,17 @@ class Testimoni extends Model
         'description',
         'packages_description',
         'source',
-        'star'
+        'star',
+        'is_published',
+        'transaction_id',
     ];
+
+    protected $casts = [
+        'is_published' => 'boolean',
+    ];
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class);
+    }
 }

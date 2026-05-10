@@ -18,9 +18,12 @@ class TransactionController extends Controller
         $search = $request->input('search');
         $tab = $request->input('tab', 'recent');
 
-        $query = Transaction::with(['items' => function($query) {
-            $query->with('employee')->orderBy('guest_index', 'asc');
-        }]);
+        $query = Transaction::with([
+            'items' => function($query) {
+                $query->with('employee')->orderBy('guest_index', 'asc');
+            },
+            'testimoni',
+        ]);
 
         // Search
         if ($search) {
@@ -38,6 +41,16 @@ class TransactionController extends Controller
             // No extra filtering
         } else if (in_array($tab, ['pending', 'send_terapis', 'invoice', 'success', 'failed'])) {
             $query->where('status', $tab);
+        }
+
+        // Date Range Filtering (overrides tab's 'recent' window when set)
+        $dateFrom = $request->input('date_from');
+        $dateTo   = $request->input('date_to');
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
         }
 
         $transactions = $query->latest()
@@ -255,4 +268,20 @@ class TransactionController extends Controller
         $transaction->delete();
         return back()->with('message', 'Transaksi berhasil dihapus');
     }
+
+    /**
+     * Generate (or regenerate) a 24-hour review token for the transaction and return the link.
+     */
+    public function generateReviewLink(Transaction $transaction)
+    {
+        $token = $transaction->generateReviewToken();
+        $link = url('/review/' . $token);
+
+        return response()->json([
+            'success' => true,
+            'link' => $link,
+            'expires_at' => $transaction->review_expires_at,
+        ]);
+    }
 }
+

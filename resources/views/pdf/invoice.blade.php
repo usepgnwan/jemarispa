@@ -354,5 +354,16 @@
         <p class="sign-text">Dengan Hormat,</p>
         <p class="sign-name">Jemari Home Spa</p>
     </div>
+
+    @if($transaction->review_token && $transaction->review_expires_at && \Carbon\Carbon::parse($transaction->review_expires_at)->isFuture())
+    <div style="margin-top: 40px; padding: 20px 25px; background: linear-gradient(135deg, #FFF8F3, #FFF3EC); border-radius: 16px; border: 1px solid #FDDCC4; text-align: center;">
+        <p style="font-size: 11px; color: #999; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px 0;">✨ Ulasan Anda Sangat Berarti Bagi Kami</p>
+        <p style="font-size: 13px; font-weight: bold; color: #333; margin: 0 0 12px 0;">Luangkan 1 menit untuk memberikan ulasan layanan Jemari Spa</p>
+        <a href="{{ url('/review/' . $transaction->review_token) }}" style="display: inline-block; background-color: #E07A5F; color: white; padding: 10px 28px; border-radius: 50px; font-size: 11px; font-weight: bold; text-decoration: none; letter-spacing: 0.5px;">
+            ⭐ TULIS ULASAN SEKARANG
+        </a>
+        <p style="font-size: 9px; color: #bbb; margin: 10px 0 0 0;">Link berlaku 1×24 jam · {{ \Carbon\Carbon::parse($transaction->review_expires_at)->locale('id')->isoFormat('dddd, D MMMM YYYY [pukul] HH:mm') }}</p>
+    </div>
+    @endif
 </body>
 </html>

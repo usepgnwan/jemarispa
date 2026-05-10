@@ -12,7 +12,7 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
         'packages' => \App\Models\Package::with('durations')->latest()->get(),
-        'testimonials' => \App\Models\Testimoni::latest()->take(6)->get()
+        'testimonials' => \App\Models\Testimoni::where('is_published', true)->latest()->take(6)->get()
     ]);
 });
 
@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('platform', PlatformController::class)->except(['show']);
     Route::resource('faq', FaqController::class)->except(['show']);
     Route::resource('testimoni', TestimoniController::class)->except(['show']);
+    Route::patch('testimoni/{testimoni}/publish', [TestimoniController::class, 'togglePublish'])->name('testimoni.publish');
     Route::resource('admin/blog', BlogController::class)->names('admin.blog')->except(['show']);
     Route::resource('admin/package', PackageController::class)->names('admin.package')->except(['show']);
     Route::resource('admin/employee', EmployeeController::class)->names('admin.employee')->except(['show']);
@@ -59,9 +60,16 @@ Route::middleware('auth')->group(function () {
     // POS routes
     Route::get('admin/pos', [TransactionController::class, 'pos'])->name('admin.pos.index');
     Route::post('admin/pos', [TransactionController::class, 'storePos'])->name('admin.pos.store');
+
+    // Generate review link for a transaction
+    Route::post('admin/transaction/{transaction}/review-link', [TransactionController::class, 'generateReviewLink'])->name('admin.transaction.review_link');
 });
 
 Route::get('invoice/{order_number}', [TransactionController::class, 'publicPdf'])->name('invoice.public');
+
+// Public customer review routes (token-gated, no auth required)
+Route::get('/review/{token}', [TestimoniController::class, 'showReviewForm'])->name('review.show');
+Route::post('/review/{token}', [TestimoniController::class, 'submitReview'])->name('review.submit');
 
 Route::get('/blog', function () {
     return Inertia::render('Blog/Index');

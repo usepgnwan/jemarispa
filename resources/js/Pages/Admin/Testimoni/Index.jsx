@@ -8,7 +8,7 @@ import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { PlusIcon, PencilSquareIcon, TrashIcon, MagnifyingGlassIcon, StarIcon as StarOutline, StarIcon } from '@heroicons/react/24/outline';
-import { StarIcon as StarSolid } from '@heroicons/react/24/solid';
+import { StarIcon as StarSolid, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -228,6 +228,9 @@ export default function Index({ testimonis, filters }) {
                                         <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
                                             Deskripsi
                                         </th>
+                                        <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
+                                            Status
+                                        </th>
                                         <th scope="col" className="px-6 py-4 text-right text-[13px] font-bold text-gray-700 capitalize tracking-wide rounded-r-xl">
                                             Aksi
                                         </th>
@@ -269,6 +272,23 @@ export default function Index({ testimonis, filters }) {
                                                     dangerouslySetInnerHTML={{ __html: testimoni.description }}
                                                 />
                                             </td>
+                                            <td className="px-6 py-5 whitespace-nowrap">
+                                                <button
+                                                    onClick={() => router.patch(route('testimoni.publish', testimoni.id))}
+                                                    title={testimoni.is_published ? 'Sembunyikan' : 'Publikasikan'}
+                                                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
+                                                        testimoni.is_published
+                                                            ? 'bg-green-50 text-green-700 hover:bg-red-50 hover:text-red-600'
+                                                            : 'bg-gray-100 text-gray-400 hover:bg-green-50 hover:text-green-600'
+                                                    }`}
+                                                >
+                                                    {testimoni.is_published ? (
+                                                        <><EyeIcon className="w-3.5 h-3.5" /> Publik</>
+                                                    ) : (
+                                                        <><EyeSlashIcon className="w-3.5 h-3.5" /> Draft</>
+                                                    )}
+                                                </button>
+                                            </td>
                                             <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex items-center justify-end gap-x-4">
                                                     <button
@@ -291,7 +311,7 @@ export default function Index({ testimonis, filters }) {
                                     ))}
                                     {testimonis.data.length === 0 && (
                                         <tr>
-                                            <td colSpan="7" className="px-6 py-16 text-center">
+                                            <td colSpan="8" className="px-6 py-16 text-center">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <svg className="w-16 h-16 text-gray-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
