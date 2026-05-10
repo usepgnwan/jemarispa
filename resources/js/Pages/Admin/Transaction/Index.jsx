@@ -124,16 +124,9 @@ export default function Index({ transactions, filters, counts, employees }) {
     const updateTherapistData = (itemId, data) => {
         router.patch(route('admin.transaction_item.update', itemId), data, {
             preserveState: true,
-            onSuccess: () => {
-                if (selectedTransaction) {
-                    const updatedItems = selectedTransaction.items.map(item => 
-                        item.id === itemId ? { ...item, ...data, employee: employees.find(e => e.id == data.employee_id) } : item
-                    );
-                    setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
-                }
-            }
         });
     };
+
 
 
 
@@ -560,11 +553,20 @@ export default function Index({ transactions, filters, counts, employees }) {
                                             <div className="space-y-3">
                                                 <select 
                                                     className="w-full text-sm py-2 border-gray-200 rounded-xl bg-gray-50 focus:ring-zenith-orange focus:border-zenith-orange"
-                                                    value={guestItem.employee_id || ''}
+                                                    value={guestItem.employee_id ?? ''}
                                                     onChange={(e) => {
+                                                        const newId = e.target.value;
+                                                        // 1. Optimistic local state update so dropdown shows new value immediately
+                                                        const updatedItems = selectedTransaction.items.map(it =>
+                                                            it.guest_index == guestIndex
+                                                                ? { ...it, employee_id: newId, employee: employees.find(emp => emp.id == newId) }
+                                                                : it
+                                                        );
+                                                        setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+                                                        // 2. Persist to backend for each item in this guest
                                                         selectedTransaction.items
                                                             .filter(item => item.guest_index == guestIndex)
-                                                            .forEach(item => updateTherapistData(item.id, { employee_id: e.target.value }));
+                                                            .forEach(item => updateTherapistData(item.id, { employee_id: newId }));
                                                     }}
                                                 >
                                                     <option value="">Pilih Karyawan...</option>
@@ -581,17 +583,19 @@ export default function Index({ transactions, filters, counts, employees }) {
                                                                 type="number"
                                                                 placeholder="Bayaran Terapis"
                                                                 className="w-full pl-8 pr-3 py-2 text-xs border-gray-200 rounded-xl bg-white focus:ring-zenith-orange focus:border-zenith-orange"
-                                                                value={guestItem.therapist_commission || ''}
+                                                                value={guestItem.therapist_commission ?? ''}
+                                                                onChange={(e) => {
+                                                                    // Optimistic update for commission too
+                                                                    const val = e.target.value;
+                                                                    const updatedItems = selectedTransaction.items.map(it =>
+                                                                        it.guest_index == guestIndex ? { ...it, therapist_commission: val } : it
+                                                                    );
+                                                                    setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+                                                                }}
                                                                 onBlur={(e) => {
                                                                     selectedTransaction.items
                                                                         .filter(item => item.guest_index == guestIndex)
                                                                         .forEach(item => updateTherapistData(item.id, { therapist_commission: e.target.value }));
-                                                                }}
-                                                                onChange={(e) => {
-                                                                    const updatedItems = selectedTransaction.items.map(it => 
-                                                                        (it.guest_index == guestIndex) ? { ...it, therapist_commission: e.target.value } : it
-                                                                    );
-                                                                    setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
                                                                 }}
                                                             />
                                                         </div>

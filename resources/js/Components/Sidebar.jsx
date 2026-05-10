@@ -10,7 +10,8 @@ import {
     QuestionMarkCircleIcon,
     UsersIcon, 
     GlobeAltIcon,
-    Cog6ToothIcon
+    Cog6ToothIcon,
+    ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 
 function classNames(...classes) {
@@ -33,6 +34,7 @@ export default function Sidebar({ collapsed }) {
             items: [
                 { name: 'Fitur POS', href: route('admin.pos.index'), icon: CalculatorIcon, current: route().current('admin.pos.*') },
                 { name: 'Pesanan', href: route('admin.transaction.index'), icon: ShoppingCartIcon, current: route().current('admin.transaction.*') },
+                { name: 'Laporan Terapis', href: route('admin.therapist.report'), icon: ClipboardDocumentListIcon, current: route().current('admin.therapist.*') },
             ]
         },
         { 

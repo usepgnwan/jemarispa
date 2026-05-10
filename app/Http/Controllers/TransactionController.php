@@ -283,5 +283,71 @@ class TransactionController extends Controller
             'expires_at' => $transaction->review_expires_at,
         ]);
     }
+    public function therapistReport(Request $request)
+    {
+        $month = $request->query('month', now()->format('Y-m'));
+
+        $monthFilter = $month
+            ? "AND TO_CHAR(t.created_at, 'YYYY-MM') = '" . addslashes($month) . "'"
+            : '';
+
+        $rows = DB::select("
+            WITH revenue AS (
+                SELECT
+                    ti.employee_id,
+                    SUM(ti.price)  AS total_revenue,
+                    COUNT(*)       AS job_count
+                FROM transaction_items ti
+                JOIN transactions t ON t.id = ti.transaction_id
+                WHERE ti.employee_id IS NOT NULL
+                  AND t.status = 'success'
+                  {$monthFilter}
+                GROUP BY ti.employee_id
+            ),
+            deduped_commission AS (
+                SELECT
+                    ti.employee_id,
+                    ti.transaction_id,
+                    ti.guest_index,
+                    MAX(COALESCE(ti.therapist_commission, 0)) AS commission
+                FROM transaction_items ti
+                JOIN transactions t ON t.id = ti.transaction_id
+                WHERE ti.employee_id IS NOT NULL
+                  AND t.status = 'success'
+                  {$monthFilter}
+                GROUP BY ti.employee_id, ti.transaction_id, ti.guest_index
+            ),
+            commission_per_employee AS (
+                SELECT employee_id, SUM(commission) AS total_commission
+                FROM deduped_commission
+                GROUP BY employee_id
+            )
+            SELECT
+                r.employee_id,
+                e.name,
+                r.total_revenue,
+                COALESCE(c.total_commission, 0) AS total_commission,
+                r.job_count
+            FROM revenue r
+            JOIN employees e ON e.id = r.employee_id
+            LEFT JOIN commission_per_employee c ON c.employee_id = r.employee_id
+            ORDER BY r.total_revenue DESC
+        ");
+
+        $therapistRevenue = collect($rows)->map(fn($row) => [
+            'name'       => $row->name,
+            'revenue'    => (float) $row->total_revenue,
+            'commission' => (float) $row->total_commission,
+            'net'        => (float) max(0, $row->total_revenue - $row->total_commission),
+            'jobs'       => (int) $row->job_count,
+        ]);
+
+        return Inertia::render('Admin/Therapist/Report', [
+            'therapistRevenue' => $therapistRevenue,
+            'filters' => [
+                'month' => $month
+            ]
+        ]);
+    }
 }
 
