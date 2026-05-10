@@ -14,5 +14,6 @@ class Setting extends Model
         'template_order',
         'template_question',
         'template_invoice',
+        'default_commission',
     ];
 }

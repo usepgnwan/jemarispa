@@ -101,19 +101,41 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             name: `${pkg.title_id} ${d.duration}`,
             groupName: pkg.title_id,
             price: parseFloat(d.price),
-            duration: d.duration
+            duration: d.duration,
+            commission: parseFloat(d.commission) || 0
         };
 
         const newGuests = [...guests];
-        newGuests[activeGuestIndex].packages.push(packageToAdd);
+        const activeGuest = newGuests[activeGuestIndex];
+
+        // Check if already added (prevent duplicates for same person)
+        const isAlreadyAdded = activeGuest.packages.some(p => p.name === packageToAdd.name);
+        if (isAlreadyAdded) {
+            showToast('Paket ini sudah ada untuk orang ini');
+            return;
+        }
+
+        activeGuest.packages.push(packageToAdd);
+        
+        // Auto-calculate commission based on selected packages
+        const totalCommission = activeGuest.packages.reduce((sum, p) => sum + (p.commission || 0), 0);
+        activeGuest.therapist_commission = totalCommission;
+
         setGuests(newGuests);
 
-        showToast(`Ditambahkan ke Orang ${activeGuestIndex + 1}`);
+        showToast(`Ditambahkan ke Orang ${activeGuestIndex + 1}: ${packageToAdd.name}`);
+        // Keep modal open so admin can add more packages if needed
+        // setShowAddModal(false); 
     };
 
     const removePackageFromGuest = (guestIndex, pkgIndex) => {
         const newGuests = [...guests];
         newGuests[guestIndex].packages.splice(pkgIndex, 1);
+        
+        // Recalculate commission after removal
+        const totalCommission = newGuests[guestIndex].packages.reduce((sum, p) => sum + (p.commission || 0), 0);
+        newGuests[guestIndex].therapist_commission = totalCommission;
+        
         setGuests(newGuests);
     };
 
@@ -183,11 +205,14 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                     guestGender: 'wanita',
                     therapistGender: 'wanita',
                     employee_id: '',
-                    therapist_commission: 0,
+                    therapist_commission: app_settings?.default_commission || 0,
                     packages: []
                 }]);
 
                 showToast('Transaksi POS berhasil disimpan');
+                
+                // Refresh todayTransactions prop
+                router.reload({ only: ['todayTransactions'] });
             }
         } catch (error) {
             console.error(error);
@@ -195,16 +220,14 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         }
     };
 
-    const sendInvoice = (transaction) => {
-        const phone = transaction.phone || app_settings?.phone || '';
+    const getInvoiceMessage = (transaction) => {
         const rawTemplate = app_settings?.template_invoice || `Halo Kak [name], terlampir invoice [invoice_no]...`;
-
         const formatCurrency = (val) => `Rp ${parseFloat(val).toLocaleString('id-ID')}`;
 
-        // Group items by guest_index
-        const grouped = transaction.items.reduce((acc, item) => {
-            if (!acc[item.guest_index]) acc[item.guest_index] = [];
-            acc[item.guest_index].push(item);
+        const grouped = (transaction.items || []).reduce((acc, item) => {
+            const idx = item.guest_index || 1;
+            if (!acc[idx]) acc[idx] = [];
+            acc[idx].push(item);
             return acc;
         }, {});
 
@@ -232,12 +255,56 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             message = message.split(`[${key}]`).join(waData[key]);
         }
 
-        const encodedMessage = encodeURIComponent(message);
-        const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
-        const waPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.substring(1) : cleanPhone;
+        return message;
+    };
 
-        const waUrl = `https://wa.me/${waPhone}?text=${encodedMessage}`;
+    const copyInvoiceText = (transaction) => {
+        const target = transaction || lastTransaction;
+        if (!target) return;
+        const message = getInvoiceMessage(target);
+        
+        navigator.clipboard.writeText(message).then(() => {
+            showToast('Teks invoice berhasil disalin!');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            showToast('Gagal menyalin teks.');
+        });
+    };
+
+    const sendInvoice = (transaction) => {
+        const phone = transaction.phone || app_settings?.phone || '';
+        const message = getInvoiceMessage(transaction);
+        const encodedMessage = encodeURIComponent(message);
+        
+        if (!phone) {
+            showToast('Nomor WhatsApp tidak ditemukan');
+            return;
+        }
+
+        const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
+        let waPhone = cleanPhone;
+        if (waPhone.startsWith('0')) {
+            waPhone = '62' + waPhone.substring(1);
+        } else if (waPhone.startsWith('8')) {
+            waPhone = '62' + waPhone;
+        }
+        
+        if (!waPhone) {
+            showToast('Nomor WhatsApp tidak valid');
+            return;
+        }
+
+        const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const waUrl = isMobileDevice
+            ? `https://wa.me/${waPhone}?text=${encodedMessage}`
+            : `https://web.whatsapp.com/send?phone=${waPhone}&text=${encodedMessage}`;
+
         window.open(waUrl, '_blank');
+    };
+
+    const sendWhatsApp = () => {
+        if (!lastTransaction) return;
+        sendInvoice(lastTransaction);
     };
 
     return (
@@ -338,34 +405,32 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                         setActiveGuestIndex(gIndex);
                                                         setShowAddModal(true);
                                                     }}
-                                                    className="p-3 bg-zenith-orange text-white rounded-2xl shadow-lg shadow-zenith-orange/20 hover:scale-105 active:scale-95 transition-all"
+                                                    className="flex items-center gap-2 px-6 py-3 bg-zenith-orange text-white rounded-full text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-orange/20 hover:bg-zenith-charcoal transition-all"
                                                 >
-                                                    <PlusIcon className="w-6 h-6" />
+                                                    <PlusIcon className="w-4 h-4" />
+                                                    Pilih Paket
                                                 </button>
                                             </div>
 
-                                            {/* Packages Section */}
-                                            <div className="space-y-4 mb-8 min-h-[120px]">
+                                            {/* Package List for Guest */}
+                                            <div className="space-y-3 mb-8">
                                                 {guest.packages.length === 0 ? (
-                                                    <div className="flex flex-col items-center justify-center py-8 bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-100 group-hover:border-zenith-orange/20 transition-colors">
-                                                        <ClipboardDocumentListIcon className="w-8 h-8 text-gray-200 mb-2" />
-                                                        <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Belum ada paket</p>
+                                                    <div className="py-8 px-6 text-center border-2 border-dashed border-gray-100 rounded-[2rem] bg-gray-50/50">
+                                                        <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Belum ada paket dipilih</p>
                                                     </div>
                                                 ) : (
                                                     guest.packages.map((pkg, pIndex) => (
-                                                        <div key={pIndex} className="flex items-center justify-between bg-gray-50/80 p-4 rounded-2xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
-                                                            <div className="flex-1">
-                                                                <p className="font-bold text-sm text-gray-800 leading-tight">{pkg.name}</p>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <span className="text-[9px] font-bold text-zenith-orange uppercase">{pkg.duration}</span>
-                                                                    <span className="text-[9px] text-gray-300">•</span>
-                                                                    <span className="text-[9px] font-bold text-gray-400">Rp {pkg.price.toLocaleString('id-ID')}</span>
+                                                        <div key={pIndex} className="flex items-center justify-between p-5 bg-zenith-surface/50 rounded-2xl border border-zenith-orange/5 group/item transition-all hover:bg-white">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="h-2 w-2 rounded-full bg-zenith-orange"></div>
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-gray-900">{pkg.groupName || pkg.name}</p>
+                                                                    <p className="text-[10px] font-bold text-zenith-orange uppercase tracking-widest mt-0.5">{pkg.duration} Menit • Rp {pkg.price.toLocaleString('id-ID')}</p>
                                                                 </div>
                                                             </div>
                                                             <button
-                                                                type="button"
                                                                 onClick={() => removePackageFromGuest(gIndex, pIndex)}
-                                                                className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                                className="p-2 text-gray-300 hover:text-red-500 transition-colors"
                                                             >
                                                                 <XMarkIcon className="w-4 h-4" />
                                                             </button>
@@ -441,341 +506,290 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                             </div>
                         </div>
 
-                        {/* RIGHT: Checkout Sidebar (4/12) */}
-                        <div className="xl:col-span-4 space-y-8">
-                            <form onSubmit={handleCheckout} className="sticky top-28 space-y-8">
-                                {/* Customer Data Card */}
-                                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl overflow-hidden">
-                                    <div className="bg-zenith-charcoal p-8">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <UserIcon className="w-5 h-5 text-zenith-orange" />
-                                            <h4 className="font-bold text-white uppercase tracking-widest text-sm">Penanggung Jawab</h4>
+                        {/* RIGHT: Transaction Summary (4/12) */}
+                        <div className="xl:col-span-4 sticky top-24">
+                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl overflow-hidden">
+                                <div className="p-8 bg-zenith-charcoal text-white">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                                            <ClipboardDocumentListIcon className="w-5 h-5 text-zenith-orange" />
                                         </div>
-                                        <p className="text-gray-400 text-[10px]">Data utama untuk pengiriman invoice</p>
+                                        <div>
+                                            <h3 className="font-bold">Ringkasan Pesanan</h3>
+                                            <p className="text-[9px] font-bold text-white/40 uppercase tracking-[0.2em]">Transaction Summary</p>
+                                        </div>
                                     </div>
 
-                                    <div className="p-8 space-y-6">
-                                        <div className="space-y-1">
-                                            <input
-                                                required type="text" placeholder="Nama Pelanggan"
-                                                className="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-zenith-orange placeholder:text-gray-300"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            />
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center text-sm font-medium text-white/60">
+                                            <span>Subtotal</span>
+                                            <span>Rp {calculateItemsTotal().toLocaleString('id-ID')}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm font-medium text-white/60">
+                                            <span>Biaya Transport</span>
+                                            <span>Rp {(parseFloat(formData.transport_fee) || 0).toLocaleString('id-ID')}</span>
+                                        </div>
+                                        <div className="pt-4 border-t border-white/10 flex justify-between items-end">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Total Bayar</span>
+                                            <span className="text-3xl font-serif italic text-zenith-orange">Rp {calculateGrandTotal().toLocaleString('id-ID')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-8 space-y-6">
+                                    {/* Order Info Form */}
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block px-1">Informasi Pelanggan</label>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                <div className="relative">
+                                                    <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                                    <input
+                                                        type="text" placeholder="Nama Pelanggan"
+                                                        className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange transition-all"
+                                                        value={formData.name}
+                                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div className="relative">
+                                                    <ChatBubbleLeftRightIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                                    <input
+                                                        type="tel" placeholder="Nomor WhatsApp"
+                                                        className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange transition-all"
+                                                        value={formData.phone}
+                                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <div className="space-y-1">
-                                            <div className="relative">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r border-gray-200 pr-3">
-                                                    <span className="text-sm font-bold text-gray-400">+62</span>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block px-1">Lokasi & Waktu</label>
+                                            <div className="space-y-3">
+                                                <div className="relative">
+                                                    <MapPinIcon className="absolute left-3.5 top-3 w-4 h-4 text-gray-300" />
+                                                    <textarea
+                                                        placeholder="Alamat Lengkap"
+                                                        className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange h-20 transition-all resize-none"
+                                                        value={formData.address}
+                                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                                    />
                                                 </div>
-                                                <input
-                                                    required type="tel" placeholder="Nomor WhatsApp"
-                                                    className="w-full bg-gray-50 border-none rounded-2xl p-4 pl-16 text-sm font-bold focus:ring-2 focus:ring-zenith-orange placeholder:text-gray-300"
-                                                    value={formData.phone}
-                                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                                />
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="relative">
+                                                        <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                                        <input
+                                                            type="date"
+                                                            className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-10 pr-3 text-xs font-bold text-gray-700 focus:ring-zenith-orange"
+                                                            value={formData.date}
+                                                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div className="relative">
+                                                        <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                                        <input
+                                                            type="time"
+                                                            className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-10 pr-3 text-xs font-bold text-gray-700 focus:ring-zenith-orange"
+                                                            value={formData.time}
+                                                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="relative group">
-                                                <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-zenith-orange transition-colors" />
-                                                <input
-                                                    required type="date"
-                                                    className="w-full bg-gray-50 border-none rounded-2xl p-4 pl-12 text-xs font-bold focus:ring-2 focus:ring-zenith-orange"
-                                                    value={formData.date}
-                                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                                />
-                                            </div>
-                                            <div className="relative group">
-                                                <ClockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-zenith-orange transition-colors" />
-                                                <input
-                                                    required type="time"
-                                                    className="w-full bg-gray-50 border-none rounded-2xl p-4 pl-12 text-xs font-bold focus:ring-2 focus:ring-zenith-orange"
-                                                    value={formData.time}
-                                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <div className="relative">
-                                                <MapPinIcon className="absolute left-4 top-4 w-5 h-5 text-gray-300" />
-                                                <textarea
-                                                    required placeholder="Alamat Lengkap..."
-                                                    className="w-full bg-gray-50 border-none rounded-2xl p-4 pl-12 text-sm font-bold focus:ring-2 focus:ring-zenith-orange h-24 placeholder:text-gray-300"
-                                                    value={formData.address}
-                                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                                ></textarea>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <div className="relative">
-                                                <TruckIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
-                                                <span className="absolute left-12 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-300">Rp</span>
-                                                <input
-                                                    type="number" placeholder="Biaya Transport"
-                                                    className="w-full bg-gray-50 border-none rounded-2xl p-4 pl-20 text-sm font-bold focus:ring-2 focus:ring-zenith-orange placeholder:text-gray-300"
-                                                    value={formData.transport_fee}
-                                                    onChange={(e) => setFormData({ ...formData, transport_fee: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {['cash', 'transfer'].map(p => (
-                                                <label key={p} className="flex-1 cursor-pointer">
-                                                    <input type="radio" name="payment" className="hidden peer" checked={formData.paymentMethod === p} onChange={() => setFormData({ ...formData, paymentMethod: p })} />
-                                                    <div className="text-center py-3 rounded-2xl bg-gray-50 text-[10px] font-bold uppercase tracking-widest text-gray-400 peer-checked:bg-white peer-checked:text-zenith-orange peer-checked:ring-2 peer-checked:ring-zenith-orange transition-all shadow-sm">
-                                                        <CreditCardIcon className="w-4 h-4 mx-auto mb-1 opacity-40 peer-checked:opacity-100" />
-                                                        {p}
-                                                    </div>
-                                                </label>
-                                            ))}
-                                        </div>
-
-                                        {/* Platform Source Selection */}
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block ml-1">Platform / Source</label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {/* Manual 'Website' Option */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFormData({ ...formData, source: 'Website' })}
-                                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                                                        formData.source === 'Website'
-                                                            ? 'bg-zenith-orange text-white border-zenith-orange shadow-md'
-                                                            : 'bg-gray-50 text-gray-400 border-transparent hover:border-gray-200'
-                                                    }`}
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block">Metode Bayar</label>
+                                                <select
+                                                    className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 px-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange"
+                                                    value={formData.paymentMethod}
+                                                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
                                                 >
-                                                    Website
-                                                </button>
-                                                
-                                                {/* Dynamic Options from DB */}
-                                                {platforms.map((platform) => (
-                                                    <button
-                                                        key={platform.id}
-                                                        type="button"
-                                                        onClick={() => setFormData({ ...formData, source: platform.title })}
-                                                        className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                                                            formData.source === platform.title
-                                                                ? 'bg-zenith-orange text-white border-zenith-orange shadow-md'
-                                                                : 'bg-gray-50 text-gray-400 border-transparent hover:border-gray-200'
-                                                        }`}
-                                                    >
-                                                        {platform.title}
-                                                    </button>
+                                                    <option value="cash">Tunai (Cash)</option>
+                                                    <option value="transfer">Transfer</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block">Biaya Transport</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">Rp</span>
+                                                    <input
+                                                        type="number"
+                                                        className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-8 pr-3 text-xs font-bold text-gray-700 focus:ring-zenith-orange"
+                                                        value={formData.transport_fee}
+                                                        onChange={(e) => setFormData({ ...formData, transport_fee: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block px-1">Sumber Booking</label>
+                                            <select
+                                                className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 px-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange appearance-none"
+                                                value={formData.source}
+                                                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                                            >
+                                                {platforms.map(p => (
+                                                    <option key={p.id} value={p.name}>{p.name}</option>
                                                 ))}
-
-                                                {/* Fallback Instagram if not in platforms */}
-                                                {!platforms.find(p => p.title === 'Instagram') && formData.source !== 'Website' && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData({ ...formData, source: 'Instagram' })}
-                                                        className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                                                            formData.source === 'Instagram'
-                                                                ? 'bg-zenith-orange text-white border-zenith-orange shadow-md'
-                                                                : 'bg-gray-50 text-gray-400 border-transparent hover:border-gray-200'
-                                                        }`}
-                                                    >
-                                                        Instagram
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Order Summary Card */}
-                                <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-zenith-orange/10 relative overflow-hidden">
-                                    {/* Abstract background element */}
-                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-zenith-orange/5 rounded-full blur-3xl"></div>
-
-                                    <div className="space-y-4 mb-8">
-                                        <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                            <span>Subtotal Layanan</span>
-                                            <span className="text-gray-900">Rp {calculateItemsTotal().toLocaleString('id-ID')}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                            <span>Biaya Transport</span>
-                                            <span className="text-gray-900">Rp {(parseFloat(formData.transport_fee) || 0).toLocaleString('id-ID')}</span>
-                                        </div>
-                                        <div className="h-px bg-dashed border-t border-gray-100 my-2"></div>
-                                        <div className="flex justify-between items-end">
-                                            <div>
-                                                <p className="text-[10px] font-bold text-zenith-orange uppercase tracking-widest">Grand Total</p>
-                                                <p className="text-3xl font-bold text-gray-900 tracking-tight">Rp {calculateGrandTotal().toLocaleString('id-ID')}</p>
-                                            </div>
-                                            <div className="bg-zenith-orange/10 px-3 py-1 rounded-lg">
-                                                <span className="text-[10px] font-bold text-zenith-orange uppercase">{pax} Pax</span>
-                                            </div>
+                                            </select>
                                         </div>
                                     </div>
 
                                     <button
-                                        type="submit"
-                                        className="w-full py-5 bg-zenith-orange text-white rounded-2xl text-sm font-bold uppercase tracking-[0.2em] shadow-xl shadow-zenith-orange/20 hover:bg-zenith-charcoal hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                                        onClick={handleCheckout}
+                                        className="w-full py-5 bg-zenith-orange text-white rounded-full text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-orange/40 hover:bg-zenith-charcoal transition-all transform active:scale-[0.98] flex items-center justify-center gap-3"
                                     >
-                                        Konfirmasi & Simpan
-                                        <ChevronRightIcon className="w-5 h-5" />
+                                        <ShoppingCartIcon className="w-5 h-5" />
+                                        Simpan Transaksi
                                     </button>
                                 </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Side Drawer Package Picker (Styled as Modal for now but with drawer feel) */}
+            {/* Modal & Toast Components */}
+            {/* ... rest of the modal logic (unchanged) ... */}
+            
+            {/* Add Service Modal */}
             <Modal show={showAddModal} onClose={() => setShowAddModal(false)} maxWidth="2xl">
-                <div className="flex flex-col h-[85vh]">
-                    <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                <div className="p-8">
+                    <div className="flex justify-between items-center mb-8">
                         <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                <div className="w-8 h-8 bg-zenith-orange text-white rounded-lg flex items-center justify-center text-xs font-bold">
-                                    {activeGuestIndex + 1}
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-900">Katalog Layanan</h3>
-                            </div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pilih paket untuk orang ke-{activeGuestIndex + 1}</p>
+                            <h3 className="text-xl font-bold text-gray-900">Pilih Layanan</h3>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pilih paket untuk Orang ke-{activeGuestIndex + 1}</p>
                         </div>
-                        <button onClick={() => setShowAddModal(false)} className="w-10 h-10 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full flex items-center justify-center transition-all">
+                        <button onClick={() => setShowAddModal(false)} className="p-2 text-gray-400 hover:text-zenith-orange">
                             <XMarkIcon className="w-6 h-6" />
                         </button>
                     </div>
 
-                    <div className="p-8 bg-gray-50 shrink-0">
-                        <div className="relative">
-                            <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
-                            <input
-                                type="text"
-                                placeholder="Cari layanan (Massage, Totok, Lulur...)"
-                                className="w-full pl-14 pr-6 py-4 bg-white border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-zenith-orange shadow-sm placeholder:text-gray-300"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
+                    <div className="relative mb-6">
+                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                        <input
+                            type="text" placeholder="Cari nama paket atau kategori..."
+                            className="w-full bg-gray-50 border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-gray-700 focus:ring-zenith-orange transition-all"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 pt-0 space-y-4 scrollbar-hide">
-                        {filteredPackages.length === 0 ? (
-                            <div className="py-20 text-center opacity-40">
-                                <MagnifyingGlassIcon className="w-12 h-12 mx-auto mb-4" />
-                                <p className="font-bold uppercase tracking-widest text-xs">Paket tidak ditemukan</p>
-                            </div>
-                        ) : (
-                            filteredPackages.map((pkg) => {
-                                const durationIndex = selectedDurations[pkg.id] || 0;
-                                const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
+                    <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4">
+                        {filteredPackages.map(pkg => {
+                             const durationIndex = selectedDurations[pkg.id] || 0;
+                             const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
 
-                                return (
-                                    <div key={pkg.id} className="group p-5 rounded-[2rem] bg-white hover:bg-zenith-orange/[0.02] border border-gray-100 hover:border-zenith-orange/20 transition-all flex flex-col sm:flex-row gap-5 items-center shadow-sm hover:shadow-md">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <h4 className="font-bold text-gray-900 truncate">{pkg.title_id}</h4>
-                                                <span className="shrink-0 px-2 py-0.5 bg-gray-100 text-gray-400 text-[8px] font-bold uppercase rounded-md tracking-tighter">{pkg.category_id || 'SPA'}</span>
-                                            </div>
-                                            <p className="text-[10px] text-gray-400 line-clamp-1 italic font-serif">Treatment berkualitas tinggi dari Jemari Spa</p>
+                             return (
+                                <div key={pkg.id} className="p-5 rounded-3xl border border-gray-100 bg-gray-50/30 hover:border-zenith-orange/30 hover:bg-white transition-all flex items-center justify-between group">
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-gray-900 group-hover:text-zenith-orange transition-colors">{pkg.title_id}</h4>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{pkg.category_id}</p>
+                                    </div>
+
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-32">
+                                            <select
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 focus:ring-zenith-orange"
+                                                value={durationIndex}
+                                                onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
+                                            >
+                                                {pkg.durations.map((d, i) => (
+                                                    <option key={d.id} value={i}>{d.duration} Menit</option>
+                                                ))}
+                                            </select>
                                         </div>
-
-                                        <div className="flex items-center gap-4 w-full sm:w-auto shrink-0">
-                                            <div className="w-full sm:w-28">
-                                                {pkg.durations.length > 1 ? (
-                                                    <select
-                                                        className="w-full bg-gray-50 border-none rounded-xl py-2 px-3 text-[10px] font-bold text-gray-700 focus:ring-1 focus:ring-zenith-orange"
-                                                        value={durationIndex}
-                                                        onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
-                                                    >
-                                                        {pkg.durations.map((d, i) => (
-                                                            <option key={d.id} value={i}>{d.duration}</option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <div className="text-center bg-gray-50 py-2 px-3 rounded-xl border border-gray-100">
-                                                        <span className="text-[10px] font-bold text-gray-400 uppercase">{currentDuration.duration}</span>
-                                                    </div>
-                                                )}
+                                        <div className="w-32 text-right">
+                                            <p className="text-sm font-bold text-zenith-orange">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
+                                        </div>
+                                        {activeGuestIndex !== null && guests[activeGuestIndex].packages.some(p => p.name === `${pkg.title_id} ${currentDuration.duration}`) ? (
+                                            <div className="px-4 py-2 bg-zenith-charcoal text-white rounded-full text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-charcoal/20">
+                                                Selected
                                             </div>
-                                            <div className="text-right min-w-[100px]">
-                                                <p className="text-xs font-bold text-gray-900">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
-                                            </div>
+                                         ) : (
                                             <button
                                                 onClick={() => addPackageToGuest(pkg)}
-                                                className="w-10 h-10 bg-zenith-charcoal text-white rounded-xl flex items-center justify-center hover:bg-zenith-orange transition-all shadow-lg active:scale-90 shrink-0"
+                                                className="h-10 w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20"
                                             >
                                                 <PlusIcon className="w-5 h-5" />
                                             </button>
-                                        </div>
+                                         )}
                                     </div>
-                                );
-                            })
-                        )}
-                    </div>
-
-                    <div className="p-8 border-t border-gray-100 bg-white shrink-0">
-                        <button
-                            onClick={() => setShowAddModal(false)}
-                            className="w-full py-4 bg-gray-900 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-zenith-orange transition-all"
-                        >
-                            Selesai Memilih
-                        </button>
+                                </div>
+                             );
+                        })}
                     </div>
                 </div>
             </Modal>
 
-            {/* History Modal - Slide-over feel */}
+            {/* History Modal */}
             <Modal show={showHistoryModal} onClose={() => setShowHistoryModal(false)} maxWidth="4xl">
-                <div className="flex flex-col h-[80vh]">
-                    <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3 uppercase tracking-tight">
-                            <ArrowPathIcon className="w-6 h-6 text-zenith-orange" />
-                            Aktivitas Hari Ini
-                        </h3>
-                        <button onClick={() => setShowHistoryModal(false)} className="w-10 h-10 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full flex items-center justify-center transition-all">
+                <div className="p-8">
+                    <div className="flex justify-between items-center mb-8 pb-6 border-b border-gray-50">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-zenith-orange/10 rounded-2xl flex items-center justify-center text-zenith-orange">
+                                <ArrowPathIcon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900">History Transaksi Hari Ini</h3>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Today's Transactions Session</p>
+                            </div>
+                        </div>
+                        <button onClick={() => setShowHistoryModal(false)} className="p-2 text-gray-400 hover:text-zenith-orange">
                             <XMarkIcon className="w-6 h-6" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 space-y-4 bg-gray-50/30">
+                    <div className="space-y-4">
                         {todayTransactions.length === 0 ? (
-                            <div className="py-20 text-center opacity-30">
-                                <ShoppingCartIcon className="w-16 h-16 mx-auto mb-4" />
-                                <p className="font-bold uppercase tracking-[0.2em] text-sm">Tidak ada transaksi</p>
+                            <div className="py-20 text-center">
+                                <ClipboardDocumentListIcon className="w-12 h-12 text-gray-100 mx-auto mb-4" />
+                                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Belum ada transaksi hari ini</p>
                             </div>
                         ) : (
-                            todayTransactions.map((tx) => (
-                                <div key={tx.id} className="p-6 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:scale-[1.01] transition-all flex flex-col md:flex-row gap-6 items-center">
-                                    <div className="flex-1 w-full">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <span className="px-3 py-1 bg-zenith-orange/10 text-zenith-orange text-[9px] font-bold uppercase tracking-widest rounded-full">{tx.order_number}</span>
-                                            <span className="px-3 py-1 bg-green-50 text-green-600 text-[9px] font-bold uppercase tracking-widest rounded-full">{tx.status}</span>
+                            todayTransactions.map(t => (
+                                <div key={t.id} className="p-6 rounded-[2rem] border border-gray-100 bg-white hover:border-zenith-orange/30 transition-all flex items-center justify-between group shadow-sm">
+                                    <div className="flex items-center gap-6">
+                                        <div className="text-center">
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{new Date(t.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p className="text-sm font-serif italic font-bold text-zenith-charcoal mt-1">{t.order_number.split('/').pop()}</p>
                                         </div>
-                                        <h5 className="font-bold text-lg text-gray-900">{tx.customer_name}</h5>
-                                        <div className="flex items-center gap-4 mt-1 text-gray-400">
-                                            <div className="flex items-center gap-1.5">
-                                                <ClockIcon className="w-3.5 h-3.5" />
-                                                <span className="text-[10px] font-bold uppercase">{tx.schedule_time}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <UserGroupIcon className="w-3.5 h-3.5" />
-                                                <span className="text-[10px] font-bold uppercase">{tx.items_count || tx.items?.length || 0} Pax</span>
+                                        <div className="h-8 w-px bg-gray-100"></div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900">{t.customer_name}</h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest ${t.payment_status === 'paid' ? 'bg-green-50 text-green-600' : 'bg-zenith-orange/5 text-zenith-orange'}`}>
+                                                    {t.payment_status}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-gray-400">• Rp {parseFloat(t.total_price).toLocaleString('id-ID')}</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right shrink-0">
-                                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Total Bayar</p>
-                                        <p className="font-bold text-2xl text-gray-900 tracking-tight">Rp {tx.total_price.toLocaleString('id-ID')}</p>
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => sendInvoice(t)}
+                                            className="p-3 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
+                                            title="Kirim WA"
+                                        >
+                                            <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={() => copyInvoiceText(t)}
+                                            className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                            title="Copy Text WA"
+                                        >
+                                            <ClipboardDocumentListIcon className="w-5 h-5" />
+                                        </button>
+                                        <Link 
+                                            href={route('admin.transaction.index', { search: t.order_number })}
+                                            className="p-3 bg-gray-50 text-gray-400 rounded-xl hover:bg-zenith-charcoal hover:text-white transition-all shadow-sm"
+                                        >
+                                            <ChevronRightIcon className="w-5 h-5" />
+                                        </Link>
                                     </div>
-                                    <button
-                                        onClick={() => sendInvoice(tx)}
-                                        className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-zenith-charcoal text-white rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] shadow-lg hover:bg-zenith-orange transition-all"
-                                    >
-                                        <ChatBubbleLeftRightIcon className="w-4 h-4" />
-                                        Invoice
-                                    </button>
                                 </div>
                             ))
                         )}
@@ -784,64 +798,52 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             </Modal>
 
             {/* Success Invoice Modal */}
-            <Modal show={showInvoiceModal} onClose={() => setShowInvoiceModal(false)}>
-                <div className="p-12 text-center">
-                    <div className="w-24 h-24 bg-green-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 relative">
-                        <CheckCircleIcon className="w-14 h-14 text-green-500" />
-                        <div className="absolute inset-0 bg-green-400/20 rounded-[2rem] animate-ping pointer-events-none opacity-20"></div>
+            <Modal show={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} maxWidth="md">
+                <div className="p-10 text-center">
+                    <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 mx-auto mb-6 shadow-lg shadow-green-500/10">
+                        <CheckCircleIcon className="w-12 h-12" />
                     </div>
-                    <h3 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">Transaksi Berhasil!</h3>
-                    <p className="text-gray-400 mb-10 leading-relaxed font-medium">Pesanan telah tercatat di sistem.<br />Silakan kirimkan invoice digital ke WhatsApp pelanggan.</p>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Transaksi Berhasil!</h3>
+                    <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed">
+                        Data transaksi telah disimpan secara otomatis ke dalam sistem. Klik tombol di bawah untuk mengirim invoice via WhatsApp.
+                    </p>
 
-                    <div className="flex flex-col gap-4">
-                        <button
-                            onClick={() => {
-                                sendInvoice(lastTransaction);
-                                setShowInvoiceModal(false);
-                            }}
-                            className="w-full py-5 bg-zenith-orange text-white rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-zenith-orange/20 hover:bg-zenith-charcoal transition-all scale-105"
-                        >
-                            KIRIM INVOICE (WHATSAPP)
-                        </button>
+                    <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={sendWhatsApp}
+                                className="py-4 bg-green-500 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-green-500/20 hover:bg-green-600 transition-all flex items-center justify-center gap-3"
+                            >
+                                <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                                Kirim WA
+                            </button>
+                            <button
+                                onClick={() => copyInvoiceText()}
+                                className="py-4 bg-zenith-charcoal text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-charcoal/20 hover:bg-black transition-all flex items-center justify-center gap-3"
+                            >
+                                <ClipboardDocumentListIcon className="w-5 h-5" />
+                                Copy Text
+                            </button>
+                        </div>
                         <button
                             onClick={() => setShowInvoiceModal(false)}
-                            className="w-full py-5 bg-white text-gray-400 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] hover:text-gray-900 transition-all"
+                            className="w-full py-4 bg-gray-100 text-gray-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-gray-200 transition-all"
                         >
-                            Tutup Jendela
+                            Tutup
                         </button>
                     </div>
                 </div>
             </Modal>
 
-            {/* Premium Toast Notification */}
+            {/* Toast Notification */}
             {toast.show && (
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[110] animate-slide-up">
-                    <div className="bg-zenith-charcoal text-white px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-x-4 border border-white/5 backdrop-blur-md">
-                        <div className="w-8 h-8 bg-zenith-orange rounded-full flex items-center justify-center shadow-lg shadow-zenith-orange/20">
-                            <CheckCircleIcon className="w-5 h-5 text-white" />
-                        </div>
-                        <p className="text-sm font-bold tracking-tight">{toast.message}</p>
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-slide-up">
+                    <div className="bg-zenith-charcoal text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-x-4 border border-white/10">
+                        <CheckCircleIcon className="w-5 h-5 text-zenith-orange" />
+                        <p className="text-[10px] font-bold uppercase tracking-widest">{toast.message}</p>
                     </div>
                 </div>
             )}
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @keyframes slide-up {
-                    from { transform: translate(-50%, 100%); opacity: 0; }
-                    to { transform: translate(-50%, 0); opacity: 1; }
-                }
-                .animate-slide-up {
-                    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-                .scrollbar-hide::-webkit-scrollbar {
-                    display: none;
-                }
-                .scrollbar-hide {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-            `}} />
         </AuthenticatedLayout>
     );
 }

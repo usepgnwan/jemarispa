@@ -18,11 +18,11 @@ export default function Create() {
         category_en: '',
         description_id: '',
         description_en: '',
-        durations: [{ duration: '', price: '' }]
+        durations: [{ duration: '', price: '', commission: '' }]
     });
 
     const handleAddDuration = () => {
-        setData('durations', [...data.durations, { duration: '', price: '' }]);
+        setData('durations', [...data.durations, { duration: '', price: '', commission: '' }]);
     };
 
     const handleRemoveDuration = (index) => {
@@ -196,7 +196,6 @@ export default function Create() {
                                                 </div>
                                                 <InputError message={errors[`durations.${index}.duration`]} className="mt-1 text-xs" />
                                             </div>
-
                                             <div className="flex-1 w-full">
                                                 <InputLabel value="Harga" className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5" />
                                                 <div className="relative">
@@ -216,6 +215,26 @@ export default function Create() {
                                                     />
                                                 </div>
                                                 <InputError message={errors[`durations.${index}.price`]} className="mt-1 text-xs" />
+                                            </div>
+
+                                            <div className="flex-1 w-full">
+                                                <InputLabel value="Komisi Terapis" className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5" />
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                        <span className="text-gray-500 text-sm font-bold">Rp</span>
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        className="pl-12 w-full rounded-xl border-gray-300 focus:border-[#0057B8] focus:ring-[#0057B8] sm:text-sm font-semibold py-2.5 shadow-sm bg-white"
+                                                        placeholder="0"
+                                                        value={item.commission !== undefined && item.commission !== null && item.commission !== '' ? new Intl.NumberFormat('id-ID').format(item.commission) : ''}
+                                                        onChange={(e) => {
+                                                            const rawValue = e.target.value.replace(/\D/g, '');
+                                                            handleDurationChange(index, 'commission', rawValue);
+                                                        }}
+                                                    />
+                                                </div>
+                                                <InputError message={errors[`durations.${index}.commission`]} className="mt-1 text-xs" />
                                             </div>
 
                                             {data.durations.length > 1 && (

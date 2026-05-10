@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { Link, router } from '@inertiajs/react';
+import { useState, useMemo, useEffect } from 'react';
 
 const translations = {
     'ID': {
@@ -9,7 +9,8 @@ const translations = {
         bookBtn: 'Pesan Paket',
         seeAll: 'Lihat Semua Paket',
         minute: 'Menit',
-        toastAdd: '{name} berhasil ditambahkan!'
+        toastAdd: '{name} berhasil ditambahkan!',
+        selected: 'Selected'
     },
     'EN': {
         tagline: 'Invitations',
@@ -18,13 +19,44 @@ const translations = {
         bookBtn: 'Book This Path',
         seeAll: 'See All Packages',
         minute: 'Minutes',
-        toastAdd: '{name} added successfully!'
+        toastAdd: '{name} added successfully!',
+        selected: 'Selected'
     }
 };
 
 export default function Pricing({ packages = [], lang = 'ID' }) {
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
+    const [cartItems, setCartItems] = useState([]);
+
+    useEffect(() => {
+        const checkSelection = () => {
+            const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
+            const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
+            
+            // Collect all unique package IDs from both storages
+            const selectedIds = new Set();
+            
+            // From landing page cart
+            savedCart.forEach(item => {
+                const baseId = item.id.split('-')[0];
+                selectedIds.add(baseId);
+            });
+            
+            // From all guests in checkout
+            savedGuests.forEach(guest => {
+                (guest.packages || []).forEach(p => {
+                    if (p.id) selectedIds.add(String(p.id));
+                });
+            });
+            
+            setCartItems(Array.from(selectedIds));
+        };
+
+        checkSelection();
+        window.addEventListener('cart-updated', checkSelection);
+        return () => window.removeEventListener('cart-updated', checkSelection);
+    }, []);
 
     const t = translations[lang];
 
@@ -56,8 +88,22 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
         const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
         
         const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
+        const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
+        const itemId = `${pkg.id}-${variant.duration}`;
+
+        // Check if ANY variant of this package is selected for ANY person
+        const isPackageSelected = 
+            savedCart.some(item => item.id.split('-')[0] === String(pkg.id)) || 
+            savedGuests.some(guest => (guest.packages || []).some(p => String(p.id) === String(pkg.id)));
+
+        // If already selected, just go to cart
+        if (isPackageSelected) {
+            router.visit('/cart');
+            return;
+        }
+
         const newItem = {
-            id: `${pkg.id}-${variant.duration}`,
+            id: itemId,
             name: `${title} ${variant.duration}`,
             price: parseFloat(variant.price),
             duration: variant.duration,
@@ -67,7 +113,9 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
         const newCart = [...savedCart, newItem];
         localStorage.setItem('spa_cart', JSON.stringify(newCart));
         window.dispatchEvent(new Event('cart-updated'));
-        showToast(t.toastAdd.replace('{name}', newItem.name));
+        
+        // Redirect immediately as requested
+        router.visit('/cart');
     };
 
     // Chunks packages into pairs for the mobile 2-row layout
@@ -139,11 +187,13 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
                 <button 
                     onClick={() => addToCart(pkg)}
                     className={`w-full py-3 md:py-5 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 ${
-                    isFeatured
-                        ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/40 hover:bg-zenith-charcoal hover:-translate-y-1'
-                        : 'bg-zenith-dim/20 text-zenith-charcoal hover:bg-zenith-orange hover:text-white shadow-lg'
+                    cartItems.includes(String(pkg.id))
+                        ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/40 hover:-translate-y-1'
+                        : isFeatured
+                            ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/40 hover:bg-zenith-charcoal hover:-translate-y-1'
+                            : 'bg-zenith-dim/20 text-zenith-charcoal hover:bg-zenith-orange hover:text-white shadow-lg'
                 }`}>
-                    {t.bookBtn}
+                    {cartItems.includes(String(pkg.id)) ? t.selected : t.bookBtn}
                 </button>
             </div>
         );

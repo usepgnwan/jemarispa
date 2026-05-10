@@ -12,6 +12,7 @@ class PackageDuration extends Model
         'package_id',
         'duration',
         'price',
+        'commission',
     ];
 
     public function package()

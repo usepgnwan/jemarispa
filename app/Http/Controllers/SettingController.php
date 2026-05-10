@@ -30,6 +30,7 @@ class SettingController extends Controller
             'template_order' => 'nullable|string',
             'template_question' => 'nullable|string',
             'template_invoice' => 'nullable|string',
+            'default_commission' => 'nullable|numeric',
         ]);
 
         $setting = Setting::first();

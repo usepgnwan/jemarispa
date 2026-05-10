@@ -16,10 +16,20 @@ export default function FloatingWhatsApp() {
         message = message.replace('[question]', formData.question || 'layanan');
         
         const encodedMessage = encodeURIComponent(message);
+
+        // Robust Phone Sanitization
+        const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
+        let waPhone = cleanPhone;
+        if (cleanPhone.startsWith('0')) {
+            waPhone = '62' + cleanPhone.substring(1);
+        } else if (cleanPhone.startsWith('8')) {
+            waPhone = '62' + cleanPhone;
+        }
+
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const waUrl = isMobile 
-            ? `https://wa.me/${phone}?text=${encodedMessage}`
-            : `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+            ? `https://wa.me/${waPhone}?text=${encodedMessage}`
+            : `https://web.whatsapp.com/send?phone=${waPhone}&text=${encodedMessage}`;
             
         window.open(waUrl, '_blank');
         setIsOpen(false);

@@ -70,9 +70,12 @@ class TransactionController extends Controller
             'failed' => Transaction::where('status', 'failed')->count(),
         ];
 
+        $packages = \App\Models\Package::with('durations')->get();
+
         return Inertia::render('Admin/Transaction/Index', [
             'transactions' => $transactions,
             'employees' => $employees,
+            'packages' => $packages,
             'filters' => [
                 'search' => $search,
                 'limit' => $limit,
@@ -106,7 +109,7 @@ class TransactionController extends Controller
     {
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => 'nullable|string|max:20',
             'address' => 'required|string',
             'schedule_date' => 'required|date',
             'schedule_time' => 'required|string',
@@ -118,44 +121,73 @@ class TransactionController extends Controller
             'guests' => 'required|array',
         ]);
 
-        return DB::transaction(function() use ($validated) {
-            $transaction = Transaction::create([
-                'order_number' => 'INV/' . now()->format('Ymd') . '/' . strtoupper(substr(uniqid(), -5)),
-                'customer_name' => $validated['customer_name'],
-                'phone' => $validated['phone'],
-                'address' => $validated['address'],
-                'schedule_date' => $validated['schedule_date'],
-                'schedule_time' => $validated['schedule_time'],
-                'payment_method' => $validated['payment_method'],
-                'source' => $validated['source'],
-                'notes' => $validated['notes'],
-                'total_price' => $validated['total_price'],
-                'transport_fee' => $validated['transport_fee'] ?? 0,
-                'status' => 'send_terapis', // Default status for POS as requested
-            ]);
+        try {
+            return DB::transaction(function() use ($validated) {
+                $transaction = Transaction::create([
+                    'order_number' => 'INV/' . now()->format('Ymd') . '/' . strtoupper(substr(uniqid(), -5)),
+                    'customer_name' => $validated['customer_name'],
+                    'phone' => $validated['phone'] ?? null,
+                    'address' => $validated['address'],
+                    'schedule_date' => $validated['schedule_date'],
+                    'schedule_time' => $validated['schedule_time'],
+                    'payment_method' => $validated['payment_method'],
+                    'source' => $validated['source'],
+                    'notes' => $validated['notes'],
+                    'total_price' => $validated['total_price'],
+                    'transport_fee' => $validated['transport_fee'] ?? 0,
+                    'status' => 'send_terapis', // Default status for POS as requested
+                ]);
 
-            foreach ($validated['guests'] as $index => $guest) {
-                foreach ($guest['packages'] as $package) {
-                    TransactionItem::create([
-                        'transaction_id' => $transaction->id,
-                        'guest_index' => $index + 1,
-                        'guest_gender' => $guest['guestGender'] ?? 'wanita',
-                        'therapist_gender_preference' => $guest['therapistGender'] ?? 'wanita',
-                        'package_name' => $package['name'],
-                        'package_duration' => $package['duration'],
-                        'price' => $package['price'],
-                        'employee_id' => !empty($guest['employee_id']) ? $guest['employee_id'] : null,
-                        'therapist_commission' => $guest['therapist_commission'] ?? 0,
-                    ]);
+                foreach ($validated['guests'] as $index => $guest) {
+                    $guestCommission = 0;
+                    // Calculate total commission for this guest from DB
+                    foreach ($guest['packages'] as $package) {
+                        // Use groupName (base title) for accurate lookup
+                        $pName = $package['groupName'] ?? $package['name'];
+                        // Ensure duration string matches DB format ("90 Menit")
+                        $pDuration = $package['duration'];
+                        if (is_numeric($pDuration)) {
+                            $pDuration .= ' Menit';
+                        }
+
+                        $commission = DB::table('package_durations')
+                            ->join('packages', 'packages.id', '=', 'package_durations.package_id')
+                            ->where('packages.title_id', $pName)
+                            ->where('package_durations.duration', $pDuration)
+                            ->value('commission') ?? 0;
+                        $guestCommission += $commission;
+                    }
+
+                    // If frontend didn't send commission, or it's 0, use calculated
+                    $finalCommission = ($guest['therapist_commission'] > 0) ? $guest['therapist_commission'] : $guestCommission;
+
+                    foreach ($guest['packages'] as $package) {
+                        TransactionItem::create([
+                            'transaction_id' => $transaction->id,
+                            'guest_index' => $index + 1,
+                            'guest_gender' => $guest['guestGender'] ?? 'wanita',
+                            'therapist_gender_preference' => $guest['therapistGender'] ?? 'wanita',
+                            'package_name' => $package['name'],
+                            'package_duration' => $pDuration,
+                            'price' => $package['price'],
+                            'employee_id' => !empty($guest['employee_id']) ? $guest['employee_id'] : null,
+                            'therapist_commission' => $finalCommission,
+                        ]);
+                    }
                 }
-            }
 
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transaction created successfully',
+                    'transaction' => $transaction->load('items'),
+                ]);
+            });
+        } catch (\Exception $e) {
             return response()->json([
-                'success' => true,
-                'message' => 'Transaction created successfully',
-                'transaction' => $transaction,
-            ]);
-        });
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
     }
 
     public function store(Request $request)
@@ -191,6 +223,24 @@ class TransactionController extends Controller
             ]);
 
             foreach ($validated['guests'] as $i => $guest) {
+                $guestCommission = 0;
+                foreach ($guest['packages'] as $package) {
+                    $pName = $package['groupName'] ?? $package['name'];
+                    $pDuration = $package['duration'];
+                    // Strip extra "Menit" if it's already there before appending or normalizing
+                    if (str_contains($pDuration, ' Menit')) {
+                        $pDuration = str_replace(' Menit', '', $pDuration);
+                    }
+                    $pDuration .= ' Menit';
+
+                    $commission = DB::table('package_durations')
+                        ->join('packages', 'packages.id', '=', 'package_durations.package_id')
+                        ->where('packages.title_id', $pName)
+                        ->where('package_durations.duration', $pDuration)
+                        ->value('commission') ?? 0;
+                    $guestCommission += $commission;
+                }
+
                 foreach ($guest['packages'] as $package) {
                     TransactionItem::create([
                         'transaction_id' => $transaction->id,
@@ -198,8 +248,9 @@ class TransactionController extends Controller
                         'guest_gender' => $guest['guestGender'],
                         'therapist_gender_preference' => $guest['therapistGender'],
                         'package_name' => $package['name'],
-                        'package_duration' => $package['duration'] . ' Menit',
+                        'package_duration' => (str_contains($package['duration'], ' Menit') ? $package['duration'] : $package['duration'] . ' Menit'),
                         'price' => $package['price'],
+                        'therapist_commission' => $guestCommission,
                     ]);
                 }
             }

@@ -71,11 +71,12 @@ export default function ReviewIndex({ transaction, token, already_reviewed }) {
                                 <div className="absolute inset-0 bg-green-400/10 rounded-[2rem] animate-ping" style={{ animationDuration: '2s', opacity: 0.3 }}></div>
                             </div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">
-                                Terima Kasih! 🙏
+                                {already_reviewed ? 'Anda Sudah Mereview! ✨' : 'Terima Kasih! 🙏'}
                             </h2>
                             <p className="text-gray-500 leading-relaxed">
-                                Ulasan Anda sangat berarti bagi kami.<br />
-                                Tim Jemari akan segera meninjau dan mempublikasikannya.
+                                {already_reviewed 
+                                    ? 'Anda telah memberikan ulasan untuk pesanan ini. Terima kasih banyak atas dukungan Anda!' 
+                                    : 'Ulasan Anda sangat berarti bagi kami. Tim Jemari akan segera meninjau dan mempublikasikannya.'}
                             </p>
                             <div className="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100">
                                 <p className="text-sm text-amber-700 font-medium">

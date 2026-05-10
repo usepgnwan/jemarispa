@@ -13,6 +13,7 @@ export default function Index({ auth, settings, serviceAreas }) {
         template_order: settings?.template_order || '',
         template_question: settings?.template_question || '',
         template_invoice: settings?.template_invoice || '',
+        default_commission: settings?.default_commission || 0,
     });
 
     const [newArea, setNewArea] = useState('');
@@ -108,6 +109,20 @@ export default function Index({ auth, settings, serviceAreas }) {
                                             placeholder="e.g. jemari@example.com"
                                         />
                                         {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">Default Therapist Commission (IDR)</label>
+                                        <input
+                                            type="number"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.default_commission}
+                                            onChange={e => setData('default_commission', e.target.value)}
+                                            placeholder="e.g. 30000"
+                                        />
+                                        {errors.default_commission && <div className="text-red-500 text-xs mt-1">{errors.default_commission}</div>}
                                     </div>
                                 </div>
 

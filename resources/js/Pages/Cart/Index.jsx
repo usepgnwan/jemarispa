@@ -15,13 +15,14 @@ const translations = {
         addMore: 'Tambah Paket',
         explore: 'Pilih Paket Sekarang',
         secureBooking: 'Konfirmasi Pesanan',
-        fullName: 'Nama Utama (Penanggung Jawab)',
+        fullName: 'Nama Pelanggan (Pemesan)',
         phone: 'Nomor WhatsApp',
         pax: 'Jumlah Orang (Pax)',
         guestTitle: 'Detail Orang ke-{n}',
         guestGender: 'Gender Pemesan',
         therapistGender: 'Gender Terapis',
         address: 'Alamat Lengkap',
+        addressPlaceholder: 'Alamat lengkap lokasi spa...',
         date: 'Tanggal Booking',
         time: 'Jam Booking',
         payment: 'Metode Pembayaran',
@@ -29,6 +30,8 @@ const translations = {
         sourceOptions: ['Instagram', 'Facebook', 'WhatsApp', 'Teman/Keluarga', 'Lainnya'],
         notes: 'Catatan Tambahan',
         notesPlaceholder: 'Contoh: Patokan rumah, atau permintaan khusus...',
+        namePlaceholder: 'Nama Pelanggan',
+        phonePlaceholder: '081...',
         checkout: 'Kirim Pesanan (WhatsApp)',
         modalTitle: 'Pilih Paket untuk Orang ke-{n}',
         modalDesc: 'Pilih layanan dan tentukan durasinya',
@@ -57,13 +60,14 @@ const translations = {
         addMore: 'Add Package',
         explore: 'Explore Packages Now',
         secureBooking: 'Confirm Booking',
-        fullName: 'Main Name (PIC)',
+        fullName: 'Customer Name (PIC)',
         phone: 'WhatsApp Number',
         pax: 'Number of People',
         guestTitle: 'Person {n} Details',
         guestGender: 'Guest Gender',
         therapistGender: 'Therapist Gender',
         address: 'Full Address',
+        addressPlaceholder: 'Full address for spa location...',
         date: 'Booking Date',
         time: 'Booking Time',
         payment: 'Payment Method',
@@ -71,6 +75,8 @@ const translations = {
         sourceOptions: ['Instagram', 'Facebook', 'WhatsApp', 'Friend/Family', 'Other'],
         notes: 'Additional Notes',
         notesPlaceholder: 'Example: House landmarks or special requests...',
+        namePlaceholder: 'Customer Name',
+        phonePlaceholder: '081...',
         checkout: 'Send via WhatsApp',
         modalTitle: 'Select Package for Person {n}',
         modalDesc: 'Choose treatment and duration',
@@ -93,6 +99,7 @@ const translations = {
 };
 
 export default function Index({ auth, packages = [] }) {
+    const { app_settings } = usePage().props;
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
     const [showAddModal, setShowAddModal] = useState(false);
     const [activeGuestIndex, setActiveGuestIndex] = useState(null);
@@ -132,6 +139,17 @@ export default function Index({ auth, packages = [] }) {
     const isFirstRender = useRef(true);
     const t = translations[lang];
 
+    // Page view analytic
+    useEffect(() => {
+        const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        axios.post(route('api.analytics.store'), {
+            title: 'Halaman Keranjang',
+            category: 'Cart',
+            user_agent: navigator.userAgent,
+            device_type: isMobileDevice ? 'mobile' : 'desktop'
+        }).catch(err => console.error('Analytic failed', err));
+    }, []);
+
     // Persist changes to LocalStorage
     useEffect(() => {
         if (!isFirstRender.current) {
@@ -149,28 +167,41 @@ export default function Index({ auth, packages = [] }) {
         const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
 
         if (savedCart.length > 0) {
-            setGuests(prevGuests => {
-                const newGuests = [...prevGuests];
-                // Ensure there is at least one guest
-                if (newGuests.length === 0) {
-                    newGuests.push({ guestGender: 'wanita', therapistGender: 'wanita', packages: [] });
+            // Combine all cart items into Person 1
+            const newGuests = [...guests];
+            if (newGuests.length === 0) {
+                newGuests.push({
+                    guestGender: 'wanita',
+                    therapistGender: 'wanita',
+                    packages: []
+                });
+            }
+
+            const currentPackages = newGuests[0].packages || [];
+            
+            savedCart.forEach(item => {
+                const pkgId = item.id.split('-')[0];
+                const exists = currentPackages.some(p => p.id === pkgId && p.duration === item.duration);
+                
+                if (!exists) {
+                    currentPackages.push({
+                        id: pkgId,
+                        name: item.name,
+                        groupName: item.category || item.name,
+                        price: parseFloat(item.price),
+                        duration: item.duration
+                    });
                 }
-
-                // Map spa_cart items to Orang 1 (index 0)
-                const formattedPackages = savedCart.map(item => ({
-                    name: item.name,
-                    groupName: item.category,
-                    price: parseFloat(item.price),
-                    duration: item.duration
-                }));
-
-                newGuests[0].packages = [...newGuests[0].packages, ...formattedPackages];
-                return newGuests;
             });
+
+            newGuests[0].packages = currentPackages;
+            setGuests(newGuests);
+            // Don't change PAX, keep it as it was or at least 1
+            if (pax < 1) setPax(1);
 
             localStorage.removeItem('spa_cart');
             localStorage.removeItem('pending_service');
-            isFirstRender.current = false; // Mark as dirty to trigger persistence
+            isFirstRender.current = false; 
         }
 
         if (isFirstRender.current) {
@@ -217,19 +248,27 @@ export default function Index({ auth, packages = [] }) {
         const d = pkg.durations[durationIndex];
 
         const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
+        const packageNameWithDuration = `${title} ${d.duration}`;
+
+        const newGuests = [...guests];
+        const activeGuest = newGuests[activeGuestIndex];
+
+        // Check if this specific package + duration is already added
+        const isAlreadyAdded = activeGuest.packages.some(p => p.name === packageNameWithDuration);
+        if (isAlreadyAdded) return;
 
         const packageToAdd = {
-            name: `${title} ${d.duration}`,
+            name: packageNameWithDuration,
             groupName: title,
             price: parseFloat(d.price),
             duration: d.duration
         };
 
-        const newGuests = [...guests];
-        newGuests[activeGuestIndex].packages.push(packageToAdd);
+        activeGuest.packages.push(packageToAdd);
         setGuests(newGuests);
 
         showToast(t.toastAdd.replace('{n}', activeGuestIndex + 1).replace('{name}', packageToAdd.name));
+        // Modal stays open as requested
     };
 
     const removePackageFromGuest = (guestIndex, pkgIndex) => {
@@ -267,8 +306,6 @@ export default function Index({ auth, packages = [] }) {
         return `${durationStr} ${t.minute}`;
     };
 
-    const { app_settings } = usePage().props;
-
     const handleCheckout = async (e) => {
         e.preventDefault();
         const hasPackages = guests.some(g => g.packages.length > 0);
@@ -303,7 +340,14 @@ export default function Index({ auth, packages = [] }) {
                 const transaction = response.data.transaction;
 
                 // Open WhatsApp
-                const phone = app_settings?.phone || '6289516166090';
+                let adminPhone = app_settings?.phone || '6289516166090';
+                adminPhone = adminPhone.toString().replace(/[^0-9]/g, '');
+                if (adminPhone.startsWith('0')) {
+                    adminPhone = '62' + adminPhone.substring(1);
+                } else if (adminPhone.startsWith('8')) {
+                    adminPhone = '62' + adminPhone;
+                }
+
                 const rawTemplate = app_settings?.template_order || `Halo Jemari Spa, saya ingin memesan untuk [pax] orang:\n\n[details]\n\nTotal Bayar: [total]\n\nData Penanggung Jawab:\nNama: [name]\nWhatsApp: [phone]\nAlamat: [address]\n\nDetail Kedatangan:\nTanggal: [date]\nJam: [time]\nBayar via: [payment]\nSumber: [source]\nCatatan: [notes]`;
 
                 // Complex groupings for WA tags
@@ -334,16 +378,29 @@ export default function Index({ auth, packages = [] }) {
                     order_number: transaction.order_number
                 };
 
-                let message = rawTemplate.replace(/<[^>]*>?/gm, ''); // Strip HTML
+                let message = (app_settings?.template_order || `Halo Jemari Spa, saya ingin memesan untuk [pax] orang:\n\n[details]\n\nTotal Bayar: [total]\n\nData Pelanggan:\nNama: [name]\nWhatsApp: [phone]\nAlamat: [address]\n\nDetail Kedatangan:\nTanggal: [date]\nJam: [time]\nBayar via: [payment]\nSumber: [source]\nCatatan: [notes]`);
+                
+                // Convert HTML tags to newlines for WA compatibility
+                message = message.replace(/<\/p><p>/g, '\n')
+                                 .replace(/<p>/g, '')
+                                 .replace(/<\/p>/g, '\n')
+                                 .replace(/<strong>/g, '*')
+                                 .replace(/<\/strong>/g, '*')
+                                 .replace(/<br\s*\/?>/g, '\n')
+                                 .replace(/&nbsp;/g, ' ')
+                                 .replace(/<[^>]*>?/gm, ''); // Strip all other tags
+
                 for (const key in waData) {
-                    message = message.replace(new RegExp(`\\[${key}\\]`, 'g'), waData[key]);
+                    message = message.split(`[${key}]`).join(waData[key]);
                 }
 
                 const encodedMessage = encodeURIComponent(message);
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                const waUrl = isMobile
-                    ? `https://wa.me/${phone}?text=${encodedMessage}`
-                    : `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+                const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                
+                // Use WhatsApp Web for desktop
+                const waUrl = isMobileDevice
+                    ? `https://wa.me/${adminPhone}?text=${encodedMessage}`
+                    : `https://web.whatsapp.com/send?phone=${adminPhone}&text=${encodedMessage}`;
 
                 window.open(waUrl, '_blank');
 
@@ -376,22 +433,110 @@ export default function Index({ auth, packages = [] }) {
                                 <h2 className="text-3xl font-serif italic text-zenith-charcoal">{t.title}</h2>
                             </div>
 
+                            {/* Pax Selection moved to left */}
+                            <div className="mb-6 bg-white rounded-3xl p-5 shadow-lg border border-zenith-orange/5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block">{t.pax}</label>
+                                    <span className="text-[10px] font-serif italic text-zenith-orange">{pax} {lang === 'ID' ? 'Orang' : 'Person'}</span>
+                                </div>
+                                <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-8 gap-2">
+                                    {[1, 2, 3, 4, 5, 6].map(n => (
+                                        <button
+                                            key={n}
+                                            type="button"
+                                            onClick={() => handlePaxChange(n)}
+                                            className={`h-10 rounded-xl text-[12px] font-bold transition-all border ${
+                                                pax === n 
+                                                ? 'bg-zenith-orange text-white border-zenith-orange shadow-lg shadow-zenith-orange/20' 
+                                                : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent hover:border-zenith-orange/20'
+                                            }`}
+                                        >
+                                            {n}
+                                        </button>
+                                    ))}
+                                    <div className="relative col-span-2 sm:col-span-1">
+                                        <select
+                                            className={`w-full h-10 pl-3 pr-8 rounded-xl text-[10px] font-bold appearance-none cursor-pointer border transition-all ${
+                                                pax > 6 
+                                                ? 'bg-zenith-orange text-white border-zenith-orange' 
+                                                : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent'
+                                            }`}
+                                            value={pax > 6 ? pax : ''}
+                                            onChange={(e) => handlePaxChange(e.target.value)}
+                                        >
+                                            <option value="" disabled>{lang === 'ID' ? 'Lain' : 'Other'}</option>
+                                            {[7, 8, 9, 10, 11, 12, 13, 14, 15].map(n => (
+                                                <option key={n} value={n} className="text-zenith-charcoal">{n}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                                            <span className={`material-symbols-outlined text-[14px] ${pax > 6 ? 'text-white' : 'text-zenith-charcoal/20'}`}>expand_more</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="space-y-8">
                                 {guests.map((guest, gIndex) => (
                                     <div key={gIndex} className="bg-white rounded-[2.5rem] shadow-2xl border border-zenith-orange/5 overflow-hidden">
                                         <div className="p-8 md:p-10">
-                                            <div className="flex justify-between items-center mb-8 pb-4 border-b border-zenith-orange/5">
-                                                <h3 className="text-xl font-serif italic flex items-center gap-x-3">
-                                                    <span className="h-6 w-6 bg-zenith-orange text-white rounded-full flex items-center justify-center text-[10px] font-sans not-italic">{gIndex + 1}</span>
-                                                    {t.guestTitle.replace('{n}', gIndex + 1)}
-                                                </h3>
+                                            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6 mb-8 pb-4 border-b border-zenith-orange/5">
+                                                <div className="flex flex-col gap-4">
+                                                    <h3 className="text-xl font-serif italic flex items-center gap-x-3">
+                                                        <span className="h-6 w-6 bg-zenith-orange text-white rounded-full flex items-center justify-center text-[10px] font-sans not-italic">{gIndex + 1}</span>
+                                                        {t.guestTitle.replace('{n}', gIndex + 1)}
+                                                    </h3>
+
+                                                    <div className="flex gap-x-6">
+                                                        <div className="flex flex-col gap-y-1.5">
+                                                            <label className="text-[7px] font-bold text-zenith-charcoal/30 uppercase tracking-[0.2em]">{t.guestGender}</label>
+                                                            <div className="flex bg-zenith-surface p-1 rounded-xl border border-zenith-orange/5 w-fit">
+                                                                {['pria', 'wanita'].map((g) => (
+                                                                    <button
+                                                                        key={g}
+                                                                        type="button"
+                                                                        onClick={() => updateGuest(gIndex, 'guestGender', g)}
+                                                                        className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase transition-all ${
+                                                                            guest.guestGender === g
+                                                                            ? 'bg-zenith-orange text-white shadow-sm'
+                                                                            : 'text-zenith-charcoal/30 hover:text-zenith-orange'
+                                                                        }`}
+                                                                    >
+                                                                        {t[g]}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex flex-col gap-y-1.5">
+                                                            <label className="text-[7px] font-bold text-zenith-charcoal/30 uppercase tracking-[0.2em]">{t.therapistGender}</label>
+                                                            <div className="flex bg-zenith-surface p-1 rounded-xl border border-zenith-orange/5 w-fit">
+                                                                {['pria', 'wanita'].map((g) => (
+                                                                    <button
+                                                                        key={g}
+                                                                        type="button"
+                                                                        onClick={() => updateGuest(gIndex, 'therapistGender', g)}
+                                                                        className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase transition-all ${
+                                                                            guest.therapistGender === g
+                                                                            ? 'bg-zenith-orange text-white shadow-sm'
+                                                                            : 'text-zenith-charcoal/30 hover:text-zenith-orange'
+                                                                        }`}
+                                                                    >
+                                                                        {t[g]}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 {guest.packages.length > 0 && (
                                                     <button
                                                         onClick={() => {
                                                             setActiveGuestIndex(gIndex);
                                                             setShowAddModal(true);
                                                         }}
-                                                        className="inline-flex items-center gap-x-2 px-6 py-3 rounded-full bg-zenith-orange text-white text-[9px] font-bold uppercase tracking-widest shadow-lg shadow-zenith-orange/20 hover:bg-zenith-charcoal transition-all"
+                                                        className="w-fit inline-flex items-center gap-x-2 px-6 py-3 rounded-full bg-zenith-orange text-white text-[9px] font-bold uppercase tracking-widest shadow-lg shadow-zenith-orange/20 hover:bg-zenith-charcoal transition-all"
                                                     >
                                                         <span className="material-symbols-outlined text-[16px]">add_circle</span>
                                                         {t.addMore}
@@ -423,7 +568,8 @@ export default function Index({ auth, packages = [] }) {
                                                     {guest.packages.map((pkg, pIndex) => (
                                                         <div key={pIndex} className="flex flex-col md:flex-row md:items-center bg-zenith-surface/50 p-4 rounded-2xl group transition-all hover:bg-zenith-orange/[0.03]">
                                                             <div className="flex-1">
-                                                                <h4 className="text-sm font-serif italic text-zenith-charcoal">{pkg.groupName || pkg.name}</h4>
+                                                                <span className="text-[7px] font-bold text-zenith-orange uppercase tracking-[0.2em] mb-1 block">{pkg.groupName}</span>
+                                                                <h4 className="text-sm font-serif italic text-zenith-charcoal">{pkg.name}</h4>
                                                                 <p className="md:hidden text-[10px] font-bold text-zenith-orange mt-1">{formatDuration(pkg.duration)} • Rp {pkg.price.toLocaleString('id-ID')}</p>
                                                             </div>
 
@@ -472,7 +618,7 @@ export default function Index({ auth, packages = [] }) {
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.fullName}</label>
                                             <input
-                                                required type="text" placeholder="Nama penanggung jawab"
+                                                required type="text" placeholder={t.namePlaceholder}
                                                 className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange"
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -482,69 +628,18 @@ export default function Index({ auth, packages = [] }) {
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.phone}</label>
                                             <input
-                                                required type="tel" placeholder="081..."
+                                                required type="tel" placeholder={t.phonePlaceholder}
                                                 className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange"
                                                 value={formData.phone}
                                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                             />
                                         </div>
-
-                                        <div>
-                                            <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.pax}</label>
-                                            <select
-                                                className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange appearance-none cursor-pointer"
-                                                value={pax}
-                                                onChange={(e) => handlePaxChange(e.target.value)}
-                                            >
-                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                                                    <option key={n} value={n}>{n} {t.pax.split('(')[0]}</option>
-                                                ))}
-                                            </select>
-                                        </div>
                                     </div>
-
-                                    <div className="space-y-6 pt-4">
-                                        {guests.map((guest, index) => (
-                                            <div key={index} className="p-6 rounded-[2rem] bg-zenith-surface/50 border border-zenith-orange/10">
-                                                <h4 className="text-[10px] font-bold text-zenith-orange uppercase tracking-widest mb-4 flex items-center gap-x-2">
-                                                    <span className="h-4 w-4 bg-zenith-orange text-white rounded-full flex items-center justify-center text-[8px] font-sans not-italic">{index + 1}</span>
-                                                    {t.guestTitle.replace('{n}', index + 1)}
-                                                </h4>
-
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <label className="text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest block mb-2">{t.guestGender}</label>
-                                                        <div className="flex gap-2">
-                                                            {['pria', 'wanita'].map((g) => (
-                                                                <label key={g} className="flex-1 cursor-pointer">
-                                                                    <input type="radio" name={`guestGender-${index}`} className="hidden peer" value={g} checked={guest.guestGender === g} onChange={(e) => updateGuest(index, 'guestGender', e.target.value)} />
-                                                                    <div className="text-center py-2.5 rounded-xl bg-white text-[8px] font-bold uppercase peer-checked:bg-zenith-orange peer-checked:text-white transition-all border border-transparent shadow-sm">{t[g]}</div>
-                                                                </label>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest block mb-2">{t.therapistGender}</label>
-                                                        <div className="flex gap-2">
-                                                            {['pria', 'wanita'].map((g) => (
-                                                                <label key={g} className="flex-1 cursor-pointer">
-                                                                    <input type="radio" name={`therapistGender-${index}`} className="hidden peer" value={g} checked={guest.therapistGender === g} onChange={(e) => updateGuest(index, 'therapistGender', e.target.value)} />
-                                                                    <div className="text-center py-2.5 rounded-xl bg-white text-[8px] font-bold uppercase peer-checked:bg-zenith-orange peer-checked:text-white transition-all border border-transparent shadow-sm">{t[g]}</div>
-                                                                </label>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
                                     <div className="space-y-6">
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.address}</label>
                                             <textarea
-                                                required placeholder="Alamat lengkap lokasi spa..."
+                                                required placeholder={t.addressPlaceholder}
                                                 className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange h-24"
                                                 value={formData.address}
                                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -718,12 +813,18 @@ export default function Index({ auth, packages = [] }) {
                                                     <p className="text-sm font-bold text-zenith-charcoal">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                                 </div>
 
-                                                <button
-                                                    onClick={() => addPackageToGuest(pkg)}
-                                                    className="h-10 w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20 shrink-0"
-                                                >
-                                                    <span className="material-symbols-outlined text-[20px]">add</span>
-                                                </button>
+                                                {guests[activeGuestIndex]?.packages.some(p => p.name === `${title} ${currentDuration.duration}`) ? (
+                                                    <div className="h-10 w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20 shrink-0">
+                                                        <span className="material-symbols-outlined text-[20px]">check</span>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => addPackageToGuest(pkg)}
+                                                        className="h-10 w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20 shrink-0"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[20px]">add</span>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     );

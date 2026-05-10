@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
@@ -17,7 +17,8 @@ const translations = {
         price: 'Harga',
         toastAdd: 'Berhasil menambahkan {name} ke keranjang!',
         loading: 'Memuat paket...',
-        noData: 'Belum ada paket tersedia.'
+        noData: 'Belum ada paket tersedia.',
+        selected: 'Selected'
     },
     'EN': {
         metaTitle: 'Pricing - Jemari Spa',
@@ -31,7 +32,8 @@ const translations = {
         price: 'Price',
         toastAdd: 'Successfully added {name} to cart!',
         loading: 'Loading packages...',
-        noData: 'No packages available yet.'
+        noData: 'No packages available yet.',
+        selected: 'Selected'
     }
 };
 
@@ -39,6 +41,21 @@ export default function Index({ auth, packages = [] }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
+    const [cartItems, setCartItems] = useState([]);
+
+    useEffect(() => {
+        const checkSelection = () => {
+            const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
+            const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
+            const selectedIds = new Set();
+            savedCart.forEach(item => selectedIds.add(item.id.split('-')[0]));
+            savedGuests.forEach(guest => (guest.packages || []).forEach(p => { if (p.id) selectedIds.add(String(p.id)); }));
+            setCartItems(Array.from(selectedIds));
+        };
+        checkSelection();
+        window.addEventListener('cart-updated', checkSelection);
+        return () => window.removeEventListener('cart-updated', checkSelection);
+    }, []);
 
     const t = translations[lang];
 
@@ -61,6 +78,17 @@ export default function Index({ auth, packages = [] }) {
         const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
         const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
 
+        const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
+        const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
+        const isPackageSelected = 
+            savedCart.some(item => item.id.split('-')[0] === String(pkg.id)) || 
+            savedGuests.some(guest => (guest.packages || []).some(p => String(p.id) === String(pkg.id)));
+
+        if (isPackageSelected) {
+            router.visit('/cart');
+            return;
+        }
+
         const service = {
             id: `${pkg.id}-${durationItem.duration}`,
             name: `${title} ${durationItem.duration}`,
@@ -69,11 +97,10 @@ export default function Index({ auth, packages = [] }) {
             category: category
         };
 
-        const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
         const newCart = [...savedCart, service];
         localStorage.setItem('spa_cart', JSON.stringify(newCart));
         window.dispatchEvent(new Event('cart-updated'));
-        showToast(t.toastAdd.replace('{name}', service.name));
+        router.visit('/cart');
     };
 
     return (
@@ -157,9 +184,23 @@ export default function Index({ auth, packages = [] }) {
 
                                                 <button
                                                     onClick={() => addToCart(pkg)}
-                                                    className="h-14 w-14 rounded-full bg-zenith-orange text-white flex items-center justify-center shadow-lg shadow-zenith-orange/20 hover:bg-zenith-charcoal transition-all transform hover:scale-110 active:scale-95 shrink-0"
+                                                    className={`h-12 flex items-center justify-center px-6 rounded-full transition-all transform hover:scale-105 active:scale-95 shrink-0 text-[10px] font-bold uppercase tracking-widest ${
+                                                        cartItems.includes(String(pkg.id))
+                                                        ? 'bg-zenith-orange text-white shadow-lg shadow-zenith-orange/20'
+                                                        : 'bg-zenith-surface text-zenith-orange border border-zenith-orange/20 hover:bg-zenith-orange hover:text-white'
+                                                    }`}
                                                 >
-                                                    <span className="material-symbols-outlined">add_shopping_cart</span>
+                                                    {cartItems.includes(String(pkg.id)) ? (
+                                                        <span className="flex items-center gap-2">
+                                                            <span className="material-symbols-outlined text-[16px]">done_all</span>
+                                                            {t.selected}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-2">
+                                                            <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                                                            {lang === 'EN' ? 'Add' : 'Pesan'}
+                                                        </span>
+                                                    )}
                                                 </button>
                                             </div>
                                         </div>

@@ -86,7 +86,7 @@ class TestimoniController extends Controller
         $transaction = Transaction::where('review_token', $token)->firstOrFail();
 
         if (!$transaction->isReviewTokenValid()) {
-            return Inertia::render('Review/Expired');
+            abort(404);
         }
 
         // Check if already submitted
@@ -132,9 +132,6 @@ class TestimoniController extends Controller
             'is_published' => false, // Admin must publish manually
             'transaction_id' => $transaction->id,
         ]);
-
-        // Invalidate the token so it can't be reused
-        $transaction->update(['review_token' => null, 'review_expires_at' => null]);
 
         return back()->with('success', true);
     }

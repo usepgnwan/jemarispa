@@ -18,7 +18,8 @@ import {
     ArrowDownTrayIcon,
     ShoppingBagIcon,
     StarIcon,
-    LinkIcon
+    LinkIcon,
+    ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 
 // Custom debounce function
@@ -50,7 +51,7 @@ const statusIcons = {
     failed: TrashIcon,
 };
 
-export default function Index({ transactions, filters, counts, employees }) {
+export default function Index({ transactions, filters, counts, employees, packages }) {
     const { flash, app_settings } = usePage().props;
     const [search, setSearch] = useState(filters?.search || '');
     const [limit, setLimit] = useState(filters?.limit || 10);
@@ -127,6 +128,47 @@ export default function Index({ transactions, filters, counts, employees }) {
         });
     };
 
+    const recalculateCommission = (guestIndex) => {
+        if (!packages || !selectedTransaction) return;
+
+        const guestItems = selectedTransaction.items.filter(item => item.guest_index == guestIndex);
+        let totalCommission = 0;
+
+        guestItems.forEach(item => {
+            // Robust matching: check for exact title_id or if item.package_name starts with it
+            const pkg = packages.find(p => 
+                item.package_name === p.title_id || 
+                (item.package_name && item.package_name.startsWith(p.title_id))
+            );
+
+            if (pkg) {
+                // Normalize duration: handle "90 Menit Menit" and missing "Menit"
+                let cleanDuration = item.package_duration || '';
+                cleanDuration = cleanDuration.replace(/ Menit Menit/g, ' Menit');
+                
+                // If it doesn't have "Menit" at all, try to append it if it's just numbers
+                if (cleanDuration && !cleanDuration.includes(' Menit')) {
+                    const match = cleanDuration.match(/^\d+/);
+                    if (match) cleanDuration = match[0] + ' Menit';
+                }
+
+                const duration = pkg.durations.find(d => d.duration === cleanDuration);
+                if (duration) {
+                    totalCommission += parseFloat(duration.commission) || 0;
+                }
+            }
+        });
+
+        // Optimistic local update
+        const updatedItems = selectedTransaction.items.map(it =>
+            it.guest_index == guestIndex ? { ...it, therapist_commission: totalCommission } : it
+        );
+        setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+
+        // Persist
+        guestItems.forEach(item => updateTherapistData(item.id, { therapist_commission: totalCommission }));
+    };
+
 
 
 
@@ -190,15 +232,86 @@ export default function Index({ transactions, filters, counts, employees }) {
         });
 
         const encodedMessage = encodeURIComponent(message);
-        const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
-        const waPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.substring(1) : cleanPhone;
         
-        if (!waPhone) {
-            alert('Nomor telepon tidak valid. Pastikan nomor telepon sudah terisi di pesanan atau pengaturan.');
+        if (!phone) {
+            alert('Nomor WhatsApp tidak ditemukan.');
             return;
         }
 
-        window.open(`https://wa.me/${waPhone}?text=${encodedMessage}`, '_blank');
+        // Robust Phone Sanitization
+        const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
+        let waPhone = cleanPhone;
+        if (cleanPhone.startsWith('0')) {
+            waPhone = '62' + cleanPhone.substring(1);
+        } else if (cleanPhone.startsWith('8')) {
+            waPhone = '62' + cleanPhone;
+        }
+        
+        if (!waPhone) {
+            alert('Nomor telepon tidak valid.');
+            return;
+        }
+
+        // Platform Detection
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const waBaseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send';
+        const finalUrl = isMobile 
+            ? `${waBaseUrl}${waPhone}?text=${encodedMessage}`
+            : `${waBaseUrl}?phone=${waPhone}&text=${encodedMessage}`;
+
+        const copyInvoiceText = (transaction) => {
+        if (!transaction) return;
+        
+        const phone = transaction.phone || app_settings?.phone || '';
+        let message = app_settings?.template_invoice || `Halo, Kak [name],\n\nTerlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :\n\n[details]\n\nBiaya Transport : [transport]\n\nTotal Pembayaran : [total]\n\nUntuk file invoice bisa di download di sini [link]`;
+        
+        const grouped = transaction.items?.reduce((acc, item) => {
+            if (!acc[item.guest_index]) acc[item.guest_index] = [];
+            acc[item.guest_index].push(item);
+            return acc;
+        }, {}) || {};
+
+        const detailsText = Object.entries(grouped).map(([index, items]) => {
+            const personDetails = items.map(item => `  - ${item.package_name} (${item.package_duration})`).join('\n');
+            return `*Person ${index}*:\n${personDetails}`;
+        }).join('\n\n');
+
+        const safeOrderNumber = transaction.order_number.replace(/\//g, '-');
+        const link = `${window.location.origin}/invoice/${safeOrderNumber}`;
+        
+        message = message.replace(/<\/p><p>/g, '\n')
+                        .replace(/<p>/g, '')
+                        .replace(/<\/p>/g, '\n')
+                        .replace(/<strong>/g, '*')
+                        .replace(/<\/strong>/g, '*')
+                        .replace(/<br\s*\/?>/g, '\n')
+                        .replace(/&nbsp;/g, ' ')
+                        .replace(/<[^>]*>?/gm, ''); 
+        
+        const data = {
+            name: transaction.customer_name,
+            invoice_no: transaction.order_number,
+            details: detailsText,
+            transport: formatCurrency(transaction.transport_fee || 0),
+            total: formatCurrency(parseFloat(transaction.total_price) + (parseFloat(transaction.transport_fee) || 0)),
+            link: link
+        };
+
+        Object.keys(data).forEach(key => {
+            message = message.split(`[${key}]`).join(data[key]);
+        });
+
+        navigator.clipboard.writeText(message).then(() => {
+            setToastMessage('Teks invoice berhasil disalin!');
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            alert('Gagal menyalin teks.');
+        });
+    };
+
+    window.open(finalUrl, '_blank');
     };
 
     const generateReviewLink = async (transaction) => {
@@ -429,6 +542,13 @@ export default function Index({ transactions, filters, counts, employees }) {
                                                         >
                                                             <ChatBubbleLeftRightIcon className="w-5 h-5" />
                                                         </button>
+                                                        <button 
+                                                            onClick={() => copyInvoiceText(transaction)}
+                                                            className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+                                                            title="Copy Text WA"
+                                                        >
+                                                            <ClipboardDocumentListIcon className="w-5 h-5" />
+                                                        </button>
                                                         <a 
                                                             href={route('admin.transaction.pdf', transaction.id)}
                                                             target="_blank"
@@ -575,33 +695,39 @@ export default function Index({ transactions, filters, counts, employees }) {
                                                     ))}
                                                 </select>
 
-                                                {selectedTransaction?.status === 'success' && (
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="relative flex-1">
-                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">Rp</span>
-                                                            <input 
-                                                                type="number"
-                                                                placeholder="Bayaran Terapis"
-                                                                className="w-full pl-8 pr-3 py-2 text-xs border-gray-200 rounded-xl bg-white focus:ring-zenith-orange focus:border-zenith-orange"
-                                                                value={guestItem.therapist_commission ?? ''}
-                                                                onChange={(e) => {
-                                                                    // Optimistic update for commission too
-                                                                    const val = e.target.value;
-                                                                    const updatedItems = selectedTransaction.items.map(it =>
-                                                                        it.guest_index == guestIndex ? { ...it, therapist_commission: val } : it
-                                                                    );
-                                                                    setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
-                                                                }}
-                                                                onBlur={(e) => {
-                                                                    selectedTransaction.items
-                                                                        .filter(item => item.guest_index == guestIndex)
-                                                                        .forEach(item => updateTherapistData(item.id, { therapist_commission: e.target.value }));
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-[9px] text-gray-400 font-medium">Bayaran</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="relative flex-1">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">Rp</span>
+                                                        <input 
+                                                            type="number"
+                                                            placeholder="Bayaran Terapis"
+                                                            className="w-full pl-8 pr-3 py-2 text-xs border-gray-200 rounded-xl bg-white focus:ring-zenith-orange focus:border-zenith-orange"
+                                                            value={guestItem.therapist_commission ?? ''}
+                                                            onChange={(e) => {
+                                                                // Optimistic update for commission too
+                                                                const val = e.target.value;
+                                                                const updatedItems = selectedTransaction.items.map(it =>
+                                                                    it.guest_index == guestIndex ? { ...it, therapist_commission: val } : it
+                                                                );
+                                                                setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+                                                            }}
+                                                            onBlur={(e) => {
+                                                                selectedTransaction.items
+                                                                    .filter(item => item.guest_index == guestIndex)
+                                                                    .forEach(item => updateTherapistData(item.id, { therapist_commission: e.target.value }));
+                                                            }}
+                                                        />
                                                     </div>
-                                                )}
+                                                    <span className="text-[9px] text-gray-400 font-medium">Bayaran</span>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => recalculateCommission(guestIndex)}
+                                                        className="p-1.5 hover:bg-zenith-orange/10 rounded-lg transition-colors group/btn"
+                                                        title="Reset Ke Komisi Paket"
+                                                     >
+                                                        <ArrowPathIcon className="w-3.5 h-3.5 text-gray-400 group-hover/btn:text-zenith-orange" />
+                                                     </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -719,6 +845,13 @@ export default function Index({ transactions, filters, counts, employees }) {
                             >
                                 <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
                                 Kirim Invoice (WA)
+                            </PrimaryButton>
+                            <PrimaryButton 
+                                onClick={() => copyInvoiceText(selectedTransaction)}
+                                className="bg-blue-600 hover:bg-blue-700 border-blue-600"
+                            >
+                                <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
+                                Copy Text
                             </PrimaryButton>
                         </div>
                         <div className="flex gap-2">

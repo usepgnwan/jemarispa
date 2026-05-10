@@ -49,6 +49,7 @@ class PackageController extends Controller
             'durations' => 'required|array|min:1',
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
+            'durations.*.commission' => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -65,6 +66,7 @@ class PackageController extends Controller
                 $package->durations()->create([
                     'duration' => $durationData['duration'],
                     'price' => $durationData['price'],
+                    'commission' => $durationData['commission'] ?? 0,
                 ]);
             }
         });
@@ -93,6 +95,7 @@ class PackageController extends Controller
             'durations' => 'required|array|min:1',
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
+            'durations.*.commission' => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request, $package, $validated) {
@@ -112,6 +115,7 @@ class PackageController extends Controller
                 $package->durations()->create([
                     'duration' => $durationData['duration'],
                     'price' => $durationData['price'],
+                    'commission' => $durationData['commission'] ?? 0,
                 ]);
             }
         });

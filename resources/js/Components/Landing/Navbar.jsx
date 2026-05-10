@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function Navbar({ auth, activeService, setActiveService, lang, setLang, forceSolid = false }) {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -12,14 +13,8 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
 
     const logAnalytic = (category, title) => {
         try {
-            fetch('/api/analytics', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ category, title })
-            });
+            axios.post(route('api.analytics.store'), { category, title })
+                .catch(() => {}); // Silently fail
         } catch (e) {
             // Silently fail
         }

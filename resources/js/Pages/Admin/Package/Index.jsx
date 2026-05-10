@@ -195,9 +195,17 @@ export default function Index({ packages, filters }) {
                                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Pilihan Durasi & Harga</h4>
                                         {pkg.durations && pkg.durations.length > 0 ? (
                                             pkg.durations.map((duration) => (
-                                                <div key={duration.id} className="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                                                    <span className="text-sm font-semibold text-gray-700">{duration.duration} Menit</span>
-                                                    <span className="text-sm font-bold text-[#0057B8]">{formatRupiah(duration.price)}</span>
+                                                <div key={duration.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 group/item hover:border-[#0057B8]/30 transition-colors">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-sm font-semibold text-gray-700">{duration.duration} Menit</span>
+                                                        <span className="text-sm font-bold text-[#0057B8]">{formatRupiah(duration.price)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center pt-1 border-t border-gray-200 mt-1">
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Komisi Terapis</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-[10px] font-black text-green-600">{formatRupiah(duration.commission || 0)}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             ))
                                         ) : (
