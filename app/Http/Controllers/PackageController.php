@@ -19,10 +19,12 @@ class PackageController extends Controller
             ->with('durations')
             ->where('is_signature', false)
             ->when($search, function ($query, $search) {
-                $query->where('title_id', 'like', "%{$search}%")
+                $query->where(function ($q) use ($search) {
+                    $q->where('title_id', 'like', "%{$search}%")
                       ->orWhere('title_en', 'like', "%{$search}%")
                       ->orWhere('category_id', 'like', "%{$search}%")
                       ->orWhere('category_en', 'like', "%{$search}%");
+                });
             })
             ->latest()
             ->paginate($limit)
