@@ -13,19 +13,32 @@ const fmt = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 export default function Report({ therapistRevenue, filters }) {
-    const [therapistMonth, setTherapistMonth] = useState(filters.month || new Date().toISOString().slice(0, 7));
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
     
-    const handleMonthChange = (e) => {
-        const newMonth = e.target.value;
-        setTherapistMonth(newMonth);
-        router.get(route('admin.therapist.report'), { month: newMonth }, {
+    const handleFilter = () => {
+        router.get(route('admin.therapist.report'), { start_date: startDate, end_date: endDate }, {
             preserveState: true,
             replace: true
         });
     };
 
-    const monthLabel = therapistMonth
-        ? new Date(therapistMonth + '-01').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+    const handleReset = () => {
+        const today = new Date();
+        const start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+        setStartDate(start);
+        setEndDate(end);
+        router.get(route('admin.therapist.report'), { start_date: start, end_date: end });
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    const dateLabel = filters.start_date && filters.end_date
+        ? `${formatDate(filters.start_date)} - ${formatDate(filters.end_date)}`
         : 'Semua Waktu';
 
     const totalRevenue = therapistRevenue.reduce((s, t) => s + t.revenue, 0);
@@ -45,27 +58,37 @@ export default function Report({ therapistRevenue, filters }) {
                         <h2 className="text-2xl font-black text-gray-900 tracking-tight">Laporan Pendapatan Terapis</h2>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
                         <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 shadow-sm">
                             <CalendarDaysIcon className="w-5 h-5 text-gray-400" />
                             <input
-                                type="month"
-                                value={therapistMonth}
-                                onChange={handleMonthChange}
-                                className="text-sm font-bold text-gray-700 bg-transparent border-none outline-none cursor-pointer focus:ring-0"
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="text-sm font-bold text-gray-700 bg-transparent border-none outline-none cursor-pointer focus:ring-0 p-0"
+                            />
+                            <span className="text-gray-400 font-bold px-2">-</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="text-sm font-bold text-gray-700 bg-transparent border-none outline-none cursor-pointer focus:ring-0 p-0"
                             />
                         </div>
-                        {therapistMonth && (
+                        <div className="flex items-center gap-2">
                             <button
-                                onClick={() => {
-                                    setTherapistMonth('');
-                                    router.get(route('admin.therapist.report'), { month: '' });
-                                }}
+                                onClick={handleFilter}
+                                className="px-4 py-2.5 bg-zenith-charcoal border border-transparent rounded-2xl text-sm font-bold text-white hover:bg-zenith-orange transition-all shadow-sm"
+                            >
+                                Filter
+                            </button>
+                            <button
+                                onClick={handleReset}
                                 className="px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
                             >
-                                Semua Waktu
+                                Reset
                             </button>
-                        )}
+                        </div>
                     </div>
                 </div>
 
@@ -78,7 +101,7 @@ export default function Report({ therapistRevenue, filters }) {
                         <div>
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Revenue</p>
                             <p className="text-2xl font-extrabold text-gray-900 leading-tight">{fmt(totalRevenue)}</p>
-                            <p className="text-xs text-gray-400 mt-1">{monthLabel}</p>
+                            <p className="text-xs text-gray-400 mt-1">{dateLabel}</p>
                         </div>
                     </div>
                     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
@@ -123,7 +146,7 @@ export default function Report({ therapistRevenue, filters }) {
                             <h3 className="font-bold text-gray-900">Rincian per Terapis</h3>
                         </div>
                         <span className="px-3 py-1 bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-wider rounded-full">
-                            {monthLabel}
+                            {dateLabel}
                         </span>
                     </div>
 

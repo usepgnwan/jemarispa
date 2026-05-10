@@ -430,14 +430,14 @@ export default function Index({ auth, packages = [] }) {
                         <div className="flex-1">
                             <div className="mb-6">
                                 <h1 className="text-[10px] font-bold text-zenith-orange uppercase tracking-[0.3em] mb-1">{t.step1}</h1>
-                                <h2 className="text-3xl font-serif italic text-zenith-charcoal">{t.title}</h2>
+                                <h2 className="text-3xl font-bold text-zenith-charcoal">{t.title}</h2>
                             </div>
 
                             {/* Pax Selection moved to left */}
                             <div className="mb-6 bg-white rounded-3xl p-5 shadow-lg border border-zenith-orange/5">
                                 <div className="flex items-center justify-between mb-4">
                                     <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block">{t.pax}</label>
-                                    <span className="text-[10px] font-serif italic text-zenith-orange">{pax} {lang === 'ID' ? 'Orang' : 'Person'}</span>
+                                    <span className="text-[10px] font-bold text-zenith-orange">{pax} {lang === 'ID' ? 'Orang' : 'Person'}</span>
                                 </div>
                                 <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-8 gap-2">
                                     {[1, 2, 3, 4, 5, 6].map(n => (
@@ -480,7 +480,7 @@ export default function Index({ auth, packages = [] }) {
                                         <div className="p-8 md:p-10">
                                             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6 mb-8 pb-4 border-b border-zenith-orange/5">
                                                 <div className="flex flex-col gap-4">
-                                                    <h3 className="text-xl font-serif italic flex items-center gap-x-3">
+                                                    <h3 className="text-xl font-bold flex items-center gap-x-3">
                                                         <span className="h-6 w-6 bg-zenith-orange text-white rounded-full flex items-center justify-center text-[10px] font-sans not-italic">{gIndex + 1}</span>
                                                         {t.guestTitle.replace('{n}', gIndex + 1)}
                                                     </h3>
@@ -565,7 +565,7 @@ export default function Index({ auth, packages = [] }) {
                                                         <div key={pIndex} className="flex flex-col md:flex-row md:items-center bg-zenith-surface/50 p-4 rounded-2xl group transition-all hover:bg-zenith-orange/[0.03]">
                                                             <div className="flex-1">
                                                                 <span className="text-[7px] font-bold text-zenith-orange uppercase tracking-[0.2em] mb-1 block">{pkg.groupName}</span>
-                                                                <h4 className="text-sm font-serif italic text-zenith-charcoal">{pkg.name}</h4>
+                                                                <h4 className="text-sm text-zenith-charcoal">{pkg.name}</h4>
                                                                 <p className="md:hidden text-[10px] font-bold text-zenith-orange mt-1">{formatDuration(pkg.duration)} • Rp {pkg.price.toLocaleString('id-ID')}</p>
                                                             </div>
 
@@ -595,7 +595,7 @@ export default function Index({ auth, packages = [] }) {
                                 {guests.length > 0 && (
                                     <div className="bg-zenith-charcoal rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl flex justify-between items-center mt-12 border-4 border-zenith-orange/20">
                                         <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">{t.total}</span>
-                                        <span className="text-3xl md:text-4xl font-serif italic text-zenith-orange">Rp {calculateTotal().toLocaleString('id-ID')}</span>
+                                        <span className="text-3xl md:text-4xl font-bold text-zenith-orange">Rp {calculateTotal().toLocaleString('id-ID')}</span>
                                     </div>
                                 )}
                             </div>
@@ -605,7 +605,7 @@ export default function Index({ auth, packages = [] }) {
                         <div className="w-full lg:w-[480px]">
                             <div className="mb-6">
                                 <h1 className="text-[10px] font-bold text-zenith-orange uppercase tracking-[0.3em] mb-1">{t.step2}</h1>
-                                <h2 className="text-3xl font-serif italic text-zenith-charcoal">{t.secureBooking}</h2>
+                                <h2 className="text-3xl font-bold text-zenith-charcoal">{t.secureBooking}</h2>
                             </div>
 
                             <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl border border-zenith-orange/5">
@@ -734,7 +734,7 @@ export default function Index({ auth, packages = [] }) {
                         <div className="p-8 border-b border-zenith-orange/5">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h3 className="text-xl font-serif italic text-zenith-charcoal">{t.modalTitle.replace('{n}', activeGuestIndex + 1)}</h3>
+                                    <h3 className="text-xl font-bold text-zenith-charcoal">{t.modalTitle.replace('{n}', activeGuestIndex + 1)}</h3>
                                     <p className="text-zenith-charcoal/40 text-[9px] font-bold uppercase tracking-widest mt-1">{t.modalDesc}</p>
                                 </div>
                                 <button
@@ -780,7 +780,7 @@ export default function Index({ auth, packages = [] }) {
                                     return (
                                         <div key={pkg.id} className="p-5 rounded-2xl bg-zenith-surface/50 border border-transparent hover:border-zenith-orange/20 transition-all flex flex-col md:flex-row gap-4 items-start md:items-center">
                                             <div className="flex-1 w-full">
-                                                <h4 className="text-lg font-serif italic text-zenith-charcoal">{title}</h4>
+                                                <h4 className="text-lg text-zenith-charcoal">{title}</h4>
                                                 <p className="text-[10px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{category}</p>
                                             </div>
 

@@ -391,7 +391,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                         <div className="p-8">
                                             <div className="flex justify-between items-start mb-8">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-zenith-charcoal text-white rounded-2xl flex items-center justify-center font-serif italic text-xl shadow-lg">
+                                                    <div className="w-12 h-12 bg-zenith-charcoal text-white rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg">
                                                         {gIndex + 1}
                                                     </div>
                                                     <div>
@@ -531,7 +531,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                         </div>
                                         <div className="pt-4 border-t border-white/10 flex justify-between items-end">
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Total Bayar</span>
-                                            <span className="text-3xl font-serif italic text-zenith-orange">Rp {calculateGrandTotal().toLocaleString('id-ID')}</span>
+                                            <span className="text-3xl font-bold text-zenith-orange">Rp {calculateGrandTotal().toLocaleString('id-ID')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -771,7 +771,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                     <div className="flex items-center gap-6">
                                         <div className="text-center">
                                             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{new Date(t.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
-                                            <p className="text-sm font-serif italic font-bold text-zenith-charcoal mt-1">{t.order_number.split('/').pop()}</p>
+                                            <p className="text-sm font-bold text-zenith-charcoal mt-1">{t.order_number.split('/').pop()}</p>
                                         </div>
                                         <div className="h-8 w-px bg-gray-100"></div>
                                         <div>

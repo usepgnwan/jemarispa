@@ -152,7 +152,7 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
                 <div className="mb-4 md:mb-6">
                     <div className="flex items-baseline gap-1 mb-1 md:mb-3">
                         <span className="text-[10px] md:text-sm font-bold text-gray-400">Rp</span>
-                        <span className="text-3xl md:text-5xl lg:text-6xl font-serif italic text-zenith-charcoal">
+                        <span className="text-3xl md:text-5xl lg:text-6xl font-bold text-zenith-charcoal">
                             {(parseFloat(currentVariant.price) / 1000).toFixed(0)}k
                         </span>
                     </div>
@@ -177,7 +177,7 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
                     </div>
                 </div>
 
-                <h4 className="text-sm md:text-xl font-serif italic text-zenith-charcoal mb-2 md:mb-4 truncate">{title}</h4>
+                <h4 className="text-sm md:text-xl text-zenith-charcoal mb-2 md:mb-4 truncate">{title}</h4>
                 
                 <div 
                     className="text-[10px] md:text-xs text-gray-500 mb-6 md:mb-10 font-sans leading-relaxed flex-1 line-clamp-3 md:line-clamp-4 overflow-hidden"
@@ -203,7 +203,7 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
         <section id="pricing" className="py-section bg-zenith-surface relative overflow-hidden">
             <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center mb-12 md:mb-20">
                 <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.tagline}</span>
-                <h2 className="text-4xl md:text-5xl font-serif text-zenith-charcoal italic">{t.title}</h2>
+                <h2 className="text-4xl md:text-5xl font-bold text-zenith-charcoal">{t.title}</h2>
             </div>
 
             <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">

@@ -336,11 +336,15 @@ class TransactionController extends Controller
     }
     public function therapistReport(Request $request)
     {
-        $month = $request->query('month', now()->format('Y-m'));
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
 
-        $monthFilter = $month
-            ? "AND TO_CHAR(t.created_at, 'YYYY-MM') = '" . addslashes($month) . "'"
-            : '';
+        if (!$startDate || !$endDate) {
+            $startDate = now()->startOfMonth()->format('Y-m-d');
+            $endDate = now()->endOfMonth()->format('Y-m-d');
+        }
+
+        $dateFilter = "AND t.schedule_date >= '" . addslashes($startDate) . "' AND t.schedule_date <= '" . addslashes($endDate) . "'";
 
         $rows = DB::select("
             WITH revenue AS (
@@ -352,7 +356,7 @@ class TransactionController extends Controller
                 JOIN transactions t ON t.id = ti.transaction_id
                 WHERE ti.employee_id IS NOT NULL
                   AND t.status = 'success'
-                  {$monthFilter}
+                  {$dateFilter}
                 GROUP BY ti.employee_id
             ),
             deduped_commission AS (
@@ -365,7 +369,7 @@ class TransactionController extends Controller
                 JOIN transactions t ON t.id = ti.transaction_id
                 WHERE ti.employee_id IS NOT NULL
                   AND t.status = 'success'
-                  {$monthFilter}
+                  {$dateFilter}
                 GROUP BY ti.employee_id, ti.transaction_id, ti.guest_index
             ),
             commission_per_employee AS (
@@ -374,15 +378,15 @@ class TransactionController extends Controller
                 GROUP BY employee_id
             )
             SELECT
-                r.employee_id,
+                e.id AS employee_id,
                 e.name,
-                r.total_revenue,
+                COALESCE(r.total_revenue, 0) AS total_revenue,
                 COALESCE(c.total_commission, 0) AS total_commission,
-                r.job_count
-            FROM revenue r
-            JOIN employees e ON e.id = r.employee_id
-            LEFT JOIN commission_per_employee c ON c.employee_id = r.employee_id
-            ORDER BY r.total_revenue DESC
+                COALESCE(r.job_count, 0) AS job_count
+            FROM employees e
+            LEFT JOIN revenue r ON r.employee_id = e.id
+            LEFT JOIN commission_per_employee c ON c.employee_id = e.id
+            ORDER BY total_revenue DESC, e.name ASC
         ");
 
         $therapistRevenue = collect($rows)->map(fn($row) => [
@@ -396,7 +400,8 @@ class TransactionController extends Controller
         return Inertia::render('Admin/Therapist/Report', [
             'therapistRevenue' => $therapistRevenue,
             'filters' => [
-                'month' => $month
+                'start_date' => $startDate,
+                'end_date' => $endDate
             ]
         ]);
     }

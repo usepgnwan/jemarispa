@@ -8,7 +8,7 @@
     }
     
     body {
-        @apply bg-[#fef8f7] text-[#1d1b1b];
+        @apply font-sans bg-[#fef8f7] text-[#1d1b1b];
     }
 }
 

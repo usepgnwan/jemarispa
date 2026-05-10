@@ -113,7 +113,7 @@ export default function Index({ auth, packages = [] }) {
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-16">
                         <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.badge}</span>
-                        <h1 className="text-4xl md:text-6xl font-serif text-zenith-charcoal italic mb-6">{t.title}</h1>
+                        <h1 className="text-4xl md:text-6xl font-bold text-zenith-charcoal mb-6">{t.title}</h1>
                         <p className="text-zenith-charcoal/40 text-sm max-w-lg mx-auto">{t.desc}</p>
                     </div>
 
@@ -140,7 +140,7 @@ export default function Index({ auth, packages = [] }) {
                                                 <span className="px-3 py-1 rounded-full bg-zenith-dim/10 text-[8px] font-bold text-zenith-charcoal/60 uppercase tracking-wider mb-3 inline-block">
                                                     {category || 'Package'}
                                                 </span>
-                                                <h3 className="text-xl md:text-2xl font-serif text-zenith-charcoal italic group-hover:text-zenith-orange transition-colors">
+                                                <h3 className="text-xl md:text-2xl text-zenith-charcoal group-hover:text-zenith-orange transition-colors">
                                                     {title}
                                                 </h3>
                                             </div>
@@ -177,7 +177,7 @@ export default function Index({ auth, packages = [] }) {
 
                                                 <div className="text-right min-w-[120px] md:w-40 pr-0 md:pr-4">
                                                     <p className="md:hidden text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest mb-1">{t.investment}</p>
-                                                    <p className="text-2xl font-serif text-zenith-charcoal">
+                                                    <p className="text-2xl font-bold text-zenith-charcoal">
                                                         Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}
                                                     </p>
                                                 </div>
