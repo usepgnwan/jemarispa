@@ -10,6 +10,7 @@ class Setting extends Model
         'description_id',
         'description_en',
         'phone',
+        'email',
         'template_order',
         'template_question',
         'template_invoice',

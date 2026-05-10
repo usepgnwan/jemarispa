@@ -51,9 +51,17 @@ Route::middleware('auth')->group(function () {
 
     // Transaction management
     Route::get('admin/transaction', [TransactionController::class, 'index'])->name('admin.transaction.index');
-    Route::patch('admin/transaction/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('admin.transaction.update-status');
+    Route::patch('admin/transaction/{transaction}', [TransactionController::class, 'update'])->name('admin.transaction.update');
+    Route::patch('admin/transaction-items/{item}', [TransactionController::class, 'updateItem'])->name('admin.transaction_item.update');
+    Route::get('admin/transaction/{transaction}/pdf', [TransactionController::class, 'downloadPdf'])->name('admin.transaction.pdf');
     Route::delete('admin/transaction/{transaction}', [TransactionController::class, 'destroy'])->name('admin.transaction.destroy');
+
+    // POS routes
+    Route::get('admin/pos', [TransactionController::class, 'pos'])->name('admin.pos.index');
+    Route::post('admin/pos', [TransactionController::class, 'storePos'])->name('admin.pos.store');
 });
+
+Route::get('invoice/{order_number}', [TransactionController::class, 'publicPdf'])->name('invoice.public');
 
 Route::get('/blog', function () {
     return Inertia::render('Blog/Index');

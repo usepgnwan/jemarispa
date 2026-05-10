@@ -26,6 +26,7 @@ class SettingController extends Controller
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
             'phone' => 'nullable|string',
+            'email' => 'nullable|string|email',
             'template_order' => 'nullable|string',
             'template_question' => 'nullable|string',
             'template_invoice' => 'nullable|string',

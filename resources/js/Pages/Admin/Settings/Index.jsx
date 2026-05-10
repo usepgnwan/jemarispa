@@ -7,6 +7,7 @@ import 'react-quill/dist/quill.snow.css';
 export default function Index({ auth, settings, serviceAreas }) {
     const { data, setData, post, processing, errors } = useForm({
         phone: settings?.phone || '',
+        email: settings?.email || '',
         description_id: settings?.description_id || '',
         description_en: settings?.description_en || '',
         template_order: settings?.template_order || '',
@@ -85,16 +86,29 @@ export default function Index({ auth, settings, serviceAreas }) {
                             </header>
 
                             <form onSubmit={submitSettings} className="mt-6 space-y-6">
-                                <div>
-                                    <label className="block font-medium text-sm text-gray-700">WhatsApp Phone Number</label>
-                                    <input
-                                        type="text"
-                                        className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        value={data.phone}
-                                        onChange={e => setData('phone', e.target.value)}
-                                        placeholder="e.g. 62895..."
-                                    />
-                                    {errors.phone && <div className="text-red-500 text-xs mt-1">{errors.phone}</div>}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">WhatsApp Phone Number</label>
+                                        <input
+                                            type="text"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.phone}
+                                            onChange={e => setData('phone', e.target.value)}
+                                            placeholder="e.g. 62895..."
+                                        />
+                                        {errors.phone && <div className="text-red-500 text-xs mt-1">{errors.phone}</div>}
+                                    </div>
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">Business Email</label>
+                                        <input
+                                            type="email"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.email}
+                                            onChange={e => setData('email', e.target.value)}
+                                            placeholder="e.g. jemari@example.com"
+                                        />
+                                        {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

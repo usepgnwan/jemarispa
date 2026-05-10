@@ -31,7 +31,7 @@ export default function Sidebar({ collapsed }) {
         { 
             section: 'PENGGUNA',
             items: [
-                { name: 'Fitur POS', href: '#', icon: CalculatorIcon, current: false },
+                { name: 'Fitur POS', href: route('admin.pos.index'), icon: CalculatorIcon, current: route().current('admin.pos.*') },
                 { name: 'Pesanan', href: route('admin.transaction.index'), icon: ShoppingCartIcon, current: route().current('admin.transaction.*') },
             ]
         },
