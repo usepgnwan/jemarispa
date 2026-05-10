@@ -2,14 +2,14 @@ import { StarIcon } from '@heroicons/react/24/solid';
 
 const translations = {
     'ID': {
-        tagline: 'Testimoni Pelanggan',
-        title: 'Suara Ketenangan',
-        subtitle: 'Kisah nyata dari mereka yang telah merasakan sentuhan Jemari.'
+        tagline: '',
+        title: 'Pengalaman Pelanggan',
+        subtitle: ''
     },
     'EN': {
-        tagline: 'Customer Testimonials',
-        title: 'Voices of Serenity',
-        subtitle: 'Real stories from those who have experienced the Jemari touch.'
+        tagline: '',
+        title: 'Customer Stories',
+        subtitle: ''
     }
 };
 

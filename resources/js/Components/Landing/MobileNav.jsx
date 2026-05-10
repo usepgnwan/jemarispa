@@ -1,9 +1,19 @@
 import { Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
-export default function MobileNav() {
+export default function MobileNav({ setActiveService }) {
     const [cartCount, setCartCount] = useState(0);
     const [activeHash, setActiveHash] = useState('');
+    
+    const handleHomeClick = () => {
+        if (typeof window !== 'undefined') {
+            if (window.location.pathname === '/') {
+                if (setActiveService) setActiveService('Default');
+            } else {
+                localStorage.setItem('pending_service', 'Default');
+            }
+        }
+    };
     
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
@@ -61,6 +71,7 @@ export default function MobileNav() {
                         <Link 
                             key={i} 
                             href={item.href} 
+                            onClick={item.label === 'Home' ? handleHomeClick : undefined}
                             className="flex flex-col items-center gap-y-1 relative group"
                         >
                             <div className="relative">

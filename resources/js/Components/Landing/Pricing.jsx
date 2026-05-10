@@ -3,8 +3,8 @@ import { useState, useMemo, useEffect } from 'react';
 
 const translations = {
     'ID': {
-        tagline: 'Invitations',
-        title: 'Select Your Journey',
+        tagline: '',
+        title: 'Pilih Perawatan Terbaik',
         durationLabel: 'Durasi:',
         bookBtn: 'Pesan Paket',
         seeAll: 'Lihat Semua Paket',
@@ -13,8 +13,8 @@ const translations = {
         selected: 'Selected'
     },
     'EN': {
-        tagline: 'Invitations',
-        title: 'Select Your Journey',
+        tagline: '',
+        title: 'Choose Our Best Treatment',
         durationLabel: 'Duration:',
         bookBtn: 'Book This Path',
         seeAll: 'See All Packages',

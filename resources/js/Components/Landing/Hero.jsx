@@ -4,88 +4,88 @@ import { Link } from '@inertiajs/react';
 const serviceContent = {
     'ID': {
         'Default': {
-            title: <>Nikmati Hidup Sehat <br /><span className="italic text-zenith-orange font-normal">Tanpa Keluar Rumah</span></>,
-            subtitle: "Jemari Home Spa Bandung",
-            desc: "Nikmati perawatan spa profesional di kenyamanan rumah Anda. Terapis bersertifikat, peralatan higienis, dan pengalaman relaksasi yang menenangkan. Kami hadir untuk Anda.",
+            title: "Nikmati Layanan Massage & Spa Tanpa Keluar Rumah",
+            subtitle: "Home Service Massage Bandung Cimahi",
+            desc: "Dengan terapis terlatih dan berpengalaman, jemari home spa hadir untuk memberikan layanan spa dan pijat berkualitas ke rumah, hotel, atau kantor Anda",
             bg: "/images/services.jpg"
         },
         'Pijat Tradisional': {
             title: <>Ingin Pijat Tradisional <br /><span className="italic text-zenith-orange font-normal">Tanpa Harus Keluar Rumah?</span></>,
-            subtitle: "Jemari Home Spa Bandung",
-            desc: "Menghadirkan layanan jasa Pijat panggilan Profesional. Terapis bersertifikat and peralatan higienis. Kami siap datang ke rumah, hotel, atau kantor Anda untuk memberikan perawatan yang aman dan nyaman.",
+            subtitle: "Home Service Massage Bandung Cimahi",
+            desc: "Menghadirkan layanan jasa Pijat panggilan Profesional. Terapis bersertifikat and peralatan higienis. Kami siap datang ke rumah, hotel, atau kantor Anda untuk memberikan perawatan yang aman and nyaman.",
             bg: "/images/pijat tradisional.jpg"
         },
         'Bekam': {
             title: <>Layanan Bekam Profesional <br /><span className="italic text-zenith-orange font-normal">Langsung di Rumah Anda</span></>,
-            subtitle: "Jemari Home Spa Bandung",
-            desc: "Layanan jasa bekam panggilan Profesional. Terapis bersertifikat and peralatan higienis. Kami siap datang ke rumah, hotel, atau kantor Anda untuk memberikan perawatan bekam yang aman dan menenangkan.",
+            subtitle: "Home Service Massage Bandung Cimahi",
+            desc: "Layanan jasa bekam panggilan Profesional. Terapis bersertifikat and peralatan higienis. Kami siap datang ke rumah, hotel, atau kantor Anda untuk memberikan perawatan bekam yang aman and menenangkan.",
             bg: "/images/bekam.webp"
         },
         'Kerokan': {
             title: <>Layanan Kerokan Panggilan <br /><span className="italic text-zenith-orange font-normal">Tradisional & Higienis</span></>,
-            subtitle: "Jemari Home Spa Bandung",
-            desc: "Ingin kerokan tanpa harus keluar rumah? Jemari Home Spa hadir sebagai solusi kesehatan Anda. Terapi kerokan profesional untuk meredakan masuk angin dan pegal-pegal dengan teknik yang aman.",
+            subtitle: "Home Service Massage Bandung Cimahi",
+            desc: "Ingin kerokan tanpa harus keluar rumah? Jemari Home Spa hadir sebagai solusi kesehatan Anda. Terapi kerokan profesional untuk meredakan masuk angin and pegal-pegal dengan teknik yang aman.",
             bg: "/images/kerokan.jpg"
         },
         'Totok Wajah': {
             title: <>Ingin Totok Wajah <br /><span className="italic text-zenith-orange font-normal">Agar Wajah Lebih Glowing?</span></>,
-            subtitle: "Jemari Home Spa Bandung",
-            desc: "Jemari Home Spa hadir sebagai solusi kecantikan Anda. Terapi totok wajah profesional untuk membantu wajah lebih segar, bercahaya, dan rileks tanpa perlu menembus kemacetan kota.",
+            subtitle: "Home Service Massage Bandung Cimahi",
+            desc: "Jemari Home Spa hadir sebagai solusi kecantikan Anda. Terapi totok wajah profesional untuk membantu wajah lebih segar, bercahaya, and rileks tanpa perlu menembus kemacetan kota.",
             bg: "/images/totok wajah.jpg"
         },
         'Pijat Refleksi': {
             title: <>Pulihkan Keseimbangan Tubuh <br /><span className="italic text-zenith-orange font-normal">Dengan Pijat Refleksi</span></>,
-            subtitle: "Jemari Home Spa Bandung",
-            desc: "Tubuh terasa lelah atau kaki pegal? Layanan panggilan ke rumah pijat refleksi profesional untuk melancarkan peredaran darah dan mengembalikan keseimbangan energi tubuh Anda.",
+            subtitle: "Home Service Massage Bandung Cimahi",
+            desc: "Tubuh terasa lelah atau kaki pegal? Layanan panggilan ke rumah pijat refleksi profesional untuk melancarkan peredaran darah and mengembalikan keseimbangan energi tubuh Anda.",
             bg: "/images/pijat refleksi.jpg"
         },
         'Pijat Ibu Hamil': {
             title: <>Relaksasi Khusus Ibu Hamil <br /><span className="italic text-zenith-orange font-normal">Aman & Menenangkan</span></>,
-            subtitle: "Jemari Home Spa Bandung",
-            desc: "Dirancang khusus untuk meredakan pegal dan stres selama kehamilan. Dengan terapis wanita bersertifikat dan teknik pijat yang lembut, Anda bisa menikmati pijat aman di rumah.",
+            subtitle: "Home Service Massage Bandung Cimahi",
+            desc: "Dirancang khusus untuk meredakan pegal and stres selama kehamilan. Dengan terapis wanita bersertifikat and teknik pijat yang lembut, Anda bisa menikmati pijat aman di rumah.",
             bg: "/images/pijat ibu hamil.jpg"
         }
     },
     'EN': {
         'Default': {
-            title: <>Enjoy Healthy Living <br /><span className="italic text-zenith-orange font-normal">Without Leaving Home</span></>,
-            subtitle: "Jemari Home Spa Bandung",
-            desc: "Professional spa treatments in the comfort of your home. Certified therapists, hygienic equipment, and a soothing relaxation experience. We are here for you.",
+            title: "Enjoy Spa & Massage Treatment Without Leaving Home",
+            subtitle: "Home Service Massage Bandung Cimahi",
+            desc: "Enjoy best spa treatment and massage services from our well trained and experienced masseur at your home, hotel or office.",
             bg: "/images/services.jpg"
         },
         'Pijat Tradisional': {
             title: <>Traditional Massage <br /><span className="italic text-zenith-orange font-normal">At Your Doorstep</span></>,
-            subtitle: "Jemari Home Spa Bandung",
+            subtitle: "Home Service Massage Bandung Cimahi",
             desc: "Professional on-call massage services. Certified therapists and hygienic equipment. Ready to visit your home, hotel, or office for a safe and comfortable treatment.",
             bg: "/images/pijat tradisional.jpg"
         },
         'Bekam': {
             title: <>Professional Cupping <br /><span className="italic text-zenith-orange font-normal">Service at Your Home</span></>,
-            subtitle: "Jemari Home Spa Bandung",
+            subtitle: "Home Service Massage Bandung Cimahi",
             desc: "Professional mobile cupping services. Certified therapists and hygienic equipment. Safe, sterile, and soothing treatments at your preferred location.",
             bg: "/images/bekam.webp"
         },
         'Kerokan': {
             title: <>Traditional Scraping <br /><span className="italic text-zenith-orange font-normal">Therapy & Hygiene</span></>,
-            subtitle: "Jemari Home Spa Bandung",
+            subtitle: "Home Service Massage Bandung Cimahi",
             desc: "Relieve colds and muscle aches with our professional scraping therapy. Safe techniques delivered directly to your home by experienced therapists.",
             bg: "/images/kerokan.jpg"
         },
         'Totok Wajah': {
             title: <>Face Acupressure <br /><span className="italic text-zenith-orange font-normal">For a Glowing Look</span></>,
-            subtitle: "Jemari Home Spa Bandung",
+            subtitle: "Home Service Massage Bandung Cimahi",
             desc: "Professional facial acupressure to help your face look fresher, glowing, and relaxed without needing to face city traffic.",
             bg: "/images/totok wajah.jpg"
         },
         'Pijat Refleksi': {
             title: <>Restore Your Balance <br /><span className="italic text-zenith-orange font-normal">With Reflexology</span></>,
-            subtitle: "Jemari Home Spa Bandung",
+            subtitle: "Home Service Massage Bandung Cimahi",
             desc: "Feeling tired or sore? Our professional mobile reflexology service improves blood circulation and restores your body's energy balance.",
             bg: "/images/pijat refleksi.jpg"
         },
         'Pijat Ibu Hamil': {
             title: <>Specialized Pregnancy <br /><span className="italic text-zenith-orange font-normal">Safe & Soothing Relaxation</span></>,
-            subtitle: "Jemari Home Spa Bandung",
+            subtitle: "Home Service Massage Bandung Cimahi",
             desc: "Specifically designed to relieve aches and stress during pregnancy. Safe home treatments with certified female therapists and gentle techniques.",
             bg: "/images/pijat ibu hamil.jpg"
         }
@@ -108,7 +108,7 @@ export default function Hero({ activeService, lang }) {
                 if (pkg) {
                     setDynamicContent({
                         title: lang === 'ID' ? pkg.title_id : (pkg.title_en || pkg.title_id),
-                        subtitle: "Jemari Home Spa Bandung",
+                        subtitle: "Home Service Massage Bandung Cimahi",
                         desc: lang === 'ID' ? pkg.description_id : (pkg.description_en || pkg.description_id),
                         bg: pkg.image ? `/storage/${pkg.image}` : (staticContent?.bg || "/images/services.jpg"),
                         isHTML: true
@@ -212,8 +212,8 @@ export default function Hero({ activeService, lang }) {
                 <div className="mx-auto max-w-xl px-6">
                     <div className="grid grid-cols-3 gap-x-4 items-center justify-center bg-black/20 backdrop-blur-2xl border border-white/20 rounded-2xl p-6 shadow-2xl scale-90">
                         <div className="text-center">
-                            <p className="text-white text-2xl font-serif italic">12+</p>
-                            <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Layanan' : 'Practices'}</p>
+                            <p className="text-white text-2xl font-serif italic">2021</p>
+                            <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Berdiri Sejak' : 'Since 2021'}</p>
                         </div>
                         <div className="h-8 w-px bg-white/20 mx-auto"></div>
                         <div className="text-center">
@@ -221,7 +221,7 @@ export default function Hero({ activeService, lang }) {
                                 <p className="text-white text-2xl font-serif italic">4.9</p>
                                 <span className="material-symbols-outlined text-zenith-gold text-lg">star</span>
                             </div>
-                            <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Rating Member' : 'Member Rating'}</p>
+                            <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Penilaian Pengguna' : 'User Rating'}</p>
                         </div>
                     </div>
                 </div>

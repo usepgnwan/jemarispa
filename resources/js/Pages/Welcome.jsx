@@ -88,10 +88,16 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                     <div className="mx-auto max-w-7xl px-6 lg:px-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                             <div>
-                                <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-6 block">Seamless Booking</span>
-                                <h2 className="text-4xl md:text-6xl font-serif text-zenith-charcoal italic mb-8 leading-tight">Book Your Escape <br />From Any Platform.</h2>
+                                <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-6 block">
+                                    {lang === 'ID' ? 'Dapatkan Layanan Terbaik Kami Dari Berbagai Platform' : 'Book Our Best Treatments From Any Platform'}
+                                </span>
+                                <h2 className="text-4xl md:text-6xl font-serif text-zenith-charcoal italic mb-8 leading-tight">
+                                    {lang === 'ID' ? 'Pesan Sekarang.' : 'Book Now.'}
+                                </h2>
                                 <p className="text-lg text-gray-500 mb-12 max-w-md font-sans leading-relaxed">
-                                    Jemari Spa kini tersedia di platform perjalanan favorit Anda. Nikmati kemudahan pemesanan dan konfirmasi instan di mana pun Anda berada.
+                                    {lang === 'ID' 
+                                        ? 'Anda bisa mendapatkan layanan Kami dengan melakukan pembelian voucher melalui Traveloka, Tiket.com dan Klook' 
+                                        : 'You can secure services by purchasing vouchers through our authorized partners: Traveloka, Tiket.com, and Klook'}
                                 </p>
                                 <div className="flex flex-wrap gap-4">
                                     {platforms.map(platform => (
@@ -192,7 +198,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
             </main>
 
             <FloatingWhatsApp />
-            <MobileNav />
+            <MobileNav setActiveService={setActiveService} />
             <Footer />
         </div>
     );

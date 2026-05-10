@@ -92,6 +92,16 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
     const activeClass = "text-zenith-orange font-black";
     const inactiveClass = isSolid ? "text-zenith-charcoal/60 hover:text-zenith-orange" : "text-white/60 hover:text-white";
 
+    const handleHomeClick = () => {
+        if (typeof window !== 'undefined') {
+            if (window.location.pathname === '/') {
+                if (setActiveService) setActiveService('Default');
+            } else {
+                localStorage.setItem('pending_service', 'Default');
+            }
+        }
+    };
+
     return (
         <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${isSolid ? 'py-2 md:py-4' : 'py-4 md:py-8'}`}>
             <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
@@ -100,14 +110,17 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                     ? 'h-16 bg-white/80 backdrop-blur-xl border-zenith-orange/10 shadow-xl shadow-zenith-charcoal/5'
                     : 'h-20 bg-white/5 backdrop-blur-md border-white/10'
                     }`}>
-                    <Link href="/" className="flex items-center gap-x-2 py-2">
+                    <Link href="/" onClick={handleHomeClick} className="flex items-center gap-x-2 py-2">
                         <img src="/images/Jemari Logo - 1.png" alt="Jemari Spa" className={`h-12 w-auto transition-all duration-500 ${isSolid ? 'brightness-100' : 'brightness-0 invert'}`} />
                     </Link>
 
                     <div className="flex items-center gap-x-10 text-[10px] font-bold tracking-[0.2em] uppercase transition-colors duration-500">
                         <Link 
                             href="/" 
-                            onClick={() => logAnalytic('Menu', 'Klik Beranda')}
+                            onClick={() => {
+                                handleHomeClick();
+                                logAnalytic('Menu', 'Klik Beranda');
+                            }}
                             className={`transition-colors ${isActive('/') ? activeClass : inactiveClass}`}
                         >
                             {t.home}
@@ -224,7 +237,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                         ))}
                     </div>
 
-                    <Link href="/" className="flex items-center">
+                    <Link href="/" onClick={handleHomeClick} className="flex items-center">
                         <img src="/images/Jemari Logo - 1.png" alt="Jemari Spa" className={`h-8 w-auto transition-all duration-500 ${isSolid ? 'brightness-100' : 'brightness-0 invert'}`} />
                     </Link>
 
