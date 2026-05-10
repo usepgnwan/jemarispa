@@ -104,6 +104,19 @@ export default function Hero({ activeService, lang }) {
 
     const b = buttons[lang] || buttons['ID'];
 
+    const logAnalytic = (category, title) => {
+        try {
+            fetch('/api/analytics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                body: JSON.stringify({ category, title })
+            });
+        } catch (e) {}
+    };
+
     useEffect(() => {
         setIsVisible(false);
         const timer = setTimeout(() => setIsVisible(true), 300);
@@ -141,10 +154,17 @@ export default function Hero({ activeService, lang }) {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <Link href="/cart" className="w-full sm:w-auto rounded-full bg-zenith-orange px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-zenith-orange/40 hover:bg-zenith-orange/80 transition-all transform hover:scale-105 active:scale-95 text-center">
+                    <Link 
+                        href="/cart" 
+                        onClick={() => logAnalytic('CTA', 'Klik Pesan Sekarang (Hero)')}
+                        className="w-full sm:w-auto rounded-full bg-zenith-orange px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-zenith-orange/40 hover:bg-zenith-orange/80 transition-all transform hover:scale-105 active:scale-95 text-center"
+                    >
                         {b.book}
                     </Link>
-                    <button className="w-full sm:w-auto rounded-full border border-white/30 backdrop-blur-md px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all">
+                    <button 
+                        onClick={() => logAnalytic('CTA', 'Klik Hubungi Kami (Hero)')}
+                        className="w-full sm:w-auto rounded-full border border-white/30 backdrop-blur-md px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all"
+                    >
                         {b.contact}
                     </button>
                 </div>

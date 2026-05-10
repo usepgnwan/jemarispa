@@ -10,6 +10,21 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
     const isSolid = isScrolled || forceSolid;
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
+    const logAnalytic = (category, title) => {
+        try {
+            fetch('/api/analytics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                body: JSON.stringify({ category, title })
+            });
+        } catch (e) {
+            // Silently fail
+        }
+    };
+
     const services = [
         'Bekam',
         'Kerokan',
@@ -99,7 +114,13 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                     </Link>
 
                     <div className="flex items-center gap-x-10 text-[10px] font-bold tracking-[0.2em] uppercase transition-colors duration-500">
-                        <Link href="/" className={`transition-colors ${isActive('/') ? activeClass : inactiveClass}`}>{t.home}</Link>
+                        <Link 
+                            href="/" 
+                            onClick={() => logAnalytic('Menu', 'Klik Beranda')}
+                            className={`transition-colors ${isActive('/') ? activeClass : inactiveClass}`}
+                        >
+                            {t.home}
+                        </Link>
 
                         <div className="relative" onMouseEnter={() => setShowServices(true)} onMouseLeave={() => setShowServices(false)}>
                             <button className={`flex items-center gap-x-1 uppercase transition-colors ${activeService !== 'Default' ? 'text-zenith-orange' : inactiveClass}`}>
@@ -112,6 +133,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                         <button
                                             key={s}
                                             onClick={() => {
+                                                logAnalytic('Layanan', `Pilih ${s}`);
                                                 if (window.location.pathname === '/') {
                                                     setActiveService(s);
                                                 } else {
@@ -130,10 +152,34 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                             </div>
                         </div>
 
-                        <Link href="/#testimonials" className={`transition-colors ${isActive('/', '#testimonials') ? activeClass : inactiveClass}`}>{t.testimonial}</Link>
-                        <Link href="/pricing" className={`transition-colors ${isActive('/pricing') ? activeClass : inactiveClass}`}>{t.pricing}</Link>
-                        <Link href="/blog" className={`transition-colors ${isActive('/blog') ? activeClass : inactiveClass}`}>{t.blog}</Link>
-                        <Link href="/#contact" className={`transition-colors ${isActive('/', '#contact') ? activeClass : inactiveClass}`}>{t.contact}</Link>
+                        <Link 
+                            href="/#testimonials" 
+                            onClick={() => logAnalytic('Menu', 'Klik Testimoni')}
+                            className={`transition-colors ${isActive('/', '#testimonials') ? activeClass : inactiveClass}`}
+                        >
+                            {t.testimonial}
+                        </Link>
+                        <Link 
+                            href="/pricing" 
+                            onClick={() => logAnalytic('Menu', 'Klik Harga')}
+                            className={`transition-colors ${isActive('/pricing') ? activeClass : inactiveClass}`}
+                        >
+                            {t.pricing}
+                        </Link>
+                        <Link 
+                            href="/blog" 
+                            onClick={() => logAnalytic('Menu', 'Klik Blog')}
+                            className={`transition-colors ${isActive('/blog') ? activeClass : inactiveClass}`}
+                        >
+                            {t.blog}
+                        </Link>
+                        <Link 
+                            href="/#contact" 
+                            onClick={() => logAnalytic('Menu', 'Klik Kontak')}
+                            className={`transition-colors ${isActive('/', '#contact') ? activeClass : inactiveClass}`}
+                        >
+                            {t.contact}
+                        </Link>
                     </div>
 
                     <div className="flex items-center gap-x-6">
@@ -152,7 +198,11 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                             ))}
                         </div>
 
-                        <Link href="/cart" className={`relative h-12 w-12 flex items-center justify-center rounded-full transition-all shadow-lg shadow-zenith-orange/5 group ${currentPath === '/cart' ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange hover:bg-zenith-orange hover:text-white'}`}>
+                        <Link 
+                            href="/cart" 
+                            onClick={() => logAnalytic('Menu', 'Klik Keranjang')}
+                            className={`relative h-12 w-12 flex items-center justify-center rounded-full transition-all shadow-lg shadow-zenith-orange/5 group ${currentPath === '/cart' ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange hover:bg-zenith-orange hover:text-white'}`}
+                        >
                             <span className="material-symbols-outlined">shopping_bag</span>
                             {cartCount > 0 && (
                                 <span className={`absolute -top-1 -right-1 h-5 w-5 text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-md ${currentPath === '/cart' ? 'bg-zenith-gold text-zenith-charcoal' : 'bg-zenith-gold text-zenith-charcoal'}`}>
@@ -203,6 +253,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                         <button
                                             key={s}
                                             onClick={() => {
+                                                logAnalytic('Layanan Mobile', `Pilih ${s}`);
                                                 if (window.location.pathname === '/') {
                                                     setActiveService(s);
                                                 } else {
@@ -221,7 +272,11 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                             </div>
                         </div>
 
-                        <Link href="/cart" className={`relative h-10 w-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${currentPath === '/cart' ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange'}`}>
+                        <Link 
+                            href="/cart" 
+                            onClick={() => logAnalytic('Menu', 'Klik Keranjang (Mobile)')}
+                            className={`relative h-10 w-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${currentPath === '/cart' ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange'}`}
+                        >
                             <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
                             {cartCount > 0 && (
                                 <span className="absolute -top-1 -right-1 h-4 w-4 bg-zenith-gold text-zenith-charcoal text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">

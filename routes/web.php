@@ -201,6 +201,7 @@ Route::get('/api/dashboard/therapist-revenue', function (Illuminate\Http\Request
     ]));
 })->middleware(['auth'])->name('api.dashboard.therapist_revenue');
 
+use App\Http\Controllers\AnalyticController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\TestimoniController;
@@ -210,12 +211,15 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TransactionController;
 
-Route::middleware('auth')->group(function () {
+Route::post('api/analytics', [AnalyticController::class, 'store'])->name('api.analytics.store');
+
+Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // Admin routes
+    Route::get('admin/analytics', [AnalyticController::class, 'index'])->name('admin.analytics.index');
     Route::resource('platform', PlatformController::class)->except(['show']);
     Route::resource('faq', FaqController::class)->except(['show']);
     Route::resource('testimoni', TestimoniController::class)->except(['show']);

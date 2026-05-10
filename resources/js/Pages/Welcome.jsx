@@ -18,6 +18,19 @@ export default function Welcome({ auth, packages = [], testimonials = [] }) {
         return localStorage.getItem('app_lang') || 'ID';
     });
 
+    const logAnalytic = (category, title) => {
+        try {
+            fetch('/api/analytics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                },
+                body: JSON.stringify({ category, title })
+            });
+        } catch (e) {}
+    };
+
     useEffect(() => {
         localStorage.setItem('app_lang', lang);
     }, [lang]);
@@ -61,13 +74,22 @@ export default function Welcome({ auth, packages = [], testimonials = [] }) {
                                     Jemari Spa kini tersedia di platform perjalanan favorit Anda. Nikmati kemudahan pemesanan dan konfirmasi instan di mana pun Anda berada.
                                 </p>
                                 <div className="flex flex-wrap gap-4">
-                                    <button className="flex items-center gap-x-3 bg-[#00BAF2] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:-translate-y-1 transition-all">
+                                    <button 
+                                        onClick={() => logAnalytic('Platform', 'Klik Traveloka')}
+                                        className="flex items-center gap-x-3 bg-[#00BAF2] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:-translate-y-1 transition-all"
+                                    >
                                         Traveloka
                                     </button>
-                                    <button className="flex items-center gap-x-3 bg-[#003580] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-blue-900/20 hover:-translate-y-1 transition-all">
+                                    <button 
+                                        onClick={() => logAnalytic('Platform', 'Klik Tiket.com')}
+                                        className="flex items-center gap-x-3 bg-[#003580] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-blue-900/20 hover:-translate-y-1 transition-all"
+                                    >
                                         Tiket.com
                                     </button>
-                                    <button className="flex items-center gap-x-3 bg-[#E12D2D] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-red-500/20 hover:-translate-y-1 transition-all">
+                                    <button 
+                                        onClick={() => logAnalytic('Platform', 'Klik Agoda')}
+                                        className="flex items-center gap-x-3 bg-[#E12D2D] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-red-500/20 hover:-translate-y-1 transition-all"
+                                    >
                                         Agoda
                                     </button>
                                 </div>
@@ -128,7 +150,11 @@ export default function Welcome({ auth, packages = [], testimonials = [] }) {
                                         </div>
 
                                         <div className="mt-auto pb-4">
-                                            <Link href="/cart" className="w-full bg-zenith-orange text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-zenith-orange/30 block text-center">
+                                            <Link 
+                                                href="/cart" 
+                                                onClick={() => logAnalytic('CTA', 'Klik Pesan Sekarang (Mobile Mockup)')}
+                                                className="w-full bg-zenith-orange text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-zenith-orange/30 block text-center"
+                                            >
                                                 Pesan Sekarang
                                             </Link>
                                         </div>

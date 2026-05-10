@@ -26,7 +26,7 @@ export default function Sidebar({ collapsed }) {
             section: 'UTAMA',
             items: [
                 { name: 'Dashboard', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard') },
-                { name: 'Analitik', href: '#', icon: ChartBarIcon, current: false },
+                { name: 'Analitik', href: route('admin.analytics.index'), icon: ChartBarIcon, current: route().current('admin.analytics.index') },
             ]
         },
         { 
