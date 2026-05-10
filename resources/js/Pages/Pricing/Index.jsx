@@ -6,7 +6,8 @@ import MobileNav from '@/Components/Landing/MobileNav';
 
 const translations = {
     'ID': {
-        metaTitle: 'Harga - Jemari Spa',
+        metaTitle: 'Harga & Paket Pijat Panggilan Bandung Cimahi - Jemari Spa',
+        metaDesc: 'Lihat daftar harga layanan pijat tradisional, bekam, totok wajah, dan refleksi panggilan di Bandung. Investasi kesehatan terbaik di rumah Anda.',
         badge: 'Menu Lengkap',
         title: 'Daftar Harga & Paket',
         desc: 'Temukan berbagai pilihan layanan spa profesional untuk kebugaran maksimal Anda.',
@@ -21,7 +22,8 @@ const translations = {
         selected: 'Selected'
     },
     'EN': {
-        metaTitle: 'Pricing - Jemari Spa',
+        metaTitle: 'Pricing & Packages Home Service Massage Bandung - Jemari Spa',
+        metaDesc: 'Full price list for professional home service massage, cupping, and reflexology in Bandung. Your best wellness investment at home.',
         badge: 'Complete Menu',
         title: 'Pricelist & Packages',
         desc: 'Discover our full range of professional home spa treatments designed for your ultimate wellness.',
@@ -105,7 +107,13 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
     return (
         <div className="font-sans text-zenith-charcoal antialiased bg-zenith-surface">
-            <Head title={t.metaTitle} />
+            <Head>
+                <title>{t.metaTitle}</title>
+                <meta name="description" content={t.metaDesc} />
+                <meta property="og:title" content={t.metaTitle} />
+                <meta property="og:description" content={t.metaDesc} />
+                <meta name="keywords" content="harga pijat panggilan bandung, pricelist jemari spa, biaya bekam bandung, paket spa rumah bandung" />
+            </Head>
 
             <Navbar auth={auth} lang={lang} setLang={setLang} forceSolid={true} signaturePackages={signaturePackages} />
 

@@ -11,9 +11,26 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
         localStorage.setItem('app_lang', lang);
     }, [lang]);
 
+    const stripHtml = (html) => {
+        if (typeof window === 'undefined') return '';
+        const tmp = document.createElement("DIV");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+    };
+
+    const metaDesc = blog.description ? stripHtml(blog.description).substring(0, 160) + '...' : blog.title;
+
     return (
         <div className="font-sans text-zenith-charcoal antialiased bg-zenith-surface">
-            <Head title={`${blog.title} - Jemari Blog`} />
+            <Head>
+                <title>{`${blog.title} - Jemari Spa Sanctuary`}</title>
+                <meta name="description" content={metaDesc} />
+                <meta property="og:title" content={blog.title} />
+                <meta property="og:description" content={metaDesc} />
+                <meta property="og:image" content={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/logo-jemari.jpg'} />
+                <meta property="og:type" content="article" />
+                <meta name="keywords" content={`${blog.tag || ''}, jemari spa blog, tips kesehatan bandung`} />
+            </Head>
 
             <Navbar 
                 auth={auth} 

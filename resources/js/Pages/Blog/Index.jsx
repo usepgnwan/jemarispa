@@ -87,7 +87,12 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
 
     return (
         <div className="font-sans text-zenith-charcoal antialiased bg-zenith-surface">
-            <Head title="Blog - Jemari Spa Sanctuary" />
+            <Head>
+                <title>{lang === 'EN' ? 'Blog & Wellness Guide - Jemari Spa Sanctuary' : 'Blog & Tips Kesehatan - Jemari Spa Sanctuary'}</title>
+                <meta name="description" content={lang === 'EN' ? 'Explore our latest articles about wellness, massage benefits, and healthy lifestyle tips.' : 'Temukan artikel menarik seputar kesehatan, manfaat pijat, dan tips gaya hidup sehat dari Jemari Spa.'} />
+                <meta property="og:title" content={lang === 'EN' ? 'Blog & Wellness Guide - Jemari Spa Sanctuary' : 'Blog & Tips Kesehatan - Jemari Spa Sanctuary'} />
+                <meta name="keywords" content="blog kesehatan, tips wellness, manfaat pijat, gaya hidup sehat, jemari spa articles" />
+            </Head>
 
             <Navbar 
                 auth={auth} 

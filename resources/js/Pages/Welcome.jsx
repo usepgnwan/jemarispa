@@ -63,9 +63,89 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
         }
     }, []);
 
+    const getMeta = () => {
+        const config = {
+            'ID': {
+                'Default': {
+                    title: 'Jemari Spa - Home Service Massage Bandung Cimahi',
+                    desc: 'Jemari Spa menghadirkan layanan massage & spa profesional ke rumah, hotel, atau kantor di Bandung dan Cimahi. Terapis terlatih, peralatan higienis, dan pengalaman relaksasi premium.'
+                },
+                'Pijat Tradisional': {
+                    title: 'Pijat Tradisional Panggilan Bandung Cimahi - Jemari Spa',
+                    desc: 'Layanan pijat tradisional panggilan profesional. Relaksasi tubuh tanpa keluar rumah dengan teknik pijat yang memulihkan kebugaran Anda.'
+                },
+                'Bekam': {
+                    title: 'Layanan Bekam Panggilan Bandung Cimahi - Jemari Spa',
+                    desc: 'Terapi bekam profesional di rumah Anda. Steril, aman, dan ditangani oleh terapis bersertifikat untuk kesehatan optimal.'
+                },
+                'Kerokan': {
+                    title: 'Pijat Kerokan Panggilan Bandung Cimahi - Jemari Spa',
+                    desc: 'Layanan kerokan tradisional yang higienis untuk meredakan masuk angin dan pegal-pegal langsung di lokasi Anda.'
+                },
+                'Totok Wajah': {
+                    title: 'Totok Wajah Glowing Panggilan Bandung - Jemari Spa',
+                    desc: 'Perawatan totok wajah profesional untuk melancarkan peredaran darah wajah dan membuat wajah lebih segar serta bercahaya.'
+                },
+                'Pijat Refleksi': {
+                    title: 'Pijat Refleksi Kaki Panggilan Bandung - Jemari Spa',
+                    desc: 'Pulihkan keseimbangan energi tubuh dengan pijat refleksi profesional tanpa harus menembus kemacetan kota.'
+                },
+                'Pijat Ibu Hamil': {
+                    title: 'Pijat Ibu Hamil Panggilan Bandung - Jemari Spa',
+                    desc: 'Relaksasi khusus untuk ibu hamil yang aman dan menenangkan. Ditangani oleh terapis wanita berpengalaman.'
+                }
+            },
+            'EN': {
+                'Default': {
+                    title: 'Jemari Spa - Professional Home Service Massage Bandung Cimahi',
+                    desc: 'Jemari Spa provides professional massage & spa services to your home, hotel, or office in Bandung and Cimahi. Well-trained therapists and premium relaxation experience.'
+                },
+                'Pijat Tradisional': {
+                    title: 'Traditional Massage Home Service Bandung - Jemari Spa',
+                    desc: 'Professional mobile traditional massage service. Body relaxation without leaving home with restoring massage techniques.'
+                },
+                'Bekam': {
+                    title: 'Cupping Therapy Home Service Bandung - Jemari Spa',
+                    desc: 'Professional cupping therapy at your home. Sterile, safe, and handled by certified therapists for optimal health.'
+                },
+                'Kerokan': {
+                    title: 'Traditional Scraping Therapy Bandung - Jemari Spa',
+                    desc: 'Hygienic traditional scraping (kerokan) service to relieve colds and aches directly at your location.'
+                },
+                'Totok Wajah': {
+                    title: 'Face Acupressure for Glowing Skin Bandung - Jemari Spa',
+                    desc: 'Professional face acupressure treatment to improve facial circulation for a fresher and glowing look.'
+                },
+                'Pijat Refleksi': {
+                    title: 'Reflexology Home Service Bandung - Jemari Spa',
+                    desc: 'Restore your body\'s energy balance with professional reflexology without facing city traffic.'
+                },
+                'Pijat Ibu Hamil': {
+                    title: 'Pregnancy Massage Home Service Bandung - Jemari Spa',
+                    desc: 'Safe and soothing relaxation specifically designed for pregnant mothers, handled by experienced female therapists.'
+                }
+            }
+        };
+
+        const currentLang = config[lang] || config['ID'];
+        const content = currentLang[activeService] || currentLang['Default'];
+        
+        return content;
+    };
+
+    const meta = getMeta();
+
     return (
         <div className="font-sans text-zenith-charcoal antialiased selection:bg-zenith-orange/20 selection:text-zenith-orange bg-zenith-surface">
-            <Head title="Jemari Spa - Luxury Wellness Sanctuary" />
+            <Head>
+                <title>{meta.title}</title>
+                <meta name="description" content={meta.desc} />
+                <meta property="og:title" content={meta.title} />
+                <meta property="og:description" content={meta.desc} />
+                <meta property="og:image" content="/images/logo-jemari.jpg" />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="keywords" content="pijat panggilan bandung, home service massage bandung, spa bandung, bekam bandung, pijat tradisional bandung, massage cimahi, jemari spa" />
+            </Head>
 
             <Navbar
                 auth={auth}
