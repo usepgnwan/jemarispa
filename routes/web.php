@@ -271,15 +271,8 @@ Route::get('invoice/{order_number}', [TransactionController::class, 'publicPdf']
 Route::get('/review/{token}', [TestimoniController::class, 'showReviewForm'])->name('review.show');
 Route::post('/review/{token}', [TestimoniController::class, 'submitReview'])->name('review.submit');
 
-Route::get('/blog', function () {
-    return Inertia::render('Blog/Index');
-})->name('blog.index');
-
-Route::get('/blog/{id}', function ($id) {
-    return Inertia::render('Blog/Show', [
-        'blogId' => $id
-    ]);
-})->name('blog.show');
+Route::get('/blog', [BlogController::class, 'publicIndex'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'publicShow'])->name('blog.show');
 
 Route::get('/pricing', function () {
     return Inertia::render('Pricing/Index', [

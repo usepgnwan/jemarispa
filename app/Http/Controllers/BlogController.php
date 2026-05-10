@@ -36,6 +36,42 @@ class BlogController extends Controller
         ]);
     }
 
+    public function publicIndex(Request $request)
+    {
+        $search = $request->input('search');
+
+        $blogs = Blog::query()
+            ->with('user')
+            ->when($search, function ($query, $search) {
+                $query->where('title', 'like', "%{$search}%")
+                      ->orWhere('tag', 'like', "%{$search}%")
+                      ->orWhere('type_package', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate(9)
+            ->withQueryString();
+
+        return Inertia::render('Blog/Index', [
+            'blogs' => $blogs,
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
+    public function publicShow($slug)
+    {
+        $blog = Blog::where('slug', $slug)->with('user')->firstOrFail();
+        
+        $suggestions = Blog::where('id', '!=', $blog->id)
+            ->latest()
+            ->limit(3)
+            ->get();
+
+        return Inertia::render('Blog/Show', [
+            'blog' => $blog,
+            'suggestions' => $suggestions
+        ]);
+    }
+
     public function create()
     {
         return Inertia::render('Admin/Blog/Create');

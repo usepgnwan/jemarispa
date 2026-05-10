@@ -48,7 +48,7 @@ class SignatureRitualController extends Controller
             'category_en' => 'nullable|string|max:255',
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
-            'image' => 'nullable|image|max:10240',
+            'image' => 'nullable|image|max:5120',
         ]);
 
         $imagePath = null;
@@ -91,7 +91,7 @@ class SignatureRitualController extends Controller
             'category_en' => 'nullable|string|max:255',
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
-            'image' => 'nullable|image|max:10240',
+            'image' => 'nullable|image|max:5120',
         ]);
 
         if ($request->hasFile('image')) {

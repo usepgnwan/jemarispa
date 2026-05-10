@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
@@ -54,10 +54,25 @@ const sliderItems = [
     }
 ];
 
-export default function Index({ auth }) {
+export default function Index({ auth, blogs, filters }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
-    const [search, setSearch] = useState('');
+    const [search, setSearch] = useState(filters.search || '');
     const [currentSlider, setCurrentSlider] = useState(0);
+
+    const handleSearch = (e) => {
+        const value = e.target.value;
+        setSearch(value);
+        
+        // Debounce search
+        const timeoutId = setTimeout(() => {
+            router.get(route('blog.index'), { search: value }, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true
+            });
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    };
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -123,7 +138,7 @@ export default function Index({ auth }) {
                                     placeholder="Search articles..."
                                     className="w-full pl-12 pr-6 py-4 rounded-2xl bg-zenith-surface border-none focus:ring-2 focus:ring-zenith-orange transition-all text-sm font-medium"
                                     value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                                    onChange={handleSearch}
                                 />
                                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zenith-charcoal/30">search</span>
                             </div>
@@ -131,50 +146,58 @@ export default function Index({ auth }) {
 
                         {/* Blog Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                            {mockBlogs.map((blog) => (
+                            {blogs.data.length > 0 ? blogs.data.map((blog) => (
                                 <Link 
                                     key={blog.id} 
-                                    href={`/blog/${blog.id}`}
+                                    href={route('blog.show', blog.slug)}
                                     className="group flex flex-col bg-zenith-surface rounded-3xl overflow-hidden border border-transparent hover:border-zenith-orange/20 transition-all hover:-translate-y-2 hover:shadow-2xl shadow-zenith-orange/5"
                                 >
                                     <div className="relative h-64 overflow-hidden">
-                                        <img src={blog.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={blog.title} />
+                                        <img src={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/services.jpg'} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={blog.title} />
                                         <div className="absolute top-4 left-4">
                                             <span className="px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-[10px] font-bold text-zenith-orange uppercase tracking-wider shadow-lg">
-                                                {blog.category}
+                                                {blog.tag || blog.type_package || 'Article'}
                                             </span>
                                         </div>
                                     </div>
                                     <div className="p-8 flex flex-col flex-1">
-                                        <p className="text-zenith-charcoal/30 text-[10px] font-bold uppercase tracking-widest mb-4">{blog.date}</p>
+                                        <p className="text-zenith-charcoal/30 text-[10px] font-bold uppercase tracking-widest mb-4">
+                                            {new Date(blog.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        </p>
                                         <h3 className="text-xl font-bold text-zenith-charcoal mb-4 leading-tight group-hover:text-zenith-orange transition-colors">
                                             {blog.title}
                                         </h3>
-                                        <p className="text-zenith-charcoal/50 text-sm leading-relaxed mb-6 flex-1 line-clamp-3">
-                                            {blog.excerpt}
-                                        </p>
+                                        <div 
+                                            className="text-zenith-charcoal/50 text-sm leading-relaxed mb-6 flex-1 line-clamp-3 prose prose-sm max-w-none"
+                                            dangerouslySetInnerHTML={{ __html: blog.description }}
+                                        />
                                         <div className="flex items-center gap-x-2 text-zenith-orange font-bold text-[10px] uppercase tracking-widest pt-4 border-t border-zenith-orange/5">
                                             Read More 
                                             <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                                         </div>
                                     </div>
                                 </Link>
-                            ))}
+                            )) : (
+                                <div className="col-span-full py-20 text-center">
+                                    <p className="text-zenith-charcoal/40 text-lg">No articles found matching your search.</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Pagination Mockup */}
-                        <div className="flex justify-center items-center gap-x-4 mt-16">
-                            <button className="h-10 w-10 rounded-full border border-zenith-orange/20 flex items-center justify-center text-zenith-orange hover:bg-zenith-orange hover:text-white transition-all">
-                                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-                            </button>
-                            <div className="flex gap-x-2">
-                                <button className="h-10 w-10 rounded-full bg-zenith-orange text-white text-sm font-bold shadow-lg shadow-zenith-orange/20">1</button>
-                                <button className="h-10 w-10 rounded-full border border-zenith-orange/10 text-zenith-charcoal/40 text-sm font-bold hover:bg-zenith-orange/5">2</button>
-                                <button className="h-10 w-10 rounded-full border border-zenith-orange/10 text-zenith-charcoal/40 text-sm font-bold hover:bg-zenith-orange/5">3</button>
-                            </div>
-                            <button className="h-10 w-10 rounded-full border border-zenith-orange/20 flex items-center justify-center text-zenith-orange hover:bg-zenith-orange hover:text-white transition-all">
-                                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-                            </button>
+                        <div className="flex justify-center items-center gap-x-2 mt-16 overflow-x-auto pb-4">
+                            {blogs.links.map((link, i) => (
+                                <Link
+                                    key={i}
+                                    href={link.url || '#'}
+                                    className={`h-10 min-w-[40px] px-3 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                                        link.active 
+                                            ? 'bg-zenith-orange text-white shadow-lg shadow-zenith-orange/20' 
+                                            : 'border border-zenith-orange/10 text-zenith-charcoal/40 hover:bg-zenith-orange/5'
+                                    } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                />
+                            ))}
                         </div>
                     </div>
                 </section>

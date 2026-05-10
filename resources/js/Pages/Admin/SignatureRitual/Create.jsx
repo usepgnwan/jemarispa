@@ -22,10 +22,22 @@ export default function Create() {
     });
 
     const [imagePreview, setImagePreview] = useState(null);
+    const [toast, setToast] = useState({ show: false, message: '' });
+
+    const showToast = (message) => {
+        setToast({ show: true, message });
+        setTimeout(() => setToast({ show: false, message: '' }), 3000);
+    };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Check if file size > 5MB (5 * 1024 * 1024 bytes)
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('image max 5mb');
+                e.target.value = ''; // Reset input
+                return;
+            }
             setData('image', file);
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -182,15 +194,15 @@ export default function Create() {
                                     ) : (
                                         <div className="text-center">
                                             <PhotoIcon className="mx-auto h-12 w-12 text-gray-300 group-hover:text-zenith-orange transition-colors" />
-                                            <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                                            <div className="mt-4 flex text-sm leading-6 text-gray-600 justify-center">
                                                 <span className="font-semibold text-zenith-orange">Upload file</span>
                                                 <p className="pl-1">atau tarik dan lepas</p>
                                             </div>
-                                            <p className="text-xs leading-5 text-gray-500">PNG, JPG, JPEG hingga 10MB</p>
                                         </div>
                                     )}
                                 </div>
-                                <InputError message={errors.image} className="mt-2" />
+                                <p className="mt-2 text-xs leading-5 text-gray-500 text-center">PNG, JPG, WebP up to 5MB (Bisa dikosongkan)</p>
+                                <InputError message={errors.image} className="mt-2 text-center" />
                             </div>
                         </div>
 
@@ -205,6 +217,16 @@ export default function Create() {
                     </form>
                 </div>
             </div>
+
+            {/* Toast Notification */}
+            {toast.show && (
+                <div className="fixed bottom-10 right-10 z-[110] animate-bounce">
+                    <div className="bg-red-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-x-4 border border-white/10">
+                        <span className="material-symbols-outlined">warning</span>
+                        <p className="text-sm font-bold uppercase tracking-widest">{toast.message}</p>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
