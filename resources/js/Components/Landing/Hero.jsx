@@ -93,9 +93,39 @@ const serviceContent = {
 };
 
 export default function Hero({ activeService, lang }) {
-    const langContent = serviceContent[lang] || serviceContent['ID'];
-    const content = langContent[activeService] || langContent['Default'];
+    const [dynamicContent, setDynamicContent] = useState(null);
     const [isVisible, setIsVisible] = useState(true);
+
+    const langContent = serviceContent[lang] || serviceContent['ID'];
+    const staticContent = langContent[activeService] || langContent['Default'];
+
+    useEffect(() => {
+        const saved = localStorage.getItem('signature_packages');
+        if (saved) {
+            try {
+                const packages = JSON.parse(saved);
+                const pkg = packages.find(p => p.title_id === activeService);
+                if (pkg) {
+                    setDynamicContent({
+                        title: lang === 'ID' ? pkg.title_id : (pkg.title_en || pkg.title_id),
+                        subtitle: "Jemari Home Spa Bandung",
+                        desc: lang === 'ID' ? pkg.description_id : (pkg.description_en || pkg.description_id),
+                        bg: pkg.image ? `/storage/${pkg.image}` : (staticContent?.bg || "/images/services.jpg"),
+                        isHTML: true
+                    });
+                } else {
+                    setDynamicContent(null);
+                }
+            } catch (e) {
+                console.error("Error parsing signature_packages in Hero", e);
+                setDynamicContent(null);
+            }
+        } else {
+            setDynamicContent(null);
+        }
+    }, [activeService, lang, staticContent]);
+
+    const content = dynamicContent || staticContent;
 
     const buttons = {
         'ID': { book: 'Pesan Sekarang', contact: 'Hubungi Kami' },
@@ -114,7 +144,7 @@ export default function Hero({ activeService, lang }) {
                 },
                 body: JSON.stringify({ category, title })
             });
-        } catch (e) {}
+        } catch (e) { }
     };
 
     useEffect(() => {
@@ -149,19 +179,26 @@ export default function Hero({ activeService, lang }) {
                     {content.title}
                 </h1>
 
-                <p className="max-w-2xl mx-auto text-sm md:text-lg text-white/80 leading-relaxed mb-12 font-sans">
-                    {content.desc}
-                </p>
+                {content.isHTML ? (
+                    <div 
+                        className="max-w-2xl mx-auto text-sm md:text-lg text-white/80 leading-relaxed mb-12 font-sans prose prose-invert prose-sm md:prose-base"
+                        dangerouslySetInnerHTML={{ __html: content.desc }}
+                    />
+                ) : (
+                    <p className="max-w-2xl mx-auto text-sm md:text-lg text-white/80 leading-relaxed mb-12 font-sans">
+                        {content.desc}
+                    </p>
+                )}
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <Link 
-                        href="/cart" 
+                    <Link
+                        href="/cart"
                         onClick={() => logAnalytic('CTA', 'Klik Pesan Sekarang (Hero)')}
                         className="w-full sm:w-auto rounded-full bg-zenith-orange px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-zenith-orange/40 hover:bg-zenith-orange/80 transition-all transform hover:scale-105 active:scale-95 text-center"
                     >
                         {b.book}
                     </Link>
-                    <button 
+                    <button
                         onClick={() => logAnalytic('CTA', 'Klik Hubungi Kami (Hero)')}
                         className="w-full sm:w-auto rounded-full border border-white/30 backdrop-blur-md px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all"
                     >

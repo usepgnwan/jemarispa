@@ -276,13 +276,15 @@ Route::get('/blog/{slug}', [BlogController::class, 'publicShow'])->name('blog.sh
 
 Route::get('/pricing', function () {
     return Inertia::render('Pricing/Index', [
-        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get()
+        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get(),
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get()
     ]);
 })->name('pricing.index');
 
 Route::get('/cart', function () {
     return Inertia::render('Cart/Index', [
-        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get()
+        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get(),
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get()
     ]);
 })->name('cart.index');
 

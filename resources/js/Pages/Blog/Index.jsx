@@ -54,7 +54,7 @@ const sliderItems = [
     }
 ];
 
-export default function Index({ auth, blogs, filters }) {
+export default function Index({ auth, blogs, filters, signaturePackages = [] }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
     const [search, setSearch] = useState(filters.search || '');
     const [currentSlider, setCurrentSlider] = useState(0);
@@ -95,6 +95,7 @@ export default function Index({ auth, blogs, filters }) {
                 setLang={setLang} 
                 activeService="Blog"
                 setActiveService={() => {}}
+                signaturePackages={signaturePackages}
             />
 
             <main>

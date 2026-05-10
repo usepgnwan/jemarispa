@@ -98,7 +98,7 @@ const translations = {
     }
 };
 
-export default function Index({ auth, packages = [] }) {
+export default function Index({ auth, packages = [], signaturePackages = [] }) {
     const { app_settings } = usePage().props;
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
     const [showAddModal, setShowAddModal] = useState(false);
@@ -421,7 +421,7 @@ export default function Index({ auth, packages = [] }) {
         <div className="font-sans text-zenith-charcoal antialiased bg-zenith-surface">
             <Head title={`${lang === 'ID' ? 'Checkout Pesanan' : 'Checkout Order'} - Jemari Spa`} />
 
-            <Navbar auth={auth} lang={lang} setLang={setLang} forceSolid={true} />
+            <Navbar auth={auth} lang={lang} setLang={setLang} forceSolid={true} signaturePackages={signaturePackages} />
 
             <main className="pt-40 pb-20 px-6">
                 <div className="max-w-7xl mx-auto">

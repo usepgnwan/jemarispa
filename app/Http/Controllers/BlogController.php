@@ -53,7 +53,8 @@ class BlogController extends Controller
 
         return Inertia::render('Blog/Index', [
             'blogs' => $blogs,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'tag']),
+            'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get()
         ]);
     }
 
@@ -68,7 +69,8 @@ class BlogController extends Controller
 
         return Inertia::render('Blog/Show', [
             'blog' => $blog,
-            'suggestions' => $suggestions
+            'suggestions' => $suggestions,
+            'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get()
         ]);
     }
 

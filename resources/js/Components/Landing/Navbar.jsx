@@ -2,7 +2,8 @@ import { Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-export default function Navbar({ auth, activeService, setActiveService, lang, setLang, forceSolid = false }) {
+export default function Navbar({ auth, activeService, setActiveService, lang, setLang, forceSolid = false, signaturePackages = [] }) {
+    const [localPackages, setLocalPackages] = useState(signaturePackages);
     const [isScrolled, setIsScrolled] = useState(false);
     const [showServices, setShowServices] = useState(false);
     const [cartCount, setCartCount] = useState(0);
@@ -20,32 +21,27 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
         }
     };
 
-    const services = [
-        'Bekam',
-        'Kerokan',
-        'Totok Wajah',
-        'Pijat Refleksi',
-        'Pijat Ibu Hamil',
-        'Pijat Tradisional'
-    ];
-
-    const serviceLabels = {
-        'ID': {
-            'Bekam': 'Bekam',
-            'Kerokan': 'Kerokan',
-            'Totok Wajah': 'Totok Wajah',
-            'Pijat Refleksi': 'Pijat Refleksi',
-            'Pijat Ibu Hamil': 'Pijat Ibu Hamil',
-            'Pijat Tradisional': 'Pijat Tradisional'
-        },
-        'EN': {
-            'Bekam': 'Professional Cupping',
-            'Kerokan': 'Scraping Therapy',
-            'Totok Wajah': 'Face Acupressure',
-            'Pijat Refleksi': 'Reflexology',
-            'Pijat Ibu Hamil': 'Pregnancy Massage',
-            'Pijat Tradisional': 'Traditional Massage'
+    useEffect(() => {
+        if (signaturePackages && signaturePackages.length > 0) {
+            setLocalPackages(signaturePackages);
+        } else {
+            const saved = localStorage.getItem('signature_packages');
+            if (saved) {
+                try {
+                    setLocalPackages(JSON.parse(saved));
+                } catch (e) {
+                    console.error("Error parsing signature_packages", e);
+                }
+            }
         }
+    }, [signaturePackages]);
+
+    const services = localPackages.map(p => p.title_id);
+    
+    // Generate dynamic labels
+    const serviceLabels = {
+        'ID': localPackages.reduce((acc, p) => ({ ...acc, [p.title_id]: p.title_id }), {}),
+        'EN': localPackages.reduce((acc, p) => ({ ...acc, [p.title_id]: p.title_en || p.title_id }), {})
     };
 
     const menuItems = {

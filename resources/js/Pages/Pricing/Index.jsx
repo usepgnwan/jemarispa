@@ -37,7 +37,7 @@ const translations = {
     }
 };
 
-export default function Index({ auth, packages = [] }) {
+export default function Index({ auth, packages = [], signaturePackages = [] }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
@@ -107,7 +107,7 @@ export default function Index({ auth, packages = [] }) {
         <div className="font-sans text-zenith-charcoal antialiased bg-zenith-surface">
             <Head title={t.metaTitle} />
 
-            <Navbar auth={auth} lang={lang} setLang={setLang} forceSolid={true} />
+            <Navbar auth={auth} lang={lang} setLang={setLang} forceSolid={true} signaturePackages={signaturePackages} />
 
             <main className="pt-40 pb-20 px-6">
                 <div className="max-w-5xl mx-auto">

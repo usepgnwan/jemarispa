@@ -4,7 +4,7 @@ import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
 
-export default function Show({ auth, blog, suggestions }) {
+export default function Show({ auth, blog, suggestions, signaturePackages = [] }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
 
     useEffect(() => {
@@ -21,6 +21,7 @@ export default function Show({ auth, blog, suggestions }) {
                 setLang={setLang} 
                 activeService="Blog"
                 setActiveService={() => {}}
+                signaturePackages={signaturePackages}
             />
 
             <main className="pt-32 pb-20 px-6">

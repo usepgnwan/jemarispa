@@ -13,10 +13,13 @@ import MobileNav from '@/Components/Landing/MobileNav';
 import Footer from '@/Components/Landing/Footer';
 
 export default function Welcome({ auth, packages = [], signaturePackages = [], testimonials = [], platforms = [] }) {
-    const [activeService, setActiveService] = useState('Default');
+    const [activeService, setActiveService] = useState(() => {
+        return localStorage.getItem('active_service') || 'Default';
+    });
     const [lang, setLang] = useState(() => {
         return localStorage.getItem('app_lang') || 'ID';
     });
+    const [localPackages, setLocalPackages] = useState(signaturePackages);
 
     const logAnalytic = (category, title) => {
         try {
@@ -34,6 +37,22 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
     useEffect(() => {
         localStorage.setItem('app_lang', lang);
     }, [lang]);
+
+    useEffect(() => {
+        localStorage.setItem('active_service', activeService);
+    }, [activeService]);
+
+    useEffect(() => {
+        if (signaturePackages && signaturePackages.length > 0) {
+            localStorage.setItem('signature_packages', JSON.stringify(signaturePackages));
+            setLocalPackages(signaturePackages);
+        } else {
+            const saved = localStorage.getItem('signature_packages');
+            if (saved) {
+                setLocalPackages(JSON.parse(saved));
+            }
+        }
+    }, [signaturePackages]);
 
     // Handle pending service from navbar redirection
     useEffect(() => {
@@ -54,6 +73,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                 setActiveService={setActiveService}
                 lang={lang}
                 setLang={setLang}
+                signaturePackages={signaturePackages}
             />
 
             <main>
