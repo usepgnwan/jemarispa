@@ -110,7 +110,7 @@ class TransactionController extends Controller
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'address' => 'required|string',
+            'address' => 'nullable|string',
             'schedule_date' => 'required|date',
             'schedule_time' => 'required|string',
             'payment_method' => 'required|string',
