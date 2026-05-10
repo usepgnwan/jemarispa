@@ -6,6 +6,7 @@ use App\Models\Package;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PackageController extends Controller
 {
@@ -16,6 +17,7 @@ class PackageController extends Controller
 
         $packages = Package::query()
             ->with('durations')
+            ->where('is_signature', false)
             ->when($search, function ($query, $search) {
                 $query->where('title_id', 'like', "%{$search}%")
                       ->orWhere('title_en', 'like', "%{$search}%")
@@ -60,6 +62,7 @@ class PackageController extends Controller
                 'category_en' => $validated['category_en'],
                 'description_id' => $validated['description_id'],
                 'description_en' => $validated['description_en'],
+                'is_signature' => false,
             ]);
 
             foreach ($validated['durations'] as $durationData) {
@@ -76,10 +79,14 @@ class PackageController extends Controller
 
     public function edit(Package $package)
     {
+        if ($package->is_signature) {
+            return redirect()->route('admin.package.index');
+        }
+
         $package->load('durations');
 
         return Inertia::render('Admin/Package/Edit', [
-            'package' => $package
+            'pkg' => $package // Changed to 'pkg' to match my earlier Edit.jsx cleanup
         ]);
     }
 
@@ -98,7 +105,7 @@ class PackageController extends Controller
             'durations.*.commission' => 'nullable|numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($request, $package, $validated) {
+        DB::transaction(function () use ($package, $validated) {
             $package->update([
                 'title_id' => $validated['title_id'],
                 'title_en' => $validated['title_en'],
@@ -106,9 +113,9 @@ class PackageController extends Controller
                 'category_en' => $validated['category_en'],
                 'description_id' => $validated['description_id'],
                 'description_en' => $validated['description_en'],
+                'is_signature' => false,
             ]);
 
-            // Sync durations by deleting old ones and inserting new ones
             $package->durations()->delete();
 
             foreach ($validated['durations'] as $durationData) {
@@ -125,7 +132,11 @@ class PackageController extends Controller
 
     public function destroy(Package $package)
     {
-        $package->delete(); // Cascade on delete will handle durations
+        if ($package->image) {
+            Storage::disk('public')->delete($package->image);
+        }
+        
+        $package->delete();
 
         return redirect()->route('admin.package.index')->with('message', 'Paket berhasil dihapus!');
     }

@@ -10,6 +10,7 @@ import {
     QuestionMarkCircleIcon,
     UsersIcon, 
     GlobeAltIcon,
+    SparklesIcon,
     Cog6ToothIcon,
     ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
@@ -40,7 +41,7 @@ export default function Sidebar({ collapsed }) {
         { 
             section: 'KONTEN',
             items: [
-                { name: 'Paket', href: route('admin.package.index'), icon: Square3Stack3DIcon, current: route().current('admin.package.*'), roles: ['admin'] },
+                { name: 'Paket', href: route('admin.package.index'), icon: Square3Stack3DIcon, current: route().current('admin.package.*') && !new URLSearchParams(window.location.search).has('is_signature'), roles: ['admin'] },
                 { name: 'Testimoni', href: route('testimoni.index'), icon: StarIcon, current: route().current('testimoni.*'), roles: ['admin', 'marketing'] },
                 { name: 'Blog', href: route('admin.blog.index'), icon: DocumentTextIcon, current: route().current('admin.blog.*'), roles: ['admin', 'marketing'] },
                 { name: 'FAQ', href: route('faq.index'), icon: QuestionMarkCircleIcon, current: route().current('faq.*'), roles: ['admin'] },
@@ -58,6 +59,7 @@ export default function Sidebar({ collapsed }) {
             section: 'SETTING',
             items: [
                 { name: 'Setting', href: route('admin.settings.index'), icon: Cog6ToothIcon, current: route().current('admin.settings.*'), roles: ['admin'] },
+                { name: 'Main Service', href: route('admin.signature-ritual.index'), icon: SparklesIcon, current: route().current('admin.signature-ritual.*'), roles: ['admin'] },
             ]
         }
     ];

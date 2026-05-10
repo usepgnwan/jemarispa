@@ -6,7 +6,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
-import { TrashIcon, ArrowLeftIcon, PlusIcon, ClockIcon, CurrencyDollarIcon, LanguageIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, ArrowLeftIcon, PlusIcon, ClockIcon } from '@heroicons/react/24/outline';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -18,6 +18,7 @@ export default function Create() {
         category_en: '',
         description_id: '',
         description_en: '',
+        is_signature: false,
         durations: [{ duration: '', price: '', commission: '' }]
     });
 
@@ -57,7 +58,9 @@ export default function Create() {
                             <ArrowLeftIcon className="w-4 h-4" />
                             Kembali ke Daftar Paket
                         </Link>
-                        <h2 className="font-bold text-2xl text-gray-900">Tambah Paket Layanan Baru</h2>
+                        <h2 className="font-bold text-2xl text-gray-900">
+                            Tambah Paket Layanan Baru
+                        </h2>
                     </div>
 
                     <form onSubmit={submit} className="space-y-8">
@@ -170,7 +173,7 @@ export default function Create() {
                                     <button
                                         type="button"
                                         onClick={handleAddDuration}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zenith-orange/10 text-zenith-orange rounded-full text-xs font-bold uppercase tracking-widest hover:bg-zenith-orange/20 transition-colors"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0057B8]/10 text-[#0057B8] rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#0057B8]/20 transition-colors"
                                     >
                                         <PlusIcon className="w-4 h-4" /> Tambah Durasi
                                     </button>

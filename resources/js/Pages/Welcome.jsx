@@ -12,7 +12,7 @@ import FloatingWhatsApp from '@/Components/Landing/FloatingWhatsApp';
 import MobileNav from '@/Components/Landing/MobileNav';
 import Footer from '@/Components/Landing/Footer';
 
-export default function Welcome({ auth, packages = [], testimonials = [], platforms = [] }) {
+export default function Welcome({ auth, packages = [], signaturePackages = [], testimonials = [], platforms = [] }) {
     const [activeService, setActiveService] = useState('Default');
     const [lang, setLang] = useState(() => {
         return localStorage.getItem('app_lang') || 'ID';
@@ -59,7 +59,7 @@ export default function Welcome({ auth, packages = [], testimonials = [], platfo
             <main>
                 <Hero activeService={activeService} lang={lang} />
                 <Highlights />
-                <SignatureRituals lang={lang} />
+                <SignatureRituals rituals={signaturePackages} lang={lang} />
                 <Pricing packages={packages} lang={lang} />
                 <Testimonials testimonials={testimonials} lang={lang} />
 

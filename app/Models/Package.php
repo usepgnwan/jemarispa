@@ -15,6 +15,8 @@ class Package extends Model
         'category_en',
         'description_id',
         'description_en',
+        'is_signature',
+        'image',
     ];
 
     public function durations()

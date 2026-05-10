@@ -10,20 +10,19 @@ import { TrashIcon, ArrowLeftIcon, PlusIcon, ClockIcon } from '@heroicons/react/
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-export default function Edit({ package: pkg }) {
-    // If package has no durations, initialize with one empty duration
-    const initialDurations = pkg.durations && pkg.durations.length > 0 
-        ? pkg.durations.map(d => ({ duration: d.duration, price: d.price, commission: d.commission || '' })) 
-        : [{ duration: '', price: '', commission: '' }];
-
-    const { data, setData, put, processing, errors } = useForm({
+export default function Edit({ pkg }) {
+    const { data, setData, post, processing, errors } = useForm({
+        _method: 'PUT',
         title_id: pkg.title_id || '',
         title_en: pkg.title_en || '',
         category_id: pkg.category_id || '',
         category_en: pkg.category_en || '',
         description_id: pkg.description_id || '',
         description_en: pkg.description_en || '',
-        durations: initialDurations
+        is_signature: pkg.is_signature || false,
+        durations: pkg.durations.length > 0 
+            ? pkg.durations.map(d => ({ id: d.id, duration: d.duration, price: d.price, commission: d.commission || '' }))
+            : [{ duration: '', price: '', commission: '' }]
     });
 
     const handleAddDuration = () => {
@@ -31,7 +30,7 @@ export default function Edit({ package: pkg }) {
     };
 
     const handleRemoveDuration = (index) => {
-        if (data.durations.length === 1) return; // Must have at least one
+        if (data.durations.length === 1) return;
         const newDurations = [...data.durations];
         newDurations.splice(index, 1);
         setData('durations', newDurations);
@@ -45,7 +44,7 @@ export default function Edit({ package: pkg }) {
 
     const submit = (e) => {
         e.preventDefault();
-        put(route('admin.package.update', pkg.id));
+        post(route('admin.package.update', pkg.id));
     };
 
     return (
@@ -62,7 +61,9 @@ export default function Edit({ package: pkg }) {
                             <ArrowLeftIcon className="w-4 h-4" />
                             Kembali ke Daftar Paket
                         </Link>
-                        <h2 className="font-bold text-2xl text-gray-900">Edit Paket: {pkg.title_id}</h2>
+                        <h2 className="font-bold text-2xl text-gray-900">
+                            Edit Paket: {pkg.title_id}
+                        </h2>
                     </div>
 
                     <form onSubmit={submit} className="space-y-8">
@@ -171,7 +172,7 @@ export default function Edit({ package: pkg }) {
                                     <button
                                         type="button"
                                         onClick={handleAddDuration}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zenith-orange/10 text-zenith-orange rounded-full text-xs font-bold uppercase tracking-widest hover:bg-zenith-orange/20 transition-colors"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0057B8]/10 text-[#0057B8] rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[#0057B8]/20 transition-colors"
                                     >
                                         <PlusIcon className="w-4 h-4" /> Tambah Durasi
                                     </button>
@@ -197,7 +198,6 @@ export default function Edit({ package: pkg }) {
                                                 </div>
                                                 <InputError message={errors[`durations.${index}.duration`]} className="mt-1 text-xs" />
                                             </div>
-
                                             <div className="flex-1 w-full">
                                                 <InputLabel value="Harga" className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5" />
                                                 <div className="relative">

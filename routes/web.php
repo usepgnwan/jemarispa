@@ -11,6 +11,7 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get(),
         'packages' => \App\Models\Package::with('durations')->latest()->get(),
         'testimonials' => \App\Models\Testimoni::where('is_published', true)->latest()->take(6)->get(),
         'platforms' => \App\Models\Platform::latest()->get()
@@ -251,6 +252,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('platform', PlatformController::class)->except(['show']);
         Route::resource('faq', FaqController::class)->except(['show']);
         Route::resource('admin/package', PackageController::class)->names('admin.package')->except(['show']);
+        Route::resource('admin/signature-ritual', \App\Http\Controllers\SignatureRitualController::class)->names('admin.signature-ritual')->except(['show']);
         Route::resource('admin/employee', EmployeeController::class)->names('admin.employee')->except(['show']);
         Route::resource('admin/user', UserController::class)->names('admin.user')->except(['show']);
         
