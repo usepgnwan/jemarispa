@@ -12,7 +12,7 @@ import FloatingWhatsApp from '@/Components/Landing/FloatingWhatsApp';
 import MobileNav from '@/Components/Landing/MobileNav';
 import Footer from '@/Components/Landing/Footer';
 
-export default function Welcome({ auth, packages = [], testimonials = [] }) {
+export default function Welcome({ auth, packages = [], testimonials = [], platforms = [] }) {
     const [activeService, setActiveService] = useState('Default');
     const [lang, setLang] = useState(() => {
         return localStorage.getItem('app_lang') || 'ID';
@@ -74,24 +74,26 @@ export default function Welcome({ auth, packages = [], testimonials = [] }) {
                                     Jemari Spa kini tersedia di platform perjalanan favorit Anda. Nikmati kemudahan pemesanan dan konfirmasi instan di mana pun Anda berada.
                                 </p>
                                 <div className="flex flex-wrap gap-4">
-                                    <button 
-                                        onClick={() => logAnalytic('Platform', 'Klik Traveloka')}
-                                        className="flex items-center gap-x-3 bg-[#00BAF2] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:-translate-y-1 transition-all"
-                                    >
-                                        Traveloka
-                                    </button>
-                                    <button 
-                                        onClick={() => logAnalytic('Platform', 'Klik Tiket.com')}
-                                        className="flex items-center gap-x-3 bg-[#003580] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-blue-900/20 hover:-translate-y-1 transition-all"
-                                    >
-                                        Tiket.com
-                                    </button>
-                                    <button 
-                                        onClick={() => logAnalytic('Platform', 'Klik Agoda')}
-                                        className="flex items-center gap-x-3 bg-[#E12D2D] text-white px-8 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-red-500/20 hover:-translate-y-1 transition-all"
-                                    >
-                                        Agoda
-                                    </button>
+                                    {platforms.map(platform => (
+                                        <a 
+                                            key={platform.id}
+                                            href={platform.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={() => logAnalytic('Platform', `Klik ${platform.title}`)}
+                                            className="flex items-center gap-x-3 bg-white border border-gray-100 text-gray-800 px-6 py-4 rounded-full font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-gray-200/50 hover:-translate-y-1 hover:border-zenith-orange/30 transition-all"
+                                        >
+                                            {platform.logo ? (
+                                                <img src={`/storage/${platform.logo}`} alt={platform.title} className="w-5 h-5 object-contain" />
+                                            ) : (
+                                                <span className="material-symbols-outlined text-sm text-zenith-orange">link</span>
+                                            )}
+                                            {platform.title}
+                                        </a>
+                                    ))}
+                                    {platforms.length === 0 && (
+                                        <p className="text-sm text-gray-400 italic font-sans">Pemesanan online segera hadir...</p>
+                                    )}
                                 </div>
                             </div>
 

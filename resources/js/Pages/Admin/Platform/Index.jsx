@@ -44,12 +44,13 @@ export default function Index({ platforms, filters }) {
         title: '',
         description: '',
         url: '',
+        logo: null,
     });
 
     const openCreateModal = () => {
         setIsEditing(false);
         setCurrentPlatformId(null);
-        setData({ title: '', description: '', url: '' });
+        setData({ title: '', description: '', url: '', logo: null });
         clearErrors();
         setIsModalOpen(true);
     };
@@ -61,6 +62,9 @@ export default function Index({ platforms, filters }) {
             title: platform.title,
             description: platform.description || '',
             url: platform.url,
+            logo: null, // Reset logo for new upload
+            current_logo: platform.logo, // For preview
+            _method: 'put',
         });
         clearErrors();
         setIsModalOpen(true);
@@ -69,7 +73,7 @@ export default function Index({ platforms, filters }) {
     const closeModal = () => {
         setIsModalOpen(false);
         setTimeout(() => {
-            setData({ title: '', description: '', url: '' });
+            setData({ title: '', description: '', url: '', logo: null });
             reset();
             clearErrors();
         }, 300);
@@ -79,7 +83,8 @@ export default function Index({ platforms, filters }) {
         e.preventDefault();
         
         if (isEditing) {
-            put(route('platform.update', currentPlatformId), {
+            post(route('platform.update', currentPlatformId), {
+                forceFormData: true,
                 onSuccess: () => {
                     closeModal();
                     showToast('Platform berhasil diperbarui!');
@@ -209,6 +214,9 @@ export default function Index({ platforms, filters }) {
                                             No
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
+                                            Logo
+                                        </th>
+                                        <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
                                             Nama Platform
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
@@ -227,6 +235,15 @@ export default function Index({ platforms, filters }) {
                                         <tr key={platform.id} className="hover:bg-gray-50/50 transition-colors">
                                             <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500 font-medium">
                                                 {(platforms.current_page - 1) * platforms.per_page + index + 1}
+                                            </td>
+                                            <td className="px-6 py-5 whitespace-nowrap">
+                                                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-100 shadow-sm">
+                                                    {platform.logo ? (
+                                                        <img src={`/storage/${platform.logo}`} alt={platform.title} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-[10px] font-bold text-gray-400">NA</span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-5 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {platform.title}
@@ -309,6 +326,34 @@ export default function Index({ platforms, filters }) {
                     </h2>
 
                     <div className="space-y-6">
+                        <div className="flex items-center gap-6">
+                            <div className="shrink-0">
+                                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center relative group">
+                                    {data.logo ? (
+                                        <img src={URL.createObjectURL(data.logo)} className="w-full h-full object-cover" />
+                                    ) : data.current_logo ? (
+                                        <img src={`/storage/${data.current_logo}`} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <InputLabel htmlFor="logo" value="Platform Logo" />
+                                <input
+                                    id="logo"
+                                    type="file"
+                                    className="mt-1 block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#0057B8]/10 file:text-[#0057B8] hover:file:bg-[#0057B8]/20 transition-all"
+                                    onChange={(e) => setData('logo', e.target.files[0])}
+                                    accept="image/*"
+                                />
+                                <p className="mt-1 text-[10px] text-gray-400">SVG, PNG, JPG or GIF (max. 2MB)</p>
+                                <InputError message={errors.logo} className="mt-2" />
+                            </div>
+                        </div>
+
                         <div>
                             <InputLabel htmlFor="title" value="Title" />
                             <TextInput

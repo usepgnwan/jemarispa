@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Platform;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class PlatformController extends Controller
 {
@@ -38,7 +39,12 @@ class PlatformController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'url' => 'required|url|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
+
+        if ($request->hasFile('logo')) {
+            $validated['logo'] = $request->file('logo')->store('platforms', 'public');
+        }
 
         Platform::create($validated);
 
@@ -51,7 +57,16 @@ class PlatformController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'url' => 'required|url|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
+
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($platform->logo) {
+                Storage::disk('public')->delete($platform->logo);
+            }
+            $validated['logo'] = $request->file('logo')->store('platforms', 'public');
+        }
 
         $platform->update($validated);
 
@@ -60,6 +75,9 @@ class PlatformController extends Controller
 
     public function destroy(Platform $platform)
     {
+        if ($platform->logo) {
+            Storage::disk('public')->delete($platform->logo);
+        }
         $platform->delete();
 
         return back()->with('message', 'Platform berhasil dihapus');

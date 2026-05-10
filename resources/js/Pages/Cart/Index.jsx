@@ -22,7 +22,7 @@ const translations = {
         guestGender: 'Gender Pemesan',
         therapistGender: 'Gender Terapis',
         address: 'Alamat Lengkap',
-        addressPlaceholder: 'Alamat lengkap lokasi spa...',
+        addressPlaceholder: 'Alamat lengkap customer...',
         date: 'Tanggal Booking',
         time: 'Jam Booking',
         payment: 'Metode Pembayaran',
@@ -67,7 +67,7 @@ const translations = {
         guestGender: 'Guest Gender',
         therapistGender: 'Therapist Gender',
         address: 'Full Address',
-        addressPlaceholder: 'Full address for spa location...',
+        addressPlaceholder: 'Full customer address...',
         date: 'Booking Date',
         time: 'Booking Time',
         payment: 'Payment Method',
@@ -178,11 +178,11 @@ export default function Index({ auth, packages = [] }) {
             }
 
             const currentPackages = newGuests[0].packages || [];
-            
+
             savedCart.forEach(item => {
                 const pkgId = item.id.split('-')[0];
                 const exists = currentPackages.some(p => p.id === pkgId && p.duration === item.duration);
-                
+
                 if (!exists) {
                     currentPackages.push({
                         id: pkgId,
@@ -201,7 +201,7 @@ export default function Index({ auth, packages = [] }) {
 
             localStorage.removeItem('spa_cart');
             localStorage.removeItem('pending_service');
-            isFirstRender.current = false; 
+            isFirstRender.current = false;
         }
 
         if (isFirstRender.current) {
@@ -348,7 +348,7 @@ export default function Index({ auth, packages = [] }) {
                     adminPhone = '62' + adminPhone;
                 }
 
-                const rawTemplate = app_settings?.template_order || `Halo Jemari Spa, saya ingin memesan untuk [pax] orang:\n\n[details]\n\nTotal Bayar: [total]\n\nData Penanggung Jawab:\nNama: [name]\nWhatsApp: [phone]\nAlamat: [address]\n\nDetail Kedatangan:\nTanggal: [date]\nJam: [time]\nBayar via: [payment]\nSumber: [source]\nCatatan: [notes]`;
+                const rawTemplate = app_settings?.template_order || `Halo Jemari Spa, saya ingin memesan untuk [pax] orang:\n\n[details]\n\nTotal Bayar: [total]\n\nData Customer:\nNama: [name]\nWhatsApp: [phone]\nAlamat: [address]\n\nDetail Kedatangan:\nTanggal: [date]\nJam: [time]\nBayar via: [payment]\nSumber: [source]\nCatatan: [notes]`;
 
                 // Complex groupings for WA tags
                 const allGenders = guests.map((g, i) => `Orang ${i + 1}: ${g.guestGender === 'pria' ? t.pria : t.wanita}`).join(', ');
@@ -379,16 +379,16 @@ export default function Index({ auth, packages = [] }) {
                 };
 
                 let message = (app_settings?.template_order || `Halo Jemari Spa, saya ingin memesan untuk [pax] orang:\n\n[details]\n\nTotal Bayar: [total]\n\nData Pelanggan:\nNama: [name]\nWhatsApp: [phone]\nAlamat: [address]\n\nDetail Kedatangan:\nTanggal: [date]\nJam: [time]\nBayar via: [payment]\nSumber: [source]\nCatatan: [notes]`);
-                
+
                 // Convert HTML tags to newlines for WA compatibility
                 message = message.replace(/<\/p><p>/g, '\n')
-                                 .replace(/<p>/g, '')
-                                 .replace(/<\/p>/g, '\n')
-                                 .replace(/<strong>/g, '*')
-                                 .replace(/<\/strong>/g, '*')
-                                 .replace(/<br\s*\/?>/g, '\n')
-                                 .replace(/&nbsp;/g, ' ')
-                                 .replace(/<[^>]*>?/gm, ''); // Strip all other tags
+                    .replace(/<p>/g, '')
+                    .replace(/<\/p>/g, '\n')
+                    .replace(/<strong>/g, '*')
+                    .replace(/<\/strong>/g, '*')
+                    .replace(/<br\s*\/?>/g, '\n')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/<[^>]*>?/gm, ''); // Strip all other tags
 
                 for (const key in waData) {
                     message = message.split(`[${key}]`).join(waData[key]);
@@ -396,7 +396,7 @@ export default function Index({ auth, packages = [] }) {
 
                 const encodedMessage = encodeURIComponent(message);
                 const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                
+
                 // Use WhatsApp Web for desktop
                 const waUrl = isMobileDevice
                     ? `https://wa.me/${adminPhone}?text=${encodedMessage}`
@@ -445,22 +445,20 @@ export default function Index({ auth, packages = [] }) {
                                             key={n}
                                             type="button"
                                             onClick={() => handlePaxChange(n)}
-                                            className={`h-10 rounded-xl text-[12px] font-bold transition-all border ${
-                                                pax === n 
-                                                ? 'bg-zenith-orange text-white border-zenith-orange shadow-lg shadow-zenith-orange/20' 
-                                                : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent hover:border-zenith-orange/20'
-                                            }`}
+                                            className={`h-10 rounded-xl text-[12px] font-bold transition-all border ${pax === n
+                                                    ? 'bg-zenith-orange text-white border-zenith-orange shadow-lg shadow-zenith-orange/20'
+                                                    : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent hover:border-zenith-orange/20'
+                                                }`}
                                         >
                                             {n}
                                         </button>
                                     ))}
                                     <div className="relative col-span-2 sm:col-span-1">
                                         <select
-                                            className={`w-full h-10 pl-3 pr-8 rounded-xl text-[10px] font-bold appearance-none cursor-pointer border transition-all ${
-                                                pax > 6 
-                                                ? 'bg-zenith-orange text-white border-zenith-orange' 
-                                                : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent'
-                                            }`}
+                                            className={`w-full h-10 pl-3 pr-8 rounded-xl text-[10px] font-bold appearance-none cursor-pointer border transition-all ${pax > 6
+                                                    ? 'bg-zenith-orange text-white border-zenith-orange'
+                                                    : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent'
+                                                }`}
                                             value={pax > 6 ? pax : ''}
                                             onChange={(e) => handlePaxChange(e.target.value)}
                                         >
@@ -496,11 +494,10 @@ export default function Index({ auth, packages = [] }) {
                                                                         key={g}
                                                                         type="button"
                                                                         onClick={() => updateGuest(gIndex, 'guestGender', g)}
-                                                                        className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase transition-all ${
-                                                                            guest.guestGender === g
-                                                                            ? 'bg-zenith-orange text-white shadow-sm'
-                                                                            : 'text-zenith-charcoal/30 hover:text-zenith-orange'
-                                                                        }`}
+                                                                        className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase transition-all ${guest.guestGender === g
+                                                                                ? 'bg-zenith-orange text-white shadow-sm'
+                                                                                : 'text-zenith-charcoal/30 hover:text-zenith-orange'
+                                                                            }`}
                                                                     >
                                                                         {t[g]}
                                                                     </button>
@@ -516,11 +513,10 @@ export default function Index({ auth, packages = [] }) {
                                                                         key={g}
                                                                         type="button"
                                                                         onClick={() => updateGuest(gIndex, 'therapistGender', g)}
-                                                                        className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase transition-all ${
-                                                                            guest.therapistGender === g
-                                                                            ? 'bg-zenith-orange text-white shadow-sm'
-                                                                            : 'text-zenith-charcoal/30 hover:text-zenith-orange'
-                                                                        }`}
+                                                                        className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase transition-all ${guest.therapistGender === g
+                                                                                ? 'bg-zenith-orange text-white shadow-sm'
+                                                                                : 'text-zenith-charcoal/30 hover:text-zenith-orange'
+                                                                            }`}
                                                                     >
                                                                         {t[g]}
                                                                     </button>
@@ -813,14 +809,29 @@ export default function Index({ auth, packages = [] }) {
                                                     <p className="text-sm font-bold text-zenith-charcoal">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                                 </div>
 
-                                                {guests[activeGuestIndex]?.packages.some(p => p.name === `${title} ${currentDuration.duration}`) ? (
-                                                    <div className="h-10 w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20 shrink-0">
-                                                        <span className="material-symbols-outlined text-[20px]">check</span>
+                                                {guests[activeGuestIndex]?.packages.findIndex(p => p.name === `${title} ${currentDuration.duration}`) !== -1 ? (
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        {/* Checklist Status */}
+                                                        <div className="h-10 w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
+                                                            <span className="material-symbols-outlined text-[20px]">check</span>
+                                                        </div>
+                                                        {/* Unchecklist Action */}
+                                                        <button
+                                                            onClick={() => {
+                                                                const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => p.name === `${title} ${currentDuration.duration}`);
+                                                                if (pkgIdx !== -1) removePackageFromGuest(activeGuestIndex, pkgIdx);
+                                                            }}
+                                                            className="h-10 w-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+                                                            title="Hapus"
+                                                        >
+                                                            <span className="material-symbols-outlined text-[20px]">close</span>
+                                                        </button>
                                                     </div>
                                                 ) : (
                                                     <button
                                                         onClick={() => addPackageToGuest(pkg)}
                                                         className="h-10 w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20 shrink-0"
+                                                        title="Tambah"
                                                     >
                                                         <span className="material-symbols-outlined text-[20px]">add</span>
                                                     </button>

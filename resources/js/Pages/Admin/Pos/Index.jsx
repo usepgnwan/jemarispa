@@ -569,7 +569,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                 <div className="relative">
                                                     <MapPinIcon className="absolute left-3.5 top-3 w-4 h-4 text-gray-300" />
                                                     <textarea
-                                                        placeholder="Alamat Lengkap"
+                                                        placeholder="Alamat Customer"
                                                         className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange h-20 transition-all resize-none"
                                                         value={formData.address}
                                                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -705,14 +705,29 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                         <div className="w-32 text-right">
                                             <p className="text-sm font-bold text-zenith-orange">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                         </div>
-                                        {activeGuestIndex !== null && guests[activeGuestIndex].packages.some(p => p.name === `${pkg.title_id} ${currentDuration.duration}`) ? (
-                                            <div className="px-4 py-2 bg-zenith-charcoal text-white rounded-full text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-charcoal/20">
-                                                Selected
+                                        {activeGuestIndex !== null && guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`) !== -1 ? (
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                {/* Checklist Status */}
+                                                <div className="h-10 w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
+                                                    <CheckCircleIcon className="w-6 h-6" />
+                                                </div>
+                                                {/* Unchecklist Action */}
+                                                <button
+                                                    onClick={() => {
+                                                        const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`);
+                                                        if (pkgIdx !== -1) removePackageFromGuest(activeGuestIndex, pkgIdx);
+                                                    }}
+                                                    className="h-10 w-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+                                                    title="Hapus"
+                                                >
+                                                    <XMarkIcon className="w-6 h-6" />
+                                                </button>
                                             </div>
                                          ) : (
                                             <button
                                                 onClick={() => addPackageToGuest(pkg)}
                                                 className="h-10 w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20"
+                                                title="Tambah"
                                             >
                                                 <PlusIcon className="w-5 h-5" />
                                             </button>

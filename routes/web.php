@@ -12,7 +12,8 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
         'packages' => \App\Models\Package::with('durations')->latest()->get(),
-        'testimonials' => \App\Models\Testimoni::where('is_published', true)->latest()->take(6)->get()
+        'testimonials' => \App\Models\Testimoni::where('is_published', true)->latest()->take(6)->get(),
+        'platforms' => \App\Models\Platform::latest()->get()
     ]);
 });
 
