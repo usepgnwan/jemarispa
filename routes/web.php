@@ -208,6 +208,7 @@ use App\Http\Controllers\TestimoniController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TransactionController;
 
@@ -218,37 +219,47 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Admin routes
-    Route::get('admin/analytics', [AnalyticController::class, 'index'])->name('admin.analytics.index');
-    Route::resource('platform', PlatformController::class)->except(['show']);
-    Route::resource('faq', FaqController::class)->except(['show']);
-    Route::resource('testimoni', TestimoniController::class)->except(['show']);
-    Route::patch('testimoni/{testimoni}/publish', [TestimoniController::class, 'togglePublish'])->name('testimoni.publish');
-    Route::resource('admin/blog', BlogController::class)->names('admin.blog')->except(['show']);
-    Route::resource('admin/package', PackageController::class)->names('admin.package')->except(['show']);
-    Route::resource('admin/employee', EmployeeController::class)->names('admin.employee')->except(['show']);
-    
-    // Settings routes
-    Route::get('admin/settings', [SettingController::class, 'index'])->name('admin.settings.index');
-    Route::post('admin/settings', [SettingController::class, 'update'])->name('admin.settings.update');
-    Route::post('admin/settings/areas', [SettingController::class, 'storeArea'])->name('admin.settings.areas.store');
-    Route::put('admin/settings/areas/{area}', [SettingController::class, 'updateArea'])->name('admin.settings.areas.update');
-    Route::delete('admin/settings/areas/{area}', [SettingController::class, 'destroyArea'])->name('admin.settings.areas.destroy');
+    // ── DIGITAL MARKETING & ADMIN ──────────────────────────────────────────
+    Route::middleware(['role:admin,marketing'])->group(function() {
+        Route::get('admin/analytics', [AnalyticController::class, 'index'])->name('admin.analytics.index');
+        Route::resource('testimoni', TestimoniController::class)->except(['show']);
+        Route::patch('testimoni/{testimoni}/publish', [TestimoniController::class, 'togglePublish'])->name('testimoni.publish');
+        Route::resource('admin/blog', BlogController::class)->names('admin.blog')->except(['show']);
+    });
 
-    // Transaction management
-    Route::get('admin/transaction', [TransactionController::class, 'index'])->name('admin.transaction.index');
-    Route::patch('admin/transaction/{transaction}', [TransactionController::class, 'update'])->name('admin.transaction.update');
-    Route::patch('admin/transaction-items/{item}', [TransactionController::class, 'updateItem'])->name('admin.transaction_item.update');
-    Route::get('admin/transaction/{transaction}/pdf', [TransactionController::class, 'downloadPdf'])->name('admin.transaction.pdf');
-    Route::delete('admin/transaction/{transaction}', [TransactionController::class, 'destroy'])->name('admin.transaction.destroy');
-    Route::get('admin/therapist/report', [TransactionController::class, 'therapistReport'])->name('admin.therapist.report');
+    // ── CS & ADMIN ─────────────────────────────────────────────────────────
+    Route::middleware(['role:admin,cs'])->group(function() {
+        // Transaction management
+        Route::get('admin/transaction', [TransactionController::class, 'index'])->name('admin.transaction.index');
+        Route::patch('admin/transaction/{transaction}', [TransactionController::class, 'update'])->name('admin.transaction.update');
+        Route::patch('admin/transaction-items/{item}', [TransactionController::class, 'updateItem'])->name('admin.transaction_item.update');
+        Route::get('admin/transaction/{transaction}/pdf', [TransactionController::class, 'downloadPdf'])->name('admin.transaction.pdf');
+        Route::delete('admin/transaction/{transaction}', [TransactionController::class, 'destroy'])->name('admin.transaction.destroy');
+        Route::get('admin/therapist/report', [TransactionController::class, 'therapistReport'])->name('admin.therapist.report');
 
-    // POS routes
-    Route::get('admin/pos', [TransactionController::class, 'pos'])->name('admin.pos.index');
-    Route::post('admin/pos', [TransactionController::class, 'storePos'])->name('admin.pos.store');
+        // POS routes
+        Route::get('admin/pos', [TransactionController::class, 'pos'])->name('admin.pos.index');
+        Route::post('admin/pos', [TransactionController::class, 'storePos'])->name('admin.pos.store');
 
-    // Generate review link for a transaction
-    Route::post('admin/transaction/{transaction}/review-link', [TransactionController::class, 'generateReviewLink'])->name('admin.transaction.review_link');
+        // Generate review link for a transaction
+        Route::post('admin/transaction/{transaction}/review-link', [TransactionController::class, 'generateReviewLink'])->name('admin.transaction.review_link');
+    });
+
+    // ── ADMIN ONLY (Full Features) ────────────────────────────────────────
+    Route::middleware(['role:admin'])->group(function() {
+        Route::resource('platform', PlatformController::class)->except(['show']);
+        Route::resource('faq', FaqController::class)->except(['show']);
+        Route::resource('admin/package', PackageController::class)->names('admin.package')->except(['show']);
+        Route::resource('admin/employee', EmployeeController::class)->names('admin.employee')->except(['show']);
+        Route::resource('admin/user', UserController::class)->names('admin.user')->except(['show']);
+        
+        // Settings routes
+        Route::get('admin/settings', [SettingController::class, 'index'])->name('admin.settings.index');
+        Route::post('admin/settings', [SettingController::class, 'update'])->name('admin.settings.update');
+        Route::post('admin/settings/areas', [SettingController::class, 'storeArea'])->name('admin.settings.areas.store');
+        Route::put('admin/settings/areas/{area}', [SettingController::class, 'updateArea'])->name('admin.settings.areas.update');
+        Route::delete('admin/settings/areas/{area}', [SettingController::class, 'destroyArea'])->name('admin.settings.areas.destroy');
+    });
 });
 
 Route::get('invoice/{order_number}', [TransactionController::class, 'publicPdf'])->name('invoice.public');

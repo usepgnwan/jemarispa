@@ -25,41 +25,47 @@ export default function Sidebar({ collapsed }) {
         { 
             section: 'UTAMA',
             items: [
-                { name: 'Dashboard', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard') },
-                { name: 'Analitik', href: route('admin.analytics.index'), icon: ChartBarIcon, current: route().current('admin.analytics.index') },
+                { name: 'Dashboard', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard'), roles: ['admin', 'marketing', 'cs'] },
+                { name: 'Analitik', href: route('admin.analytics.index'), icon: ChartBarIcon, current: route().current('admin.analytics.index'), roles: ['admin', 'marketing'] },
             ]
         },
         { 
             section: 'PENGGUNA',
             items: [
-                { name: 'Fitur POS', href: route('admin.pos.index'), icon: CalculatorIcon, current: route().current('admin.pos.*') },
-                { name: 'Pesanan', href: route('admin.transaction.index'), icon: ShoppingCartIcon, current: route().current('admin.transaction.*') },
-                { name: 'Laporan Terapis', href: route('admin.therapist.report'), icon: ClipboardDocumentListIcon, current: route().current('admin.therapist.*') },
+                { name: 'Fitur POS', href: route('admin.pos.index'), icon: CalculatorIcon, current: route().current('admin.pos.*'), roles: ['admin', 'cs'] },
+                { name: 'Pesanan', href: route('admin.transaction.index'), icon: ShoppingCartIcon, current: route().current('admin.transaction.*'), roles: ['admin', 'cs'] },
+                { name: 'Laporan Terapis', href: route('admin.therapist.report'), icon: ClipboardDocumentListIcon, current: route().current('admin.therapist.*'), roles: ['admin', 'cs'] },
             ]
         },
         { 
             section: 'KONTEN',
             items: [
-                { name: 'Paket', href: route('admin.package.index'), icon: Square3Stack3DIcon, current: route().current('admin.package.*') },
-                { name: 'Testimoni', href: route('testimoni.index'), icon: StarIcon, current: route().current('testimoni.*') },
-                { name: 'Blog', href: route('admin.blog.index'), icon: DocumentTextIcon, current: route().current('admin.blog.*') },
-                { name: 'FAQ', href: route('faq.index'), icon: QuestionMarkCircleIcon, current: route().current('faq.*') },
+                { name: 'Paket', href: route('admin.package.index'), icon: Square3Stack3DIcon, current: route().current('admin.package.*'), roles: ['admin'] },
+                { name: 'Testimoni', href: route('testimoni.index'), icon: StarIcon, current: route().current('testimoni.*'), roles: ['admin', 'marketing'] },
+                { name: 'Blog', href: route('admin.blog.index'), icon: DocumentTextIcon, current: route().current('admin.blog.*'), roles: ['admin', 'marketing'] },
+                { name: 'FAQ', href: route('faq.index'), icon: QuestionMarkCircleIcon, current: route().current('faq.*'), roles: ['admin'] },
             ]
         },
         { 
             section: 'MASTER',
             items: [
-                { name: 'Data Karyawan', href: route('admin.employee.index'), icon: UsersIcon, current: route().current('admin.employee.*') },
-                { name: 'Platform', href: route('platform.index'), icon: GlobeAltIcon, current: route().current('platform.*') },
+                { name: 'Data Karyawan', href: route('admin.employee.index'), icon: UsersIcon, current: route().current('admin.employee.*'), roles: ['admin'] },
+                { name: 'Data User', href: route('admin.user.index'), icon: UsersIcon, current: route().current('admin.user.*'), roles: ['admin'] },
+                { name: 'Platform', href: route('platform.index'), icon: GlobeAltIcon, current: route().current('platform.*'), roles: ['admin'] },
             ]
         },
         { 
             section: 'SETTING',
             items: [
-                { name: 'Setting', href: route('admin.settings.index'), icon: Cog6ToothIcon, current: route().current('admin.settings.*') },
+                { name: 'Setting', href: route('admin.settings.index'), icon: Cog6ToothIcon, current: route().current('admin.settings.*'), roles: ['admin'] },
             ]
         }
     ];
+
+    const filteredNavigation = navigation.map(group => ({
+        ...group,
+        items: group.items.filter(item => item.roles.includes(user.role || 'admin'))
+    })).filter(group => group.items.length > 0);
 
     return (
         <div className="flex grow flex-col h-full bg-white border-r border-gray-200 transition-all duration-300 overflow-hidden">
@@ -79,7 +85,7 @@ export default function Sidebar({ collapsed }) {
             {/* Navigation Section - Scrollable */}
             <nav className="flex-1 overflow-y-auto px-6 py-4 scrollbar-hide">
                 <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                    {navigation.map((group) => (
+                    {filteredNavigation.map((group) => (
                         <li key={group.section}>
                             {!collapsed && (
                                 <div className="text-[10px] font-bold leading-6 text-gray-400 tracking-widest mb-2 uppercase">
@@ -128,7 +134,7 @@ export default function Sidebar({ collapsed }) {
                     collapsed ? 'justify-center' : ''
                 )}>
                     <div className="h-10 w-10 rounded-full bg-zenith-orange/10 flex items-center justify-center text-zenith-orange overflow-hidden shrink-0">
-                        <span className="font-bold text-sm uppercase">{user.name.charAt(0)}</span>
+                        <span className="font-bold text-sm uppercase">{user.name?.charAt(0)}</span>
                     </div>
                     {!collapsed && (
                         <div className="flex-1 min-w-0 transition-opacity duration-300">
