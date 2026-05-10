@@ -42,7 +42,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         phone: '',
         address: '',
         paymentMethod: 'cash',
-        source: 'Instagram',
+        source: 'Website',
         date: new Date().toISOString().split('T')[0],
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':'),
         transport_fee: 0,
@@ -194,7 +194,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                     phone: '',
                     address: '',
                     paymentMethod: 'cash',
-                    source: 'Instagram',
+                    source: 'Website',
                     date: new Date().toISOString().split('T')[0],
                     time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':'),
                     transport_fee: 0,
@@ -631,8 +631,9 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                 value={formData.source}
                                                 onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                                             >
+                                                <option value="Website">Website</option>
                                                 {platforms.map(p => (
-                                                    <option key={p.id} value={p.name}>{p.name}</option>
+                                                    <option key={p.id} value={p.title}>{p.title}</option>
                                                 ))}
                                             </select>
                                         </div>
