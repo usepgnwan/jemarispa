@@ -43,7 +43,7 @@ const translations = {
         finish: 'Selesai',
         toastAdd: 'Ditambahkan ke Pelanggan {n}: {name}',
         toastRemove: 'Dihapus dari Pelanggan {n}: {name}',
-        total: 'Total Keseluruhan',
+        total: 'Total pesanan',
         remove: 'Hapus',
         pria: 'Pria',
         wanita: 'Wanita',
@@ -401,6 +401,18 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                 const waUrl = isMobileDevice
                     ? `https://wa.me/${adminPhone}?text=${encodedMessage}`
                     : `https://web.whatsapp.com/send?phone=${adminPhone}&text=${encodedMessage}`;
+
+                // Track interaction
+                try {
+                    await axios.post(route('api.analytics.store'), {
+                        title: formData.name || 'Anonymous',
+                        category: 'Checkout WA',
+                        user_agent: navigator.userAgent,
+                        device_type: isMobileDevice ? 'mobile' : 'desktop'
+                    });
+                } catch (e) {
+                    console.error('Tracking failed', e);
+                }
 
                 window.open(waUrl, '_blank');
 

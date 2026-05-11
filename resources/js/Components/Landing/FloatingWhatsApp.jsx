@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import axios from 'axios';
 
 export default function FloatingWhatsApp() {
     const { app_settings } = usePage().props;
@@ -11,6 +12,13 @@ export default function FloatingWhatsApp() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // Track Analytics
+        axios.post(route('api.analytics.store'), {
+            category: 'Floating WA',
+            title: `Pertanyaan: ${formData.name}`
+        }).catch(err => console.error('Analytic Error:', err));
+
         let message = rawTemplate.replace(/<[^>]*>?/gm, ''); // Strip HTML
         message = message.replace('[name]', formData.name || 'tamu');
         message = message.replace('[question]', formData.question || 'layanan');
