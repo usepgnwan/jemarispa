@@ -134,7 +134,7 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                 </div>
             </main>
 
-            <Footer />
+            <Footer lang={lang} setLang={setLang} />
             <MobileNav lang={lang} />
         </div>
     );

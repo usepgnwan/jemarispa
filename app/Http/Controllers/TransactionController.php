@@ -43,6 +43,14 @@ class TransactionController extends Controller
             $query->where('status', $tab);
         }
 
+        // Therapist Filtering
+        $therapistId = $request->input('therapist_id');
+        if ($therapistId) {
+            $query->whereHas('items', function($q) use ($therapistId) {
+                $q->where('employee_id', $therapistId);
+            });
+        }
+
         // Date Range Filtering (overrides tab's 'recent' window when set)
         $dateFrom = $request->input('date_from');
         $dateTo   = $request->input('date_to');
@@ -70,7 +78,7 @@ class TransactionController extends Controller
             'failed' => Transaction::where('status', 'failed')->count(),
         ];
 
-        $packages = \App\Models\Package::with('durations')->get();
+        $packages = \App\Models\Package::with('durations')->where('is_signature', false)->get();
 
         return Inertia::render('Admin/Transaction/Index', [
             'transactions' => $transactions,
@@ -87,7 +95,7 @@ class TransactionController extends Controller
 
     public function pos()
     {
-        $packages = \App\Models\Package::with('durations')->latest()->get();
+        $packages = \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get();
         $employees = \App\Models\Employee::all();
         $todayTransactions = Transaction::with('items')
             ->whereDate('created_at', now()->toDateString())
@@ -283,7 +291,7 @@ class TransactionController extends Controller
 
     public function downloadPdf(Transaction $transaction)
     {
-        $transaction->load('items');
+        $transaction->load('items.employee');
         $settings = Setting::first();
         $pdf = Pdf::loadView('pdf.invoice', compact('transaction', 'settings'));
         $filename = "Invoice-" . str_replace(['/', '\\'], '-', $transaction->order_number) . ".pdf";
@@ -295,7 +303,7 @@ class TransactionController extends Controller
         // Decode order number if it has slashes encoded
         $orderNumber = str_replace('-', '/', $orderNumber);
         
-        $transaction = Transaction::with('items')->where('order_number', $orderNumber)->firstOrFail();
+        $transaction = Transaction::with('items.employee')->where('order_number', $orderNumber)->firstOrFail();
         $settings = Setting::first();
         $pdf = Pdf::loadView('pdf.invoice', compact('transaction', 'settings'));
         $filename = "Invoice-" . str_replace(['/', '\\'], '-', $transaction->order_number) . ".pdf";

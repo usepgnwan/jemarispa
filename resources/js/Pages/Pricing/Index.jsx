@@ -76,14 +76,14 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
     const addToCart = (pkg) => {
         const durationIndex = selectedDurations[pkg.id] || 0;
         const durationItem = pkg.durations[durationIndex];
-        
+
         const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
         const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
 
         const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
         const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
-        const isPackageSelected = 
-            savedCart.some(item => item.id.split('-')[0] === String(pkg.id)) || 
+        const isPackageSelected =
+            savedCart.some(item => item.id.split('-')[0] === String(pkg.id)) ||
             savedGuests.some(guest => (guest.packages || []).some(p => String(p.id) === String(pkg.id)));
 
         if (isPackageSelected) {
@@ -117,12 +117,12 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
             <Navbar auth={auth} lang={lang} setLang={setLang} forceSolid={true} signaturePackages={signaturePackages} />
 
-            <main className="pt-40 pb-20 px-6">
+            <main className="pt-32 md:pt-40 pb-20 px-6">
                 <div className="max-w-5xl mx-auto">
-                    <div className="text-center mb-16">
-                        <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.badge}</span>
-                        <h1 className="text-4xl md:text-6xl font-bold text-zenith-charcoal mb-6">{t.title}</h1>
-                        <p className="text-zenith-charcoal/40 text-sm max-w-lg mx-auto">{t.desc}</p>
+                    <div className="text-center mb-12 md:mb-16">
+                        <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[8px] md:text-[10px] mb-3 md:mb-4 block">{t.badge}</span>
+                        <h1 className="text-3xl md:text-6xl font-bold text-zenith-charcoal mb-4 md:mb-6 leading-tight">{t.title}</h1>
+                        <p className="text-zenith-charcoal/60 text-xs md:text-sm max-w-md mx-auto px-4 md:px-0 leading-relaxed">{t.desc}</p>
                     </div>
 
                     <div className="bg-white rounded-[3rem] shadow-2xl shadow-zenith-orange/5 overflow-hidden border border-zenith-orange/5">
@@ -138,77 +138,92 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                 packages.map((pkg) => {
                                     const durationIndex = selectedDurations[pkg.id] || 0;
                                     const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
-                                    
-                                    const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
+
+                                    const primaryTitle = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
+                                    const secondaryTitle = lang === 'EN' ? pkg.title_id : pkg.title_en;
                                     const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
+                                    const description = lang === 'EN' ? (pkg.description_en || pkg.description_id) : pkg.description_id;
 
                                     return (
-                                        <div key={pkg.id} className="p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6 hover:bg-zenith-orange/[0.02] transition-colors group">
-                                            <div className="flex-1 w-full">
-                                                <span className="px-3 py-1 rounded-full bg-zenith-dim/10 text-[8px] font-bold text-zenith-charcoal/60 uppercase tracking-wider mb-3 inline-block">
+                                        <div key={pkg.id} className="p-6 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 hover:bg-zenith-orange/[0.02] transition-colors group">
+                                            <div className="flex-1 w-full text-left">
+                                                <span className="px-3 py-1 rounded-full bg-zenith-dim/10 text-[8px] font-bold text-zenith-charcoal/60 uppercase tracking-wider mb-4 inline-block">
                                                     {category || 'Package'}
                                                 </span>
-                                                <h3 className="text-xl md:text-2xl text-zenith-charcoal group-hover:text-zenith-orange transition-colors">
-                                                    {title}
-                                                </h3>
+                                                <div className="mb-4">
+                                                    <h3 className="text-xl md:text-2xl font-bold text-zenith-charcoal group-hover:text-zenith-orange transition-colors">
+                                                        {primaryTitle}
+                                                    </h3>
+                                                    {/* {secondaryTitle && (
+                                                        <p className="text-sm md:text-base text-gray-400 font-medium">
+                                                            {secondaryTitle}
+                                                        </p>
+                                                    )} */}
+                                                </div>
+
+                                                {description && (
+                                                    <div
+                                                        className="text-xs md:text-sm text-gray-500 leading-relaxed max-w-2xl prose prose-sm prose-zenith"
+                                                        dangerouslySetInnerHTML={{ __html: description }}
+                                                    />
+                                                )}
                                             </div>
-                                            
-                                            <div className="flex items-center gap-x-8 w-full md:w-auto justify-between md:justify-end">
-                                                <div className="w-full md:w-48">
+
+                                            <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-x-12 w-full md:w-auto">
+                                                {/* Duration Selection */}
+                                                <div className="w-full md:w-32">
+                                                    <p className="text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-[0.2em] mb-2">{t.selectDuration}</p>
                                                     {pkg.durations && pkg.durations.length > 1 ? (
-                                                        <div className="flex flex-col md:items-center gap-y-2">
-                                                            <span className="md:hidden text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{t.selectDuration}</span>
-                                                            <select 
-                                                                className="w-full md:w-32 bg-zenith-surface border-none rounded-xl px-4 py-2 text-[10px] font-bold text-zenith-charcoal focus:ring-1 focus:ring-zenith-orange appearance-none cursor-pointer text-center"
+                                                        <div className="relative">
+                                                            <select
+                                                                className="w-full bg-zenith-surface border border-zenith-orange/10 rounded-xl px-4 py-3 text-[10px] font-bold text-zenith-charcoal focus:ring-1 focus:ring-zenith-orange appearance-none cursor-pointer"
                                                                 value={durationIndex}
                                                                 onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
                                                             >
                                                                 {pkg.durations.map((d, i) => (
                                                                     <option key={d.id} value={i}>
-                                                                        {d.duration.toLowerCase().includes('menit') || d.duration.toLowerCase().includes('min') 
-                                                                            ? d.duration 
-                                                                            : `${d.duration} ${lang === 'EN' ? 'Minutes' : 'Menit'}`}
+                                                                        {d.duration.toLowerCase().includes('menit') || d.duration.toLowerCase().includes('min')
+                                                                            ? d.duration
+                                                                            : `${d.duration} ${lang === 'EN' ? 'Min' : 'Menit'}`}
                                                                     </option>
                                                                 ))}
                                                             </select>
+                                                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zenith-orange pointer-events-none">expand_more</span>
                                                         </div>
                                                     ) : (
-                                                        <div className="text-center">
-                                                            <span className="inline-block text-[10px] font-bold text-zenith-orange bg-zenith-orange/5 px-4 py-2 rounded-xl border border-zenith-orange/10">
-                                                                {currentDuration.duration.toLowerCase().includes('menit') || currentDuration.duration.toLowerCase().includes('min') 
-                                                                    ? currentDuration.duration 
-                                                                    : `${currentDuration.duration} ${lang === 'EN' ? 'Minutes' : 'Menit'}`}
+                                                        <div className="bg-zenith-orange/5 border border-zenith-orange/10 rounded-xl px-4 py-3">
+                                                            <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">
+                                                                {currentDuration.duration.toLowerCase().includes('menit') || currentDuration.duration.toLowerCase().includes('min')
+                                                                    ? currentDuration.duration
+                                                                    : `${currentDuration.duration} ${lang === 'EN' ? 'Min' : 'Menit'}`}
                                                             </span>
                                                         </div>
                                                     )}
                                                 </div>
 
-                                                <div className="text-right min-w-[120px] md:w-40 pr-0 md:pr-4">
-                                                    <p className="md:hidden text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest mb-1">{t.investment}</p>
-                                                    <p className="text-2xl font-bold text-zenith-charcoal">
-                                                        Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}
-                                                    </p>
+                                                {/* Price Display */}
+                                                <div className="text-left md:text-right md:min-w-[140px]">
+                                                    <p className="text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-[0.2em] mb-1">{t.investment}</p>
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-xs font-bold text-zenith-charcoal/40">Rp</span>
+                                                        <span className="text-2xl md:text-3xl font-bold text-zenith-charcoal">
+                                                            {parseFloat(currentDuration.price).toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
+                                                {/* Add Button */}
                                                 <button
                                                     onClick={() => addToCart(pkg)}
-                                                    className={`h-12 flex items-center justify-center px-6 rounded-full transition-all transform hover:scale-105 active:scale-95 shrink-0 text-[10px] font-bold uppercase tracking-widest ${
-                                                        cartItems.includes(String(pkg.id))
-                                                        ? 'bg-zenith-orange text-white shadow-lg shadow-zenith-orange/20'
-                                                        : 'bg-zenith-surface text-zenith-orange border border-zenith-orange/20 hover:bg-zenith-orange hover:text-white'
-                                                    }`}
+                                                    className={`w-full md:w-auto h-14 md:h-12 flex items-center justify-center px-8 rounded-2xl transition-all transform hover:scale-105 active:scale-95 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] ${cartItems.includes(String(pkg.id))
+                                                        ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/30'
+                                                        : 'bg-white text-zenith-orange border border-zenith-orange/20 hover:bg-zenith-orange hover:text-white shadow-sm'
+                                                        }`}
                                                 >
-                                                    {cartItems.includes(String(pkg.id)) ? (
-                                                        <span className="flex items-center gap-2">
-                                                            <span className="material-symbols-outlined text-[16px]">done_all</span>
-                                                            {t.selected}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="flex items-center gap-2">
-                                                            <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
-                                                            {lang === 'EN' ? 'Add' : 'Pesan'}
-                                                        </span>
-                                                    )}
+                                                    <span className="material-symbols-outlined text-sm mr-2">
+                                                        {cartItems.includes(String(pkg.id)) ? 'check_circle' : 'add_shopping_cart'}
+                                                    </span>
+                                                    {cartItems.includes(String(pkg.id)) ? (lang === 'EN' ? 'Added' : 'Terpilih') : (lang === 'EN' ? 'Add' : 'Pesan')}
                                                 </button>
                                             </div>
                                         </div>
@@ -234,7 +249,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                 </div>
             )}
 
-            <Footer />
+            <Footer lang={lang} setLang={setLang} />
             <MobileNav lang={lang} />
         </div>
     );

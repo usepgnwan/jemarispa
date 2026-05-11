@@ -155,8 +155,10 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
     };
 
     const filteredPackages = packages.filter(p => {
-        return p.title_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const hasDurations = p.durations && p.durations.length > 0;
+        const matchesSearch = p.title_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (p.category_id && p.category_id.toLowerCase().includes(searchQuery.toLowerCase()));
+        return hasDurations && matchesSearch;
     });
 
     const handleCheckout = async (e) => {
@@ -425,7 +427,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                                 <div className="h-2 w-2 rounded-full bg-zenith-orange"></div>
                                                                 <div>
                                                                     <p className="text-sm font-bold text-gray-900">{pkg.groupName || pkg.name}</p>
-                                                                    <p className="text-[10px] font-bold text-zenith-orange uppercase tracking-widest mt-0.5">{pkg.duration} Menit • Rp {pkg.price.toLocaleString('id-ID')}</p>
+                                                                    <p className="text-[10px] font-bold text-zenith-orange uppercase tracking-widest mt-0.5">{pkg.duration} • Rp {pkg.price.toLocaleString('id-ID')}</p>
                                                                 </div>
                                                             </div>
                                                             <button
@@ -441,37 +443,22 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
 
                                             {/* Staff Assignment Section */}
                                             <div className="bg-zenith-charcoal/[0.02] p-6 rounded-[2rem] border border-gray-50 space-y-5">
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div className="space-y-2 col-span-2">
                                                         <label className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
                                                             <IdentificationIcon className="w-3.5 h-3.5" />
-                                                            Pilih Terapis
+                                                            Terapis
                                                         </label>
                                                         <select
                                                             className="w-full bg-white border-gray-100 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-700 focus:ring-zenith-orange shadow-sm"
                                                             value={guest.employee_id}
                                                             onChange={(e) => updateGuest(gIndex, 'employee_id', e.target.value)}
                                                         >
-                                                            <option value="">(Belum Ada)</option>
+                                                            <option value="">Pilih Terapis</option>
                                                             {employees.map(emp => (
                                                                 <option key={emp.id} value={emp.id}>{emp.name}</option>
                                                             ))}
                                                         </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                                                            <BanknotesIcon className="w-3.5 h-3.5" />
-                                                            Komisi
-                                                        </label>
-                                                        <div className="relative">
-                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">Rp</span>
-                                                            <input
-                                                                type="number"
-                                                                className="w-full bg-white border-gray-100 rounded-xl py-2.5 pl-8 pr-3 text-xs font-bold text-zenith-orange focus:ring-zenith-orange shadow-sm"
-                                                                value={guest.therapist_commission}
-                                                                onChange={(e) => updateGuest(gIndex, 'therapist_commission', e.target.value)}
-                                                            />
-                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -656,15 +643,14 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             {/* Modal & Toast Components */}
             {/* ... rest of the modal logic (unchanged) ... */}
             
-            {/* Add Service Modal */}
             <Modal show={showAddModal} onClose={() => setShowAddModal(false)} maxWidth="2xl">
-                <div className="p-8">
-                    <div className="flex justify-between items-center mb-8">
+                <div className="p-5 sm:p-8">
+                    <div className="flex justify-between items-center mb-6 sm:mb-8">
                         <div>
                             <h3 className="text-xl font-bold text-gray-900">Pilih Layanan</h3>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pilih paket untuk Orang ke-{activeGuestIndex + 1}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pilih paket untuk Pelanggan ke-{activeGuestIndex + 1}</p>
                         </div>
-                        <button onClick={() => setShowAddModal(false)} className="p-2 text-gray-400 hover:text-zenith-orange">
+                        <button onClick={() => setShowAddModal(false)} className="p-2 text-gray-400 hover:text-zenith-orange transition-colors">
                             <XMarkIcon className="w-6 h-6" />
                         </button>
                     </div>
@@ -679,38 +665,38 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                         />
                     </div>
 
-                    <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4">
+                    <div className="max-h-[60vh] sm:max-h-[500px] overflow-y-auto pr-2 space-y-4">
                         {filteredPackages.map(pkg => {
                              const durationIndex = selectedDurations[pkg.id] || 0;
                              const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
 
                              return (
-                                <div key={pkg.id} className="p-5 rounded-3xl border border-gray-100 bg-gray-50/30 hover:border-zenith-orange/30 hover:bg-white transition-all flex items-center justify-between group">
+                                <div key={pkg.id} className="p-4 sm:p-5 rounded-3xl border border-gray-100 bg-gray-50/30 hover:border-zenith-orange/30 hover:bg-white transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                                     <div className="flex-1">
                                         <h4 className="font-bold text-gray-900 group-hover:text-zenith-orange transition-colors">{pkg.title_id}</h4>
                                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{pkg.category_id}</p>
                                     </div>
 
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-32">
+                                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-none border-gray-100">
+                                        <div className="w-28 sm:w-32">
                                             <select
-                                                className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 focus:ring-zenith-orange"
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-[10px] sm:text-xs font-bold text-gray-700 focus:ring-zenith-orange"
                                                 value={durationIndex}
                                                 onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
                                             >
                                                 {pkg.durations.map((d, i) => (
-                                                    <option key={d.id} value={i}>{d.duration} Menit</option>
+                                                    <option key={d.id} value={i}>{d.duration}</option>
                                                 ))}
                                             </select>
                                         </div>
-                                        <div className="w-32 text-right">
-                                            <p className="text-sm font-bold text-zenith-orange">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
+                                        <div className="text-right sm:w-32">
+                                            <p className="text-xs sm:text-sm font-bold text-zenith-orange whitespace-nowrap">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                         </div>
                                         {activeGuestIndex !== null && guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`) !== -1 ? (
                                             <div className="flex items-center gap-2 shrink-0">
                                                 {/* Checklist Status */}
-                                                <div className="h-10 w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
-                                                    <CheckCircleIcon className="w-6 h-6" />
+                                                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
+                                                    <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                                 </div>
                                                 {/* Unchecklist Action */}
                                                 <button
@@ -718,16 +704,16 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                         const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`);
                                                         if (pkgIdx !== -1) removePackageFromGuest(activeGuestIndex, pkgIdx);
                                                     }}
-                                                    className="h-10 w-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+                                                    className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
                                                     title="Hapus"
                                                 >
-                                                    <XMarkIcon className="w-6 h-6" />
+                                                    <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                                 </button>
                                             </div>
                                          ) : (
                                             <button
                                                 onClick={() => addPackageToGuest(pkg)}
-                                                className="h-10 w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20"
+                                                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20"
                                                 title="Tambah"
                                             >
                                                 <PlusIcon className="w-5 h-5" />

@@ -9,16 +9,16 @@ const translations = {
     'ID': {
         step1: '1. Periksa Pesanan & Paket',
         step2: '2. Data Pemesan',
-        title: 'Paket Per Orang',
-        empty: 'Belum ada paket yang dipilih untuk orang ini.',
+        title: 'Paket Per Pelanggan',
+        empty: 'Belum ada paket yang dipilih untuk pelanggan ini.',
         seePackages: 'Klik Lihat Paket Disini',
         addMore: 'Tambah Paket',
         explore: 'Pilih Paket Sekarang',
         secureBooking: 'Konfirmasi Pesanan',
         fullName: 'Nama Pelanggan (Pemesan)',
         phone: 'Nomor WhatsApp',
-        pax: 'Jumlah Orang (Pax)',
-        guestTitle: 'Detail Orang ke-{n}',
+        pax: 'Jumlah Pelanggan (Pax)',
+        guestTitle: 'Detail Pelanggan ke-{n}',
         guestGender: 'Gender Pemesan',
         therapistGender: 'Gender Terapis',
         address: 'Alamat Lengkap',
@@ -33,7 +33,7 @@ const translations = {
         namePlaceholder: 'Nama Pelanggan',
         phonePlaceholder: '081...',
         checkout: 'Kirim Pesanan (WhatsApp)',
-        modalTitle: 'Pilih Paket untuk Orang ke-{n}',
+        modalTitle: 'Pilih Paket untuk Pelanggan ke-{n}',
         modalDesc: 'Pilih layanan dan tentukan durasinya',
         searchPlaceholder: 'Cari paket (misal: Pijat, Bekam...)',
         selectDuration: 'Pilih Durasi',
@@ -41,8 +41,8 @@ const translations = {
         duration: 'Durasi',
         price: 'Harga',
         finish: 'Selesai',
-        toastAdd: 'Ditambahkan ke Orang {n}: {name}',
-        toastRemove: 'Dihapus dari Orang {n}: {name}',
+        toastAdd: 'Ditambahkan ke Pelanggan {n}: {name}',
+        toastRemove: 'Dihapus dari Pelanggan {n}: {name}',
         total: 'Total Keseluruhan',
         remove: 'Hapus',
         pria: 'Pria',
@@ -54,8 +54,8 @@ const translations = {
     'EN': {
         step1: '1. Review Order & Packages',
         step2: '2. Customer Info',
-        title: 'Packages Per Person',
-        empty: 'No packages selected for this person.',
+        title: 'Packages Per Customer',
+        empty: 'No packages selected for this customer.',
         seePackages: 'Click to View Packages Here',
         addMore: 'Add Package',
         explore: 'Explore Packages Now',
@@ -63,7 +63,7 @@ const translations = {
         fullName: 'Customer Name (PIC)',
         phone: 'WhatsApp Number',
         pax: 'Number of People',
-        guestTitle: 'Person {n} Details',
+        guestTitle: 'Customer {n} Details',
         guestGender: 'Guest Gender',
         therapistGender: 'Therapist Gender',
         address: 'Full Address',
@@ -78,7 +78,7 @@ const translations = {
         namePlaceholder: 'Customer Name',
         phonePlaceholder: '081...',
         checkout: 'Send via WhatsApp',
-        modalTitle: 'Select Package for Person {n}',
+        modalTitle: 'Select Package for Customer {n}',
         modalDesc: 'Choose treatment and duration',
         searchPlaceholder: 'Search packages (e.g., Massage, Therapy...)',
         selectDuration: 'Select Duration',
@@ -86,8 +86,8 @@ const translations = {
         duration: 'Duration',
         price: 'Price',
         finish: 'Done',
-        toastAdd: 'Added to Person {n}: {name}',
-        toastRemove: 'Removed from Person {n}: {name}',
+        toastAdd: 'Added to Customer {n}: {name}',
+        toastRemove: 'Removed from Customer {n}: {name}',
         total: 'Grand Total',
         remove: 'Remove',
         pria: 'Male',
@@ -167,7 +167,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
         const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
 
         if (savedCart.length > 0) {
-            // Combine all cart items into Person 1
+            // Combine all cart items into Customer 1
             const newGuests = [...guests];
             if (newGuests.length === 0) {
                 newGuests.push({
@@ -317,7 +317,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
         const totalPrice = calculateTotal();
         const guestDetails = guests.map((g, i) => {
             const pkgs = g.packages.map(p => `${p.name} @ Rp ${p.price.toLocaleString('id-ID')}`).join('\n    ');
-            return `Orang ${i + 1}:\n  Gender: ${g.guestGender === 'pria' ? t.pria : t.wanita}\n  Terapis: ${g.therapistGender === 'pria' ? t.pria : t.wanita}\n  Treatment:\n    ${pkgs || '(Belum pilih paket)'}`;
+            return `Pelanggan ${i + 1}:\n  Gender: ${g.guestGender === 'pria' ? t.pria : t.wanita}\n  Terapis: ${g.therapistGender === 'pria' ? t.pria : t.wanita}\n  Treatment:\n    ${pkgs || '(Belum pilih paket)'}`;
         }).join('\n\n');
 
         const payload = {
@@ -351,11 +351,11 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                 const rawTemplate = app_settings?.template_order || `Halo Jemari Spa, saya ingin memesan untuk [pax] orang:\n\n[details]\n\nTotal Bayar: [total]\n\nData Customer:\nNama: [name]\nWhatsApp: [phone]\nAlamat: [address]\n\nDetail Kedatangan:\nTanggal: [date]\nJam: [time]\nBayar via: [payment]\nSumber: [source]\nCatatan: [notes]`;
 
                 // Complex groupings for WA tags
-                const allGenders = guests.map((g, i) => `Orang ${i + 1}: ${g.guestGender === 'pria' ? t.pria : t.wanita}`).join(', ');
-                const allTherapistGenders = guests.map((g, i) => `Orang ${i + 1}: ${g.therapistGender === 'pria' ? t.pria : t.wanita}`).join(', ');
+                const allGenders = guests.map((g, i) => `Pelanggan ${i + 1}: ${g.guestGender === 'pria' ? t.pria : t.wanita}`).join(', ');
+                const allTherapistGenders = guests.map((g, i) => `Pelanggan ${i + 1}: ${g.therapistGender === 'pria' ? t.pria : t.wanita}`).join(', ');
                 const groupedPackages = guests.map((g, i) => {
                     const pkgs = g.packages.map(p => `${p.name} @ Rp ${p.price.toLocaleString('id-ID')}`).join('\n  - ');
-                    return `Orang ${i + 1}:\n  - ${pkgs}`;
+                    return `Pelanggan ${i + 1}:\n  - ${pkgs}`;
                 }).join('\n');
 
                 const waData = {
@@ -437,7 +437,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                             <div className="mb-6 bg-white rounded-3xl p-5 shadow-lg border border-zenith-orange/5">
                                 <div className="flex items-center justify-between mb-4">
                                     <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block">{t.pax}</label>
-                                    <span className="text-[10px] font-bold text-zenith-orange">{pax} {lang === 'ID' ? 'Orang' : 'Person'}</span>
+                                    <span className="text-[10px] font-bold text-zenith-orange">{pax} {lang === 'ID' ? 'Pelanggan' : 'Customer'}</span>
                                 </div>
                                 <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-8 gap-2">
                                     {[1, 2, 3, 4, 5, 6].map(n => (
@@ -446,8 +446,8 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                             type="button"
                                             onClick={() => handlePaxChange(n)}
                                             className={`h-10 rounded-xl text-[12px] font-bold transition-all border ${pax === n
-                                                    ? 'bg-zenith-orange text-white border-zenith-orange shadow-lg shadow-zenith-orange/20'
-                                                    : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent hover:border-zenith-orange/20'
+                                                ? 'bg-zenith-orange text-white border-zenith-orange shadow-lg shadow-zenith-orange/20'
+                                                : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent hover:border-zenith-orange/20'
                                                 }`}
                                         >
                                             {n}
@@ -456,8 +456,8 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                     <div className="relative col-span-2 sm:col-span-1">
                                         <select
                                             className={`w-full h-10 pl-3 pr-8 rounded-xl text-[10px] font-bold appearance-none cursor-pointer border transition-all ${pax > 6
-                                                    ? 'bg-zenith-orange text-white border-zenith-orange'
-                                                    : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent'
+                                                ? 'bg-zenith-orange text-white border-zenith-orange'
+                                                : 'bg-zenith-surface text-zenith-charcoal/40 border-transparent'
                                                 }`}
                                             value={pax > 6 ? pax : ''}
                                             onChange={(e) => handlePaxChange(e.target.value)}
@@ -495,8 +495,8 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                                         type="button"
                                                                         onClick={() => updateGuest(gIndex, 'guestGender', g)}
                                                                         className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase transition-all ${guest.guestGender === g
-                                                                                ? 'bg-zenith-orange text-white shadow-sm'
-                                                                                : 'text-zenith-charcoal/30 hover:text-zenith-orange'
+                                                                            ? 'bg-zenith-orange text-white shadow-sm'
+                                                                            : 'text-zenith-charcoal/30 hover:text-zenith-orange'
                                                                             }`}
                                                                     >
                                                                         {t[g]}
@@ -514,8 +514,8 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                                         type="button"
                                                                         onClick={() => updateGuest(gIndex, 'therapistGender', g)}
                                                                         className={`px-4 py-1.5 rounded-lg text-[8px] font-bold uppercase transition-all ${guest.therapistGender === g
-                                                                                ? 'bg-zenith-orange text-white shadow-sm'
-                                                                                : 'text-zenith-charcoal/30 hover:text-zenith-orange'
+                                                                            ? 'bg-zenith-orange text-white shadow-sm'
+                                                                            : 'text-zenith-charcoal/30 hover:text-zenith-orange'
                                                                             }`}
                                                                     >
                                                                         {t[g]}
@@ -863,7 +863,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                 </div>
             )}
 
-            <Footer />
+            <Footer lang={lang} setLang={setLang} />
             <MobileNav lang={lang} />
         </div>
     );

@@ -15,5 +15,10 @@ class Setting extends Model
         'template_question',
         'template_invoice',
         'default_commission',
+        'title',
+        'url_fb',
+        'url_instagram',
+        'url_x',
+        'url_tiktok',
     ];
 }

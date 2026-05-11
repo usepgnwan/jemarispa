@@ -16,7 +16,7 @@ const translations = {
         tagline: '',
         title: 'Choose Our Best Treatment',
         durationLabel: 'Duration:',
-        bookBtn: 'Book This Path',
+        bookBtn: 'Book This Package',
         seeAll: 'See All Packages',
         minute: 'Minutes',
         toastAdd: '{name} added successfully!',
@@ -33,23 +33,23 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
         const checkSelection = () => {
             const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
             const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
-            
+
             // Collect all unique package IDs from both storages
             const selectedIds = new Set();
-            
+
             // From landing page cart
             savedCart.forEach(item => {
                 const baseId = item.id.split('-')[0];
                 selectedIds.add(baseId);
             });
-            
+
             // From all guests in checkout
             savedGuests.forEach(guest => {
                 (guest.packages || []).forEach(p => {
                     if (p.id) selectedIds.add(String(p.id));
                 });
             });
-            
+
             setCartItems(Array.from(selectedIds));
         };
 
@@ -83,17 +83,17 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
     const addToCart = (pkg) => {
         const durationIndex = selectedDurations[pkg.id] || 0;
         const variant = pkg.durations[durationIndex];
-        
+
         const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
         const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
-        
+
         const savedCart = JSON.parse(localStorage.getItem('spa_cart') || '[]');
         const savedGuests = JSON.parse(localStorage.getItem('jemari_checkout_guests') || '[]');
         const itemId = `${pkg.id}-${variant.duration}`;
 
         // Check if ANY variant of this package is selected for ANY person
-        const isPackageSelected = 
-            savedCart.some(item => item.id.split('-')[0] === String(pkg.id)) || 
+        const isPackageSelected =
+            savedCart.some(item => item.id.split('-')[0] === String(pkg.id)) ||
             savedGuests.some(guest => (guest.packages || []).some(p => String(p.id) === String(pkg.id)));
 
         // If already selected, just go to cart
@@ -109,11 +109,11 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
             duration: variant.duration,
             category: category || 'Package'
         };
-        
+
         const newCart = [...savedCart, newItem];
         localStorage.setItem('spa_cart', JSON.stringify(newCart));
         window.dispatchEvent(new Event('cart-updated'));
-        
+
         // Redirect immediately as requested
         router.visit('/cart');
     };
@@ -130,7 +130,7 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
     const renderCard = (pkg, index, isMobile = false) => {
         const durationIndex = selectedDurations[pkg.id] || 0;
         const currentVariant = pkg.durations[durationIndex] || { duration: '-', price: 0 };
-        
+
         const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
         const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
         const description = lang === 'EN' ? (pkg.description_en || pkg.description_id) : pkg.description_id;
@@ -139,16 +139,15 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
         const isFeatured = !isMobile && index === 1;
 
         return (
-            <div 
+            <div
                 key={pkg.id}
-                className={`snap-center shrink-0 w-full md:w-auto rounded-[2rem] md:rounded-[3rem] p-5 md:p-10 transition-all duration-700 flex flex-col ${
-                    isFeatured 
-                        ? 'bg-white shadow-[0_32px_64px_-16px_rgba(244,124,81,0.1)] border border-zenith-orange/10 lg:scale-105 z-10' 
-                        : 'bg-white/50 border border-white hover:bg-white hover:shadow-xl'
-                }`}
+                className={`snap-center shrink-0 w-full md:w-auto rounded-[2rem] md:rounded-[3rem] p-5 md:p-10 transition-all duration-700 flex flex-col ${isFeatured
+                    ? 'bg-white shadow-[0_32px_64px_-16px_rgba(244,124,81,0.1)] border border-zenith-orange/10 lg:scale-105 z-10'
+                    : 'bg-white/50 border border-white hover:bg-white hover:shadow-xl'
+                    }`}
             >
                 <h3 className="text-[7px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-zenith-orange mb-3 md:mb-8">{category || (lang === 'EN' ? 'Package' : 'Paket')}</h3>
-                
+
                 <div className="mb-4 md:mb-6">
                     <div className="flex items-baseline gap-1 mb-1 md:mb-3">
                         <span className="text-[10px] md:text-sm font-bold text-gray-400">Rp</span>
@@ -156,11 +155,11 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
                             {(parseFloat(currentVariant.price) / 1000).toFixed(0)}k
                         </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-x-2 mt-1 md:mt-2">
                         <span className="text-[7px] md:text-[10px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{t.durationLabel}</span>
                         {pkg.durations?.length > 1 ? (
-                            <select 
+                            <select
                                 className="bg-zenith-surface border-none rounded-lg px-2 py-1 md:px-3 md:py-1.5 text-[8px] md:text-[10px] font-bold text-zenith-charcoal focus:ring-1 focus:ring-zenith-orange appearance-none cursor-pointer"
                                 value={durationIndex}
                                 onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
@@ -178,21 +177,20 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
                 </div>
 
                 <h4 className="text-sm md:text-xl text-zenith-charcoal mb-2 md:mb-4 truncate">{title}</h4>
-                
-                <div 
+
+                <div
                     className="text-[10px] md:text-xs text-gray-500 mb-6 md:mb-10 font-sans leading-relaxed flex-1 line-clamp-3 md:line-clamp-4 overflow-hidden"
                     dangerouslySetInnerHTML={{ __html: description }}
                 />
-                
-                <button 
+
+                <button
                     onClick={() => addToCart(pkg)}
-                    className={`w-full py-3 md:py-5 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 ${
-                    cartItems.includes(String(pkg.id))
+                    className={`w-full py-3 md:py-5 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 ${cartItems.includes(String(pkg.id))
                         ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/40 hover:-translate-y-1'
                         : isFeatured
                             ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/40 hover:bg-zenith-charcoal hover:-translate-y-1'
                             : 'bg-zenith-dim/20 text-zenith-charcoal hover:bg-zenith-orange hover:text-white shadow-lg'
-                }`}>
+                        }`}>
                     {cartItems.includes(String(pkg.id)) ? t.selected : t.bookBtn}
                 </button>
             </div>
@@ -222,7 +220,7 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
                 </div>
 
                 <div className="mt-8 md:mt-20 text-center">
-                    <Link 
+                    <Link
                         href="/pricing"
                         className="inline-flex items-center gap-x-3 text-[10px] font-bold uppercase tracking-[0.3em] text-zenith-orange hover:text-zenith-charcoal transition-all group"
                     >

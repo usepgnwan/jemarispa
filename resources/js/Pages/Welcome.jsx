@@ -273,13 +273,13 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                     </div>
                 </section>
 
-                <Contact />
+                <Contact lang={lang} />
                 <FAQ lang={lang} />
             </main>
 
             <FloatingWhatsApp />
-            <MobileNav setActiveService={setActiveService} />
-            <Footer />
+            <MobileNav setActiveService={setActiveService} lang={lang} />
+            <Footer lang={lang} setLang={setLang} />
         </div>
     );
 }

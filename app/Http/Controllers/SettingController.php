@@ -31,6 +31,11 @@ class SettingController extends Controller
             'template_question' => 'nullable|string',
             'template_invoice' => 'nullable|string',
             'default_commission' => 'nullable|numeric',
+            'title' => 'nullable|string|max:255',
+            'url_fb' => 'nullable|string|max:255',
+            'url_instagram' => 'nullable|string|max:255',
+            'url_x' => 'nullable|string|max:255',
+            'url_tiktok' => 'nullable|string|max:255',
         ]);
 
         $setting = Setting::first();

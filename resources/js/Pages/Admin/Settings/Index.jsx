@@ -14,6 +14,11 @@ export default function Index({ auth, settings, serviceAreas }) {
         template_question: settings?.template_question || '',
         template_invoice: settings?.template_invoice || '',
         default_commission: settings?.default_commission || 0,
+        title: settings?.title || '',
+        url_fb: settings?.url_fb || '',
+        url_instagram: settings?.url_instagram || '',
+        url_x: settings?.url_x || '',
+        url_tiktok: settings?.url_tiktok || '',
     });
 
     const [newArea, setNewArea] = useState('');
@@ -109,6 +114,67 @@ export default function Index({ auth, settings, serviceAreas }) {
                                             placeholder="e.g. jemari@example.com"
                                         />
                                         {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+                                    </div>
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">Brand Title / Application Name</label>
+                                        <input
+                                            type="text"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.title}
+                                            onChange={e => setData('title', e.target.value)}
+                                            placeholder="e.g. Jemari Spa"
+                                        />
+                                        {errors.title && <div className="text-red-500 text-xs mt-1">{errors.title}</div>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">Facebook URL</label>
+                                        <input
+                                            type="text"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.url_fb}
+                                            onChange={e => setData('url_fb', e.target.value)}
+                                            placeholder="https://facebook.com/..."
+                                        />
+                                        {errors.url_fb && <div className="text-red-500 text-xs mt-1">{errors.url_fb}</div>}
+                                    </div>
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">Instagram URL</label>
+                                        <input
+                                            type="text"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.url_instagram}
+                                            onChange={e => setData('url_instagram', e.target.value)}
+                                            placeholder="https://instagram.com/..."
+                                        />
+                                        {errors.url_instagram && <div className="text-red-500 text-xs mt-1">{errors.url_instagram}</div>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">X (Twitter) URL</label>
+                                        <input
+                                            type="text"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.url_x}
+                                            onChange={e => setData('url_x', e.target.value)}
+                                            placeholder="https://x.com/..."
+                                        />
+                                        {errors.url_x && <div className="text-red-500 text-xs mt-1">{errors.url_x}</div>}
+                                    </div>
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">TikTok URL</label>
+                                        <input
+                                            type="text"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.url_tiktok}
+                                            onChange={e => setData('url_tiktok', e.target.value)}
+                                            placeholder="https://tiktok.com/@..."
+                                        />
+                                        {errors.url_tiktok && <div className="text-red-500 text-xs mt-1">{errors.url_tiktok}</div>}
                                     </div>
                                 </div>
 
@@ -258,7 +324,7 @@ export default function Index({ auth, settings, serviceAreas }) {
                                             modules={modules}
                                         />
                                     </div>
-                                    <p className="mt-2 text-xs text-gray-400">Placeholders: [name], [invoice_no], [details], [transport], [total], [link]</p>
+                                    <p className="mt-2 text-xs text-gray-400">Placeholders: [name], [invoice_no], [details], [transport], [total], [link], [link_review]</p>
                                 </div>
 
                                 <div className="flex items-center gap-4">

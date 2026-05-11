@@ -12,15 +12,17 @@
         body {
             font-family: 'Poppins', 'Helvetica', 'Arial', sans-serif;
             margin: 0;
-            padding: 40px;
+            padding: 30px;
             color: #333;
             line-height: 1.4;
+            font-size: 11px;
         }
         .header {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         .logo-container {
             float: left;
+            width: 50%;
         }
         .logo {
             width: 80px;
@@ -32,6 +34,7 @@
         }
         .status-container {
             float: right;
+            width: 50%;
             text-align: right;
         }
         .status-badge {
@@ -46,13 +49,13 @@
             margin-bottom: 5px;
         }
         .invoice-title {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             margin: 0;
             color: #000;
         }
         .invoice-number {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
             margin: 0;
         }
@@ -61,39 +64,48 @@
             clear: both;
         }
         .company-name {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             margin: 0;
         }
         .company-details {
-            font-size: 11px;
+            font-size: 10px;
             color: #666;
             margin-top: 2px;
         }
         .divider {
             border-bottom: 1px solid #eee;
-            margin: 20px 0;
+            margin: 15px 0;
         }
         .info-grid {
             width: 100%;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            table-layout: fixed;
         }
         .info-grid td {
             vertical-align: top;
             font-size: 11px;
+            word-wrap: break-word;
         }
         .tagihan-kepada {
             color: #999;
             font-weight: bold;
             text-transform: uppercase;
-            font-size: 10px;
+            font-size: 9px;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
         .customer-name {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             margin: 0;
+        }
+        .customer-address {
+            font-size: 10px;
+            color: #666;
+            margin-top: 3px;
+            line-height: 1.4;
+            max-width: 90%;
         }
         .meta-table {
             width: 100%;
@@ -103,7 +115,7 @@
         }
         .meta-label {
             color: #999;
-            width: 100px;
+            width: 80px;
         }
         .meta-separator {
             width: 10px;
@@ -112,22 +124,25 @@
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            table-layout: fixed;
         }
         .items-table th {
             text-align: left;
             padding: 10px 5px;
             border-bottom: 1px solid #eee;
             color: #999;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .items-table td {
-            padding: 15px 5px;
+            padding: 12px 5px;
             border-bottom: 1px solid #f9f9f9;
-            font-size: 11px;
+            font-size: 10px;
+            vertical-align: top;
+            word-wrap: break-word;
         }
         .items-table .text-right {
             text-align: right;
@@ -138,63 +153,71 @@
         .item-name {
             font-weight: bold;
             display: block;
+            margin-bottom: 2px;
+        }
+        .summary-section {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .notes-section {
+            width: 55%;
+            float: left;
         }
         .summary-container {
-            width: 350px;
+            width: 40%;
             float: right;
             background-color: #f8f9fa;
             border-radius: 12px;
-            padding: 15px;
+            padding: 12px;
+        }
+        .notes-title {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .notes-content {
+            font-size: 10px;
+            color: #555;
+            line-height: 1.5;
+            padding-right: 15px;
         }
         .summary-table {
             width: 100%;
         }
         .summary-table td {
-            padding: 5px 0;
-            font-size: 11px;
+            padding: 4px 0;
+            font-size: 10px;
         }
         .summary-label {
-            color: #999;
+            color: #777;
         }
         .summary-value {
             text-align: right;
             font-weight: bold;
+            color: #333;
         }
         .summary-divider {
-            border-bottom: 1px solid #ddd;
-            margin: 5px 0;
+            border-bottom: 1px solid #eee;
+            margin: 4px 0;
         }
         .summary-total {
             color: #3b82f6;
-            font-size: 13px;
-        }
-        .notes-section {
-            width: 350px;
-            float: left;
-        }
-        .notes-title {
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-        .notes-content {
-            font-size: 11px;
-            color: #555;
-            line-height: 1.6;
+            font-size: 12px;
         }
         .footer-sign {
-            margin-top: 50px;
+            margin-top: 40px;
             clear: both;
             text-align: right;
         }
         .sign-text {
-            font-size: 11px;
+            font-size: 10px;
             color: #666;
-            margin-bottom: 60px;
+            margin-bottom: 50px;
         }
         .sign-name {
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
         }
         .clear {
             clear: both;
@@ -244,11 +267,15 @@
 
     <table class="info-grid">
         <tr>
-            <td width="60%">
+            <td width="55%">
                 <div class="tagihan-kepada">TAGIHAN KEPADA</div>
                 <p class="customer-name">{{ $transaction->customer_name }}</p>
+                <div class="customer-address">{{ $transaction->address }}</div>
+                @if($transaction->phone)
+                    <div class="customer-address">Telp: {{ $transaction->phone }}</div>
+                @endif
             </td>
-            <td width="40%">
+            <td width="45%">
                 <table class="meta-table">
                     <tr>
                         <td class="meta-label">Tanggal</td>
@@ -261,9 +288,9 @@
                         <td>{{ \Carbon\Carbon::parse($transaction->schedule_date)->format('d M Y') }}</td>
                     </tr>
                     <tr>
-                        <td class="meta-label">Referensi</td>
+                        <td class="meta-label">Terapis</td>
                         <td class="meta-separator">:</td>
-                        <td>{{ $transaction->source ?: '-' }}</td>
+                        <td>{{ $transaction->items->pluck('employee.name')->filter()->unique()->join(', ') ?: '-' }}</td>
                     </tr>
                 </table>
             </td>
@@ -271,15 +298,24 @@
     </table>
 
     <table class="items-table">
+        <colgroup>
+            <col style="width: 30%;">
+            <col style="width: 10%;">
+            <col style="width: 15%;">
+            <col style="width: 10%;">
+            <col style="width: 15%;">
+            <col style="width: 5%;">
+            <col style="width: 15%;">
+        </colgroup>
         <thead>
             <tr>
                 <th>PRODUK</th>
-                <th class="text-center">KUANTITAS</th>
+                <th class="text-center">QTY</th>
                 <th class="text-right">HARGA</th>
-                <th class="text-center">DISKON</th>
-                <th class="text-right">HARGA DISKON</th>
-                <th class="text-center">PAJAK</th>
-                <th class="text-right">JUMLAH</th>
+                <th class="text-center">DISC</th>
+                <th class="text-right">SUBTOTAL</th>
+                <th class="text-center">TAX</th>
+                <th class="text-right">TOTAL</th>
             </tr>
         </thead>
         <tbody>
@@ -288,20 +324,20 @@
             @endphp
             @foreach($groupedItems as $guestIndex => $items)
                 <tr>
-                    <td colspan="7" style="background-color: #f9f9f9; font-weight: bold; font-size: 10px; padding: 5px 10px; border-bottom: 1px solid #eee;">PERSON {{ $guestIndex }}</td>
+                    <td colspan="7" style="background-color: #f9f9f9; font-weight: bold; font-size: 9px; padding: 5px 10px; border-bottom: 1px solid #eee; text-transform: uppercase;">Person {{ $guestIndex }}</td>
                 </tr>
                 @foreach($items as $item)
                 <tr>
-                    <td style="padding-left: 20px;">
-                        <span class="item-name">{{ $item->package_name }} - {{ $item->package_duration }}</span>
-                        <div style="font-size: 9px; color: #999; margin-top: 2px;">Gender: {{ ucfirst($item->guest_gender) }} | Terapis: {{ ucfirst($item->therapist_gender_preference) }}</div>
+                    <td style="padding-left: 15px;">
+                        <span class="item-name">{{ $item->package_name }}</span>
+                        <div style="font-size: 9px; color: #888; margin-top: 2px;">{{ $item->package_duration }} | {{ ucfirst($item->guest_gender) }}</div>
                     </td>
                     <td class="text-center">1 Pax</td>
-                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($item->price, 0, ',', '.') }}</td>
                     <td class="text-center">0%</td>
-                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($item->price, 0, ',', '.') }}</td>
                     <td class="text-center">-</td>
-                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($item->price, 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
             @endforeach
@@ -310,11 +346,11 @@
 
     <div class="summary-section">
         <div class="notes-section">
-            <h4 class="notes-title">Pesan</h4>
+            <h4 class="notes-title">Pesan & Informasi</h4>
             <p class="notes-content">
                 Pembayaran bisa diberikan langsung kepada terapis kami (tunai) atau transfer melalui rekening berikut :<br>
                 <strong>BCA a.n Acep Dani : 7772554756</strong><br>
-                # Harap mengirimkan bukti transfer kepada admin melalui whatsapp setelah melakukan pembayaran
+                <span style="font-size: 9px; color: #888;">* Harap mengirimkan bukti transfer kepada admin melalui whatsapp setelah melakukan pembayaran.</span>
             </p>
         </div>
 
@@ -329,22 +365,11 @@
                     <td class="summary-value">Rp {{ number_format($transaction->transport_fee, 0, ',', '.') }}</td>
                 </tr>
                 <tr>
-                    <td class="summary-label">Grand Total</td>
-                    <td class="summary-value">Rp {{ number_format($transaction->total_price + $transaction->transport_fee, 0, ',', '.') }}</td>
-                </tr>
-                <tr>
                     <td colspan="2" class="summary-divider"></td>
                 </tr>
                 <tr class="summary-total">
-                    <td class="summary-label" style="color: #3b82f6;">Total</td>
-                    <td class="summary-value">Rp {{ number_format($transaction->total_price + $transaction->transport_fee, 0, ',', '.') }}</td>
-                </tr>
-                <tr>
-                    <td colspan="2" class="summary-divider"></td>
-                </tr>
-                <tr>
-                    <td class="summary-label">Sisa Tagihan</td>
-                    <td class="summary-value">Rp {{ number_format($transaction->total_price + $transaction->transport_fee, 0, ',', '.') }}</td>
+                    <td class="summary-label" style="color: #3b82f6; font-weight: bold;">TOTAL</td>
+                    <td class="summary-value" style="color: #3b82f6; font-size: 14px;">Rp {{ number_format($transaction->total_price + $transaction->transport_fee, 0, ',', '.') }}</td>
                 </tr>
             </table>
         </div>
@@ -352,18 +377,19 @@
     </div>
 
     <div class="footer-sign">
-        <p class="sign-text">Dengan Hormat,</p>
+        <p class="sign-text">Hormat Kami,</p>
+        <div style="height: 40px;"></div>
         <p class="sign-name">Jemari Home Spa</p>
     </div>
 
     @if($transaction->review_token && $transaction->review_expires_at && \Carbon\Carbon::parse($transaction->review_expires_at)->isFuture())
-    <div style="margin-top: 40px; padding: 20px 25px; background: linear-gradient(135deg, #FFF8F3, #FFF3EC); border-radius: 16px; border: 1px solid #FDDCC4; text-align: center;">
-        <p style="font-size: 11px; color: #999; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px 0;">✨ Ulasan Anda Sangat Berarti Bagi Kami</p>
-        <p style="font-size: 13px; font-weight: bold; color: #333; margin: 0 0 12px 0;">Luangkan 1 menit untuk memberikan ulasan layanan Jemari Spa</p>
-        <a href="{{ url('/review/' . $transaction->review_token) }}" style="display: inline-block; background-color: #E07A5F; color: white; padding: 10px 28px; border-radius: 50px; font-size: 11px; font-weight: bold; text-decoration: none; letter-spacing: 0.5px;">
-            ⭐ TULIS ULASAN SEKARANG
+    <div style="margin-top: 30px; padding: 15px; background-color: #fdf2f0; border: 1px solid #f9d6d1; border-radius: 12px; text-align: center;">
+        <p style="font-size: 9px; color: #e07a5f; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 5px 0;">Ulasan Anda Sangat Berarti</p>
+        <p style="font-size: 11px; font-weight: bold; color: #333; margin: 0 0 10px 0;">Berikan ulasan layanan kami untuk membantu kami berkembang</p>
+        <a href="{{ url('/review/' . $transaction->review_token) }}" style="display: inline-block; background-color: #e07a5f; color: white; padding: 8px 20px; border-radius: 20px; font-size: 10px; font-weight: bold; text-decoration: none;">
+            TULIS ULASAN
         </a>
-        <p style="font-size: 9px; color: #bbb; margin: 10px 0 0 0;">Link berlaku 1×24 jam · {{ \Carbon\Carbon::parse($transaction->review_expires_at)->locale('id')->isoFormat('dddd, D MMMM YYYY [pukul] HH:mm') }}</p>
+        <p style="font-size: 8px; color: #999; margin: 8px 0 0 0;">Link berlaku 24 jam · S/d {{ \Carbon\Carbon::parse($transaction->review_expires_at)->locale('id')->isoFormat('D MMMM YYYY HH:mm') }}</p>
     </div>
     @endif
 </body>

@@ -1,9 +1,16 @@
 import { Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
-export default function MobileNav({ setActiveService }) {
+export default function MobileNav({ setActiveService, lang = 'ID' }) {
     const [cartCount, setCartCount] = useState(0);
     const [activeHash, setActiveHash] = useState('');
+
+    const labels = {
+        'ID': { home: 'Beranda', blog: 'Blog', pricing: 'Harga', cart: 'Keranjang', contact: 'Kontak' },
+        'EN': { home: 'Home', blog: 'Blog', pricing: 'Prices', cart: 'Cart', contact: 'Contact' }
+    };
+
+    const t = labels[lang] || labels['ID'];
     
     const handleHomeClick = () => {
         if (typeof window !== 'undefined') {
@@ -56,11 +63,11 @@ export default function MobileNav({ setActiveService }) {
     };
 
     const navItems = [
-        { label: 'Home', icon: 'home', href: '/', active: isActive('/') },
-        { label: 'Blog', icon: 'newspaper', href: '/blog', active: isActive('/blog') },
-        { label: 'Prices', icon: 'receipt_long', href: '/pricing', active: isActive('/pricing') },
-        { label: 'Cart', icon: 'shopping_bag', href: '/cart', isCart: true, active: isActive('/cart') },
-        { label: 'Contact', icon: 'chat_bubble', href: '/#contact', active: isActive('/', '#contact') },
+        { label: t.home, icon: 'home', href: '/', active: isActive('/') },
+        { label: t.blog, icon: 'newspaper', href: '/blog', active: isActive('/blog') },
+        { label: t.pricing, icon: 'receipt_long', href: '/pricing', active: isActive('/pricing') },
+        { label: t.cart, icon: 'shopping_bag', href: '/cart', isCart: true, active: isActive('/cart') },
+        { label: t.contact, icon: 'chat_bubble', href: '/#contact', active: isActive('/', '#contact') },
     ];
 
     return (

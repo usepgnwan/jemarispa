@@ -209,7 +209,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                 </section>
             </main>
 
-            <Footer />
+            <Footer lang={lang} setLang={setLang} />
             <MobileNav lang={lang} />
         </div>
     );
