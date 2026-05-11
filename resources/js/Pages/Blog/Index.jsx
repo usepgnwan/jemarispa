@@ -4,60 +4,56 @@ import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
 
-const mockBlogs = [
-    {
-        id: 1,
-        title: "Manfaat Bekam untuk Kesehatan Tubuh",
-        excerpt: "Bekam adalah terapi tradisional yang telah digunakan selama berabad-abad untuk membantu sirkulasi darah dan detoksifikasi...",
-        image: "/images/bekam.webp",
-        date: "12 Mei 2024",
-        category: "Therapy"
+const translations = {
+    'ID': {
+        metaTitle: 'Blog & Tips Kesehatan - Jemari Spa Sanctuary',
+        metaDesc: 'Temukan artikel menarik seputar kesehatan, manfaat pijat, dan tips gaya hidup sehat dari Jemari Spa.',
+        latestStories: 'Cerita Terbaru',
+        discoverRecent: 'Temukan publikasi terbaru dan tips kesehatan kami.',
+        searchPlaceholder: 'Cari artikel...',
+        noArticles: 'Artikel tidak ditemukan.',
+        readMore: 'Baca Selengkapnya',
+        defaultSubtitle: 'Jemari Blog Sanctuary',
+        defaultTitle: 'Insight & Wellness Guide',
+        defaultDesc: 'Temukan artikel menarik seputar kesehatan, tips kecantikan, dan panduan gaya hidup sehat langsung dari ahlinya.'
     },
-    {
-        id: 2,
-        title: "Pijat Tradisional vs Modern: Mana yang Lebih Baik?",
-        excerpt: "Banyak orang bingung memilih antara pijat tradisional yang kuat atau pijat modern yang lebih lembut. Mari kita bahas perbedaannya...",
-        image: "/images/pijat tradisional.JPG",
-        date: "10 Mei 2024",
-        category: "Wellness"
-    },
-    {
-        id: 3,
-        title: "Tips Relaksasi di Rumah Saat Akhir Pekan",
-        excerpt: "Tidak perlu ke luar rumah untuk merasa segar kembali. Berikut adalah beberapa tips sederhana untuk menciptakan suasana spa di rumah...",
-        image: "/images/services.jpg",
-        date: "08 Mei 2024",
-        category: "Lifestyle"
-    },
-    {
-        id: 4,
-        title: "Rahasia Wajah Glowing dengan Totok Wajah",
-        excerpt: "Totok wajah bukan hanya soal kecantikan, tapi juga soal kesehatan syaraf wajah dan melancarkan aliran energi...",
-        image: "/images/totok wajah.jpg",
-        date: "05 Mei 2024",
-        category: "Beauty"
+    'EN': {
+        metaTitle: 'Blog & Wellness Guide - Jemari Spa Sanctuary',
+        metaDesc: 'Explore our latest articles about wellness, massage benefits, and healthy lifestyle tips.',
+        latestStories: 'Latest Stories',
+        discoverRecent: 'Discover our recent publications and health tips.',
+        searchPlaceholder: 'Search articles...',
+        noArticles: 'No articles found.',
+        readMore: 'Read More',
+        defaultSubtitle: 'Jemari Blog Sanctuary',
+        defaultTitle: 'Insight & Wellness Guide',
+        defaultDesc: 'Explore our latest articles about wellness, massage benefits, and healthy lifestyle tips.'
     }
-];
-
-const sliderItems = [
-    {
-        title: "Insight & Wellness Guide",
-        subtitle: "Jemari Blog Sanctuary",
-        desc: "Temukan artikel menarik seputar kesehatan, tips kecantikan, dan panduan gaya hidup sehat langsung dari ahlinya.",
-        bg: "/images/services.jpg"
-    },
-    {
-        title: "Art of Relaxation",
-        subtitle: "Traditional Wisdom",
-        desc: "Mempelajari teknik kuno yang diadaptasi untuk kenyamanan modern dalam memulihkan kebugaran tubuh Anda.",
-        bg: "/images/pijat tradisional.JPG"
-    }
-];
+};
 
 export default function Index({ auth, blogs, filters, signaturePackages = [] }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
     const [search, setSearch] = useState(filters.search || '');
     const [currentSlider, setCurrentSlider] = useState(0);
+
+    const t = translations[lang];
+
+    // Generate dynamic slider items from signature packages
+    const sliderItems = signaturePackages.length > 0 
+        ? signaturePackages.map(pkg => ({
+            title: lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id,
+            subtitle: lang === 'EN' ? (pkg.category_en || pkg.category_id || 'Signature Ritual') : (pkg.category_id || 'Ritual Signature'),
+            desc: lang === 'EN' ? (pkg.description_en || pkg.description_id) : pkg.description_id,
+            bg: pkg.image ? `/storage/${pkg.image}` : "/images/services.jpg"
+        }))
+        : [
+            {
+                title: t.defaultTitle,
+                subtitle: t.defaultSubtitle,
+                desc: t.defaultDesc,
+                bg: "/images/services.jpg"
+            }
+        ];
 
     const handleSearch = (e) => {
         const value = e.target.value;
@@ -75,11 +71,12 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
     };
 
     useEffect(() => {
+        if (sliderItems.length <= 1) return;
         const interval = setInterval(() => {
             setCurrentSlider((prev) => (prev + 1) % sliderItems.length);
         }, 5000);
         return () => clearInterval(interval);
-    }, []);
+    }, [sliderItems.length]);
 
     useEffect(() => {
         localStorage.setItem('app_lang', lang);
@@ -88,9 +85,9 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
     return (
         <div className="font-sans text-zenith-charcoal antialiased bg-zenith-surface">
             <Head>
-                <title>{lang === 'EN' ? 'Blog & Wellness Guide - Jemari Spa Sanctuary' : 'Blog & Tips Kesehatan - Jemari Spa Sanctuary'}</title>
-                <meta name="description" content={lang === 'EN' ? 'Explore our latest articles about wellness, massage benefits, and healthy lifestyle tips.' : 'Temukan artikel menarik seputar kesehatan, manfaat pijat, dan tips gaya hidup sehat dari Jemari Spa.'} />
-                <meta property="og:title" content={lang === 'EN' ? 'Blog & Wellness Guide - Jemari Spa Sanctuary' : 'Blog & Tips Kesehatan - Jemari Spa Sanctuary'} />
+                <title>{t.metaTitle}</title>
+                <meta name="description" content={t.metaDesc} />
+                <meta property="og:title" content={t.metaTitle} />
                 <meta name="keywords" content="blog kesehatan, tips wellness, manfaat pijat, gaya hidup sehat, jemari spa articles" />
             </Head>
 
@@ -119,14 +116,15 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                     <div className="relative z-10 text-center px-6 max-w-4xl">
                         <div className="inline-flex items-center gap-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 mb-6">
                             <span className="h-1.5 w-1.5 rounded-full bg-zenith-orange animate-pulse"></span>
-                            <span className="text-[10px] font-bold text-white tracking-[0.2em] uppercase">{sliderItems[currentSlider].subtitle}</span>
+                            <span className="text-[10px] font-bold text-white tracking-[0.2em] uppercase">{sliderItems[currentSlider]?.subtitle}</span>
                         </div>
                         <h1 className="text-4xl md:text-6xl font-serif text-white mb-6 leading-tight">
-                            {sliderItems[currentSlider].title}
+                            {sliderItems[currentSlider]?.title}
                         </h1>
-                        <p className="text-white/80 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed">
-                            {sliderItems[currentSlider].desc}
-                        </p>
+                        <div 
+                            className="text-white/80 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed line-clamp-2"
+                            dangerouslySetInnerHTML={{ __html: sliderItems[currentSlider]?.desc }}
+                        />
                     </div>
                 </section>
 
@@ -135,13 +133,13 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                     <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-zenith-orange/10 mb-16">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
                             <div>
-                                <h2 className="text-3xl font-serif italic text-zenith-charcoal mb-2">Latest Stories</h2>
-                                <p className="text-zenith-charcoal/40 text-sm font-medium tracking-wide">Discover our recent publications and health tips.</p>
+                                <h2 className="text-3xl font-serif italic text-zenith-charcoal mb-2">{t.latestStories}</h2>
+                                <p className="text-zenith-charcoal/40 text-sm font-medium tracking-wide">{t.discoverRecent}</p>
                             </div>
                             <div className="relative w-full md:w-96">
                                 <input 
                                     type="text" 
-                                    placeholder="Search articles..."
+                                    placeholder={t.searchPlaceholder}
                                     className="w-full pl-12 pr-6 py-4 rounded-2xl bg-zenith-surface border-none focus:ring-2 focus:ring-zenith-orange transition-all text-sm font-medium"
                                     value={search}
                                     onChange={handleSearch}
@@ -168,7 +166,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                     </div>
                                     <div className="p-8 flex flex-col flex-1">
                                         <p className="text-zenith-charcoal/30 text-[10px] font-bold uppercase tracking-widest mb-4">
-                                            {new Date(blog.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {new Date(blog.created_at).toLocaleDateString(lang === 'EN' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </p>
                                         <h3 className="text-xl font-bold text-zenith-charcoal mb-4 leading-tight group-hover:text-zenith-orange transition-colors">
                                             {blog.title}
@@ -178,19 +176,19 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                             dangerouslySetInnerHTML={{ __html: blog.description }}
                                         />
                                         <div className="flex items-center gap-x-2 text-zenith-orange font-bold text-[10px] uppercase tracking-widest pt-4 border-t border-zenith-orange/5">
-                                            Read More 
+                                            {t.readMore} 
                                             <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                                         </div>
                                     </div>
                                 </Link>
                             )) : (
                                 <div className="col-span-full py-20 text-center">
-                                    <p className="text-zenith-charcoal/40 text-lg">No articles found matching your search.</p>
+                                    <p className="text-zenith-charcoal/40 text-lg">{t.noArticles}</p>
                                 </div>
                             )}
                         </div>
 
-                        {/* Pagination Mockup */}
+                        {/* Pagination */}
                         <div className="flex justify-center items-center gap-x-2 mt-16 overflow-x-auto pb-4">
                             {blogs.links.map((link, i) => (
                                 <Link

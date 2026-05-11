@@ -4,12 +4,35 @@ import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
 
+const translations = {
+    'ID': {
+        recommendedStories: 'Rekomendasi Cerita',
+        readyForRelax: 'Siap untuk Relaksasi?',
+        orderNowDesc: 'Pesan layanan spa kami sekarang dan rasakan manfaatnya langsung di rumah Anda.',
+        orderNowBtn: 'Pesan Sekarang',
+        wellnessInsight: 'Wawasan Kesehatan',
+        share: 'Bagikan:',
+        adminName: 'Admin Jemari'
+    },
+    'EN': {
+        recommendedStories: 'Recommended Stories',
+        readyForRelax: 'Ready for Relaxation?',
+        orderNowDesc: 'Book our spa services now and experience the benefits right in your home.',
+        orderNowBtn: 'Order Now',
+        wellnessInsight: 'Wellness Insight',
+        share: 'Share:',
+        adminName: 'Jemari Admin'
+    }
+};
+
 export default function Show({ auth, blog, suggestions, signaturePackages = [] }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
 
     useEffect(() => {
         localStorage.setItem('app_lang', lang);
     }, [lang]);
+
+    const t = translations[lang];
 
     const stripHtml = (html) => {
         if (typeof window === 'undefined') return '';
@@ -49,7 +72,7 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                         <aside className="w-full lg:w-1/4 order-2 lg:order-1">
                             <div className="sticky top-32">
                                 <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-zenith-orange mb-8 border-b border-zenith-orange/10 pb-4">
-                                    Recommended Stories
+                                    {t.recommendedStories}
                                 </h4>
                                 <div className="space-y-8">
                                     {suggestions.map((item) => (
@@ -67,10 +90,10 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
 
                                 <div className="mt-12 p-8 rounded-3xl bg-zenith-charcoal text-white relative overflow-hidden">
                                     <div className="relative z-10">
-                                        <h4 className="text-xl font-serif italic mb-4 text-zenith-gold">Siap untuk Relaksasi?</h4>
-                                        <p className="text-white/60 text-xs leading-relaxed mb-6">Pesan layanan spa kami sekarang dan rasakan manfaatnya langsung di rumah Anda.</p>
+                                        <h4 className="text-xl font-serif italic mb-4 text-zenith-gold">{t.readyForRelax}</h4>
+                                        <p className="text-white/60 text-xs leading-relaxed mb-6">{t.orderNowDesc}</p>
                                         <Link href="/" className="inline-block px-6 py-3 bg-zenith-orange text-white text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-zenith-gold transition-colors">
-                                            Pesan Sekarang
+                                            {t.orderNowBtn}
                                         </Link>
                                     </div>
                                     <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-white/5 text-8xl rotate-12">spa</span>
@@ -83,7 +106,7 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                             <div className="mb-12">
                                 <div className="inline-flex items-center gap-x-2 px-3 py-1 rounded-full bg-zenith-orange/10 border border-zenith-orange/10 mb-6">
                                     <span className="h-1.5 w-1.5 rounded-full bg-zenith-orange animate-pulse"></span>
-                                    <span className="text-[10px] font-bold text-zenith-orange tracking-[0.2em] uppercase">{blog.type_package || 'Wellness Insight'}</span>
+                                    <span className="text-[10px] font-bold text-zenith-orange tracking-[0.2em] uppercase">{blog.type_package || t.wellnessInsight}</span>
                                 </div>
                                 <h1 className="text-3xl md:text-5xl font-serif text-zenith-charcoal leading-tight mb-8">
                                     {blog.title}
@@ -91,11 +114,11 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                                 <div className="flex items-center gap-x-6 text-[10px] font-bold uppercase tracking-[0.2em] text-zenith-charcoal/40 border-b border-zenith-orange/5 pb-8">
                                     <div className="flex items-center gap-x-2">
                                         <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-                                        {new Date(blog.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        {new Date(blog.created_at).toLocaleDateString(lang === 'EN' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </div>
                                     <div className="flex items-center gap-x-2 text-zenith-orange">
                                         <span className="material-symbols-outlined text-[14px]">person</span>
-                                        {blog.user?.name || 'Admin Jemari'}
+                                        {blog.user?.name || t.adminName}
                                     </div>
                                 </div>
                             </div>
@@ -111,7 +134,7 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                             {/* Share & Tags */}
                             <div className="mt-16 pt-8 border-t border-zenith-orange/10 flex flex-col md:flex-row justify-between items-center gap-6">
                                 <div className="flex gap-x-4 items-center">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-zenith-charcoal/30">Share:</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-zenith-charcoal/30">{t.share}</span>
                                     <div className="flex gap-x-2">
                                         {['FB', 'IG', 'X', 'WA'].map(s => (
                                             <button key={s} className="h-8 w-8 rounded-full border border-zenith-orange/10 flex items-center justify-center text-[10px] font-bold text-zenith-charcoal/60 hover:bg-zenith-orange hover:text-white hover:border-zenith-orange transition-all">
