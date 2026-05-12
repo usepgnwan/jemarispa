@@ -250,7 +250,8 @@ export default function Index({ transactions, filters, counts, employees, packag
             invoice_no: transaction.order_number,
             details: detailsText,
             transport: formatCurrency(transaction.transport_fee || 0),
-            total: formatCurrency(parseFloat(transaction.total_price) + (parseFloat(transaction.transport_fee) || 0)),
+            discount: transaction.discount_amount > 0 ? `-${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)` : '',
+            total: formatCurrency(transaction.total_price),
             link: link,
             link_review: linkReview
         };
@@ -500,6 +501,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Order ID</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jadwal</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Diskon</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Aksi</th>
@@ -533,6 +535,16 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                 <td className="px-6 py-5">
                                                     <span className="text-sm font-medium text-gray-700 block">{new Date(transaction.schedule_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                                                     <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">{transaction.schedule_time}</span>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    {transaction.discount_amount > 0 ? (
+                                                        <>
+                                                            <span className="text-xs font-bold text-red-500 block">-{formatCurrency(transaction.discount_amount)}</span>
+                                                            <span className="text-[9px] font-medium text-gray-400 uppercase">({parseFloat(transaction.discount_percent)}%)</span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-gray-300">—</span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-5">
                                                     <span className="text-sm font-bold text-gray-900">{formatCurrency(transaction.total_price)}</span>
@@ -867,13 +879,20 @@ export default function Index({ transactions, filters, counts, employees, packag
                                     <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Grand Total</span>
                                     <div className="text-right">
                                         <span className="text-2xl font-black text-zenith-orange">
-                                            {formatCurrency(parseFloat(selectedTransaction?.total_price) + (parseFloat(selectedTransaction?.transport_fee) || 0))}
+                                            {formatCurrency(selectedTransaction?.total_price)}
                                         </span>
-                                        {selectedTransaction?.transport_fee > 0 && (
-                                            <p className="text-[10px] text-gray-400 font-medium mt-1">
-                                                Sudah termasuk Biaya Transport {formatCurrency(selectedTransaction.transport_fee)}
-                                            </p>
-                                        )}
+                                        <div className="flex flex-col items-end gap-1 mt-1">
+                                            {selectedTransaction?.transport_fee > 0 && (
+                                                <p className="text-[10px] text-gray-400 font-medium">
+                                                    Sudah termasuk Biaya Transport {formatCurrency(selectedTransaction.transport_fee)}
+                                                </p>
+                                            )}
+                                            {selectedTransaction?.discount_amount > 0 && (
+                                                <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                                                    Potongan Diskon {parseFloat(selectedTransaction.discount_percent)}% ({formatCurrency(selectedTransaction.discount_amount)})
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

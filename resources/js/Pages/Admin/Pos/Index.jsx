@@ -46,6 +46,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         date: new Date().toISOString().split('T')[0],
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':'),
         transport_fee: 0,
+        discount_percent: 0,
         notes: ''
     });
 
@@ -145,8 +146,17 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         }, 0);
     };
 
+    const calculateDiscountAmount = () => {
+        const itemsTotal = calculateItemsTotal();
+        const percent = parseFloat(formData.discount_percent) || 0;
+        return (itemsTotal * percent) / 100;
+    };
+
     const calculateGrandTotal = () => {
-        return calculateItemsTotal() + (parseFloat(formData.transport_fee) || 0);
+        const subtotal = calculateItemsTotal();
+        const transport = parseFloat(formData.transport_fee) || 0;
+        const discount = calculateDiscountAmount();
+        return subtotal + transport - discount;
     };
 
     const showToast = (message) => {
@@ -180,6 +190,8 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             notes: formData.notes,
             total_price: calculateGrandTotal(),
             transport_fee: formData.transport_fee,
+            discount_percent: formData.discount_percent,
+            discount_amount: calculateDiscountAmount(),
             guests: guests,
         };
 
@@ -200,6 +212,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                     date: new Date().toISOString().split('T')[0],
                     time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':'),
                     transport_fee: 0,
+                    discount_percent: 0,
                     notes: ''
                 });
                 setPax(1);
@@ -246,6 +259,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             invoice_no: transaction.order_number,
             details: detailsText,
             transport: formatCurrency(transaction.transport_fee || 0),
+            discount: transaction.discount_amount > 0 ? `-${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)` : '',
             total: formatCurrency(transaction.total_price),
             link: link
         };
@@ -516,6 +530,12 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                             <span>Biaya Transport</span>
                                             <span>Rp {(parseFloat(formData.transport_fee) || 0).toLocaleString('id-ID')}</span>
                                         </div>
+                                        {parseFloat(formData.discount_percent) > 0 && (
+                                            <div className="flex justify-between items-center text-sm font-medium text-red-400/80">
+                                                <span>Diskon ({formData.discount_percent}%)</span>
+                                                <span>- Rp {calculateDiscountAmount().toLocaleString('id-ID')}</span>
+                                            </div>
+                                        )}
                                         <div className="pt-4 border-t border-white/10 flex justify-between items-end">
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Total Bayar</span>
                                             <span className="text-3xl font-bold text-zenith-orange">Rp {calculateGrandTotal().toLocaleString('id-ID')}</span>
@@ -598,6 +618,22 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                 </select>
                                             </div>
                                             <div className="space-y-2">
+                                                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block px-1">Sumber Booking</label>
+                                                <select
+                                                    className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 px-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange appearance-none"
+                                                    value={formData.source}
+                                                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                                                >
+                                                    <option value="Website">Website</option>
+                                                    {platforms.map(p => (
+                                                        <option key={p.id} value={p.title}>{p.title}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
                                                 <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block">Biaya Transport</label>
                                                 <div className="relative">
                                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">Rp</span>
@@ -609,20 +645,20 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                     />
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block px-1">Sumber Booking</label>
-                                            <select
-                                                className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 px-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange appearance-none"
-                                                value={formData.source}
-                                                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                                            >
-                                                <option value="Website">Website</option>
-                                                {platforms.map(p => (
-                                                    <option key={p.id} value={p.title}>{p.title}</option>
-                                                ))}
-                                            </select>
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block">Diskon (%)</label>
+                                                <div className="relative">
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">%</span>
+                                                    <input
+                                                        type="number"
+                                                        className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-4 pr-8 text-xs font-bold text-gray-700 focus:ring-zenith-orange"
+                                                        value={formData.discount_percent}
+                                                        onChange={(e) => setFormData({ ...formData, discount_percent: e.target.value })}
+                                                        min="0"
+                                                        max="100"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 

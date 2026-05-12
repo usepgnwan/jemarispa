@@ -126,6 +126,8 @@ class TransactionController extends Controller
             'notes' => 'nullable|string',
             'total_price' => 'required|numeric',
             'transport_fee' => 'nullable|numeric',
+            'discount_percent' => 'nullable|numeric',
+            'discount_amount' => 'nullable|numeric',
             'guests' => 'required|array',
         ]);
 
@@ -143,6 +145,8 @@ class TransactionController extends Controller
                     'notes' => $validated['notes'],
                     'total_price' => $validated['total_price'],
                     'transport_fee' => $validated['transport_fee'] ?? 0,
+                    'discount_percent' => $validated['discount_percent'] ?? 0,
+                    'discount_amount' => $validated['discount_amount'] ?? 0,
                     'status' => 'send_terapis', // Default status for POS as requested
                 ]);
 

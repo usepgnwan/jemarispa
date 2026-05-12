@@ -364,12 +364,18 @@
                     <td class="summary-label">Biaya Transport</td>
                     <td class="summary-value">Rp {{ number_format($transaction->transport_fee, 0, ',', '.') }}</td>
                 </tr>
+                @if(isset($transaction->discount_amount) && $transaction->discount_amount > 0)
+                <tr>
+                    <td class="summary-label">Diskon ({{ (float)$transaction->discount_percent }}%)</td>
+                    <td class="summary-value">- Rp {{ number_format($transaction->discount_amount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
                 <tr>
                     <td colspan="2" class="summary-divider"></td>
                 </tr>
                 <tr class="summary-total">
                     <td class="summary-label" style="color: #3b82f6; font-weight: bold;">TOTAL</td>
-                    <td class="summary-value" style="color: #3b82f6; font-size: 14px;">Rp {{ number_format($transaction->total_price + $transaction->transport_fee, 0, ',', '.') }}</td>
+                    <td class="summary-value" style="color: #3b82f6; font-size: 14px;">Rp {{ number_format($transaction->total_price, 0, ',', '.') }}</td>
                 </tr>
             </table>
         </div>
