@@ -13,7 +13,7 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
         'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get(),
         'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get(),
-        'testimonials' => \App\Models\Testimoni::where('is_published', true)->latest()->take(6)->get(),
+        'testimonials' => \App\Models\Testimoni::where('is_published', true)->inRandomOrder()->take(6)->get(),
         'platforms' => \App\Models\Platform::latest()->get()
     ]);
 });
@@ -213,6 +213,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\VoucherController;
 
 Route::post('api/analytics', [AnalyticController::class, 'store'])->name('api.analytics.store');
 
@@ -245,6 +246,11 @@ Route::middleware(['auth'])->group(function () {
 
         // Generate review link for a transaction
         Route::post('admin/transaction/{transaction}/review-link', [TransactionController::class, 'generateReviewLink'])->name('admin.transaction.review_link');
+
+        // Voucher validation for POS
+        Route::post('admin/voucher/validate', [VoucherController::class, 'validateCode'])->name('admin.voucher.validate');
+        Route::get('admin/voucher/{voucher}/download', [VoucherController::class, 'downloadPdf'])->name('admin.voucher.download');
+        Route::resource('admin/voucher', VoucherController::class)->names('admin.voucher')->except(['show']);
     });
 
     // ── ADMIN ONLY (Full Features) ────────────────────────────────────────

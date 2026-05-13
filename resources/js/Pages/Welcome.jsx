@@ -31,7 +31,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                 },
                 body: JSON.stringify({ category, title })
             });
-        } catch (e) {}
+        } catch (e) { }
     };
 
     useEffect(() => {
@@ -129,7 +129,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
 
         const currentLang = config[lang] || config['ID'];
         const content = currentLang[activeService] || currentLang['Default'];
-        
+
         return content;
     };
 
@@ -175,13 +175,13 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                                     {lang === 'ID' ? 'Pesan Sekarang.' : 'Book Now.'}
                                 </h2>
                                 <p className="text-lg text-gray-500 mb-12 max-w-md font-sans leading-relaxed">
-                                    {lang === 'ID' 
-                                        ? 'Anda bisa mendapatkan layanan Kami dengan melakukan pembelian voucher melalui Traveloka, Tiket.com dan Klook' 
+                                    {lang === 'ID'
+                                        ? 'Anda bisa mendapatkan layanan Kami dengan melakukan pembelian voucher melalui Traveloka, Tiket.com dan Klook'
                                         : 'You can secure services by purchasing vouchers through our authorized partners: Traveloka, Tiket.com, and Klook'}
                                 </p>
                                 <div className="flex flex-wrap gap-4">
                                     {platforms.map(platform => (
-                                        <a 
+                                        <a
                                             key={platform.id}
                                             href={platform.url}
                                             target="_blank"
@@ -258,8 +258,8 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                                         </div>
 
                                         <div className="mt-auto pb-4">
-                                            <Link 
-                                                href="/cart" 
+                                            <Link
+                                                href="/cart"
                                                 onClick={() => logAnalytic('CTA', 'Klik Pesan Sekarang (Mobile Mockup)')}
                                                 className="w-full bg-zenith-orange text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-zenith-orange/30 block text-center"
                                             >
@@ -272,9 +272,9 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                         </div>
                     </div>
                 </section>
-
-                <Contact lang={lang} />
                 <FAQ lang={lang} />
+                <Contact lang={lang} />
+
             </main>
 
             <FloatingWhatsApp />

@@ -364,10 +364,16 @@
                     <td class="summary-label">Biaya Transport</td>
                     <td class="summary-value">Rp {{ number_format($transaction->transport_fee, 0, ',', '.') }}</td>
                 </tr>
-                @if(isset($transaction->discount_amount) && $transaction->discount_amount > 0)
+                @if($transaction->discount_percent > 0)
                 <tr>
                     <td class="summary-label">Diskon ({{ (float)$transaction->discount_percent }}%)</td>
                     <td class="summary-value">- Rp {{ number_format($transaction->discount_amount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                @if($transaction->voucher)
+                <tr>
+                    <td class="summary-label">Voucher ({{ $transaction->voucher->code }})</td>
+                    <td class="summary-value">- Rp {{ number_format($transaction->voucher->discount_amount, 0, ',', '.') }}</td>
                 </tr>
                 @endif
                 <tr>

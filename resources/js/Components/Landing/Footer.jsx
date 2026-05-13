@@ -18,7 +18,7 @@ export default function Footer({ lang = 'ID', setLang }) {
                             </div>
                             <div>
                                 <h3 className="text-2xl font-bold tracking-[0.2em] uppercase text-white mb-2">{app_settings?.title || 'Jemari Home Spa'}</h3>
-                                <p className="text-zenith-orange text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Home Spa Sanctuary</p>
+
                                 <p className="text-white/60 max-w-sm text-sm leading-relaxed mb-6 font-sans">
                                     {isEn
                                         ? (app_settings?.description_en || defaultDescEn)

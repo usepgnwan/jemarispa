@@ -49,7 +49,16 @@ const translations = {
         wanita: 'Wanita',
         cash: 'Tunai',
         transfer: 'Transfer',
-        minute: 'Menit'
+        minute: 'Menit',
+        voucherInvalid: 'Voucher tidak ditemukan atau sudah kadaluarsa',
+        voucherQuotaFull: 'Kuota voucher sudah habis',
+        voucherSuccess: 'Voucher {code} berhasil dipasang!',
+        voucherRemoved: 'Voucher dihapus',
+        voucherApplied: 'Potongan Rp {amount} Berhasil!',
+        haveVoucher: 'Punya Voucher?',
+        enterVoucher: 'Masukkan kode...',
+        apply: 'Pasang',
+        removeVoucher: 'Hapus'
     },
     'EN': {
         step1: '1. Review Order & Packages',
@@ -62,7 +71,7 @@ const translations = {
         secureBooking: 'Confirm Booking',
         fullName: 'Customer Name (PIC)',
         phone: 'WhatsApp Number',
-        pax: 'Number of People',
+        pax: 'Number of Customers',
         guestTitle: 'Customer {n} Details',
         guestGender: 'Guest Gender',
         therapistGender: 'Therapist Gender',
@@ -94,7 +103,16 @@ const translations = {
         wanita: 'Female',
         cash: 'Cash',
         transfer: 'Transfer',
-        minute: 'Minutes'
+        minute: 'Minutes',
+        voucherInvalid: 'Voucher not found or expired',
+        voucherQuotaFull: 'Voucher quota is full',
+        voucherSuccess: 'Voucher {code} applied successfully!',
+        voucherRemoved: 'Voucher removed',
+        voucherApplied: 'Discount Rp {amount} Applied!',
+        haveVoucher: 'Have a Voucher?',
+        enterVoucher: 'Enter code...',
+        apply: 'Apply',
+        removeVoucher: 'Remove'
     }
 };
 
@@ -135,6 +153,10 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             packages: []
         }];
     });
+
+    const [voucherCode, setVoucherCode] = useState('');
+    const [appliedVoucher, setAppliedVoucher] = useState(null);
+    const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
 
     const isFirstRender = useRef(true);
     const t = translations[lang];
@@ -280,15 +302,49 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
         showToast(t.toastRemove.replace('{n}', guestIndex + 1).replace('{name}', removedPkg.name));
     };
 
+    const handleApplyVoucher = async () => {
+        if (!voucherCode) return;
+        setIsValidatingVoucher(true);
+        try {
+            const response = await axios.post(route('admin.voucher.validate'), { code: voucherCode });
+            if (response.data.success) {
+                setAppliedVoucher(response.data.voucher);
+                showToast(t.voucherSuccess.replace('{code}', response.data.voucher.code));
+            }
+        } catch (error) {
+            console.error(error);
+            let msg = t.voucherInvalid;
+            if (error.response?.status === 422) {
+                msg = t.voucherQuotaFull;
+            }
+            showToast(msg);
+            setAppliedVoucher(null);
+        } finally {
+            setIsValidatingVoucher(false);
+        }
+    };
+
+    const removeVoucher = () => {
+        setAppliedVoucher(null);
+        setVoucherCode('');
+        showToast(t.voucherRemoved);
+    };
+
     const showToast = (message) => {
         setToast({ show: true, message });
         setTimeout(() => setToast({ show: false, message: '' }), 3000);
     };
 
-    const calculateTotal = () => {
+    const calculateSubtotal = () => {
         return guests.reduce((total, guest) => {
             return total + guest.packages.reduce((pTotal, pkg) => pTotal + pkg.price, 0);
         }, 0);
+    };
+
+    const calculateGrandTotal = () => {
+        const subtotal = calculateSubtotal();
+        const voucherDiscount = appliedVoucher ? parseFloat(appliedVoucher.discount_amount) : 0;
+        return Math.max(0, subtotal - voucherDiscount);
     };
 
     const filteredPackages = packages.filter(p => {
@@ -314,7 +370,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             return;
         }
 
-        const totalPrice = calculateTotal();
+        const totalPrice = calculateGrandTotal();
         const guestDetails = guests.map((g, i) => {
             const pkgs = g.packages.map(p => `${p.name} @ Rp ${p.price.toLocaleString('id-ID')}`).join('\n    ');
             return `Pelanggan ${i + 1}:\n  Gender: ${g.guestGender === 'pria' ? t.pria : t.wanita}\n  Terapis: ${g.therapistGender === 'pria' ? t.pria : t.wanita}\n  Treatment:\n    ${pkgs || '(Belum pilih paket)'}`;
@@ -330,6 +386,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             source: formData.source,
             notes: formData.notes,
             total_price: totalPrice,
+            voucher_id: appliedVoucher?.id,
             guests: guests,
         };
 
@@ -372,7 +429,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                     package: `\n${groupedPackages}`,
                     therapist_pax: pax,
                     therapist_gender: allTherapistGenders,
-                    total: `Rp ${totalPrice.toLocaleString('id-ID')}`,
+                    total: `Rp ${totalPrice.toLocaleString('id-ID')}${appliedVoucher ? ` (Sudah potong Voucher ${appliedVoucher.code} -Rp ${parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID')})` : ''}`,
                     source: formData.source,
                     notes: formData.notes || '-',
                     order_number: transaction.order_number
@@ -607,7 +664,14 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                 {guests.length > 0 && (
                                     <div className="bg-zenith-charcoal rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl flex justify-between items-center mt-12 border-4 border-zenith-orange/20">
                                         <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">{t.total}</span>
-                                        <span className="text-3xl md:text-4xl font-bold text-zenith-orange">Rp {calculateTotal().toLocaleString('id-ID')}</span>
+                                        <div className="text-right">
+                                            {appliedVoucher && (
+                                                <p className="text-[10px] text-zenith-orange font-bold uppercase mb-1">
+                                                    Voucher: {appliedVoucher.code} (-Rp {parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID')})
+                                                </p>
+                                            )}
+                                            <span className="text-3xl md:text-4xl font-bold text-zenith-orange">Rp {calculateGrandTotal().toLocaleString('id-ID')}</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -709,6 +773,46 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                 value={formData.notes}
                                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                             ></textarea>
+                                        </div>
+
+                                        <div className="bg-zenith-surface p-6 rounded-3xl border border-zenith-orange/5">
+                                            <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-3">
+                                                {t.haveVoucher}
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder={t.enterVoucher}
+                                                    className="flex-1 bg-white border-none rounded-xl px-4 py-3 text-xs font-bold uppercase placeholder:text-gray-300 focus:ring-2 focus:ring-zenith-orange transition-all disabled:opacity-50"
+                                                    value={voucherCode}
+                                                    onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                                                    disabled={appliedVoucher || isValidatingVoucher}
+                                                />
+                                                {appliedVoucher ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={removeVoucher}
+                                                        className="px-4 bg-red-500 text-white rounded-xl text-[10px] font-bold uppercase transition-all hover:bg-red-600"
+                                                    >
+                                                        {t.removeVoucher}
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleApplyVoucher}
+                                                        disabled={!voucherCode || isValidatingVoucher}
+                                                        className="px-6 bg-zenith-charcoal text-white rounded-xl text-[10px] font-bold uppercase transition-all hover:bg-zenith-orange disabled:opacity-50"
+                                                    >
+                                                        {isValidatingVoucher ? '...' : t.apply}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {appliedVoucher && (
+                                                <div className="mt-3 flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase">
+                                                    <span className="material-symbols-outlined text-[14px]">verified</span>
+                                                    <span>{t.voucherApplied.replace('{amount}', parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID'))}</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <button

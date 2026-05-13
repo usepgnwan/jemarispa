@@ -47,30 +47,30 @@ export default function Testimonials({ testimonials = [], lang = 'ID' }) {
                     <p className="text-gray-400 text-sm md:text-base font-sans leading-relaxed italic">{t.subtitle}</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-hide gap-4 md:gap-8 pb-10 -mx-6 px-6 md:mx-0 md:px-0 md:grid-cols-2 lg:grid-cols-3">
                     {displayTestimonials.slice(0, 6).map((review, i) => (
-                        <div key={review.id || i} className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-zenith-orange/10 shadow-[0_32px_64px_-16px_rgba(244,124,81,0.05)] hover:-translate-y-2 transition-all duration-700 group flex flex-col">
-                            <div className="flex items-center gap-x-1 mb-6">
+                        <div key={review.id || i} className="flex-none w-[calc(65%-1rem)] md:w-auto snap-start bg-white rounded-[1.5rem] md:rounded-[2.5rem] p-5 md:p-10 border border-zenith-orange/10 shadow-[0_20px_40px_-16px_rgba(244,124,81,0.05)] hover:-translate-y-2 transition-all duration-700 group flex flex-col">
+                            <div className="flex items-center gap-x-0.5 md:gap-x-1 mb-4 md:mb-6">
                                 {[...Array(parseInt(review.star || 5))].map((_, i) => (
-                                    <StarIcon key={i} className="h-4 w-4 text-zenith-gold drop-shadow-sm" />
+                                    <StarIcon key={i} className="h-3 w-3 md:h-4 md:h-4 text-zenith-gold drop-shadow-sm" />
                                 ))}
                             </div>
 
                             <div 
-                                className="text-zenith-charcoal text-base md:text-lg font-serif italic leading-relaxed mb-10 flex-1 prose prose-sm max-w-none prose-p:italic"
+                                className="text-zenith-charcoal text-xs md:text-lg font-serif italic leading-relaxed mb-6 md:mb-10 flex-1 prose prose-sm max-w-none prose-p:italic line-clamp-4 md:line-clamp-none"
                                 dangerouslySetInnerHTML={{ __html: review.description }}
                             />
 
-                            <div className="flex items-center justify-between border-t border-zenith-dim/10 pt-8">
-                                <div>
-                                    <h4 className="text-[10px] font-bold text-zenith-charcoal uppercase tracking-widest">{review.name}</h4>
-                                    <p className="text-[9px] text-zenith-orange font-bold uppercase tracking-widest mt-1 opacity-60">{review.packages_description}</p>
+                            <div className="flex items-center justify-between border-t border-zenith-dim/10 pt-4 md:pt-8 mt-auto">
+                                <div className="min-w-0">
+                                    <h4 className="text-[8px] md:text-[10px] font-bold text-zenith-charcoal uppercase tracking-widest truncate">{review.name}</h4>
+                                    <p className="text-[7px] md:text-[9px] text-zenith-orange font-bold uppercase tracking-widest mt-1 opacity-60 truncate">{review.packages_description}</p>
                                 </div>
-                                <div className="flex flex-col items-end">
-                                    <div className="h-10 w-10 rounded-full bg-zenith-dim/5 flex items-center justify-center mb-3 group-hover:bg-zenith-orange group-hover:text-white transition-all duration-500">
-                                        <span className="material-symbols-outlined text-base">format_quote</span>
+                                <div className="flex flex-col items-end shrink-0">
+                                    <div className="h-7 w-7 md:h-10 md:w-10 rounded-full bg-zenith-dim/5 flex items-center justify-center mb-2 md:mb-3 group-hover:bg-zenith-orange group-hover:text-white transition-all duration-500">
+                                        <span className="material-symbols-outlined text-xs md:text-base">format_quote</span>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest shadow-sm ${
+                                    <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[6px] md:text-[8px] font-bold uppercase tracking-widest shadow-sm ${
                                         review.source?.toLowerCase() === 'traveloka' ? 'bg-blue-50 text-blue-600' :
                                         review.source?.toLowerCase() === 'tiket.com' ? 'bg-yellow-50 text-yellow-600' :
                                         'bg-zenith-dim/5 text-zenith-charcoal/40'

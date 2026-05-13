@@ -11,7 +11,7 @@ class Transaction extends Model
         'schedule_date', 'schedule_time', 'payment_method', 
         'source', 'notes', 'total_price', 'transport_fee', 
         'discount_percent', 'discount_amount', 'status',
-        'review_token', 'review_expires_at',
+        'review_token', 'review_expires_at', 'voucher_id',
     ];
 
     protected $casts = [
@@ -26,6 +26,11 @@ class Transaction extends Model
     public function testimoni()
     {
         return $this->hasOne(Testimoni::class);
+    }
+
+    public function voucher()
+    {
+        return $this->belongsTo(Voucher::class);
     }
 
     /**

@@ -13,6 +13,7 @@ import {
     SparklesIcon,
     Cog6ToothIcon,
     ClipboardDocumentListIcon,
+    TicketIcon
 } from '@heroicons/react/24/outline';
 
 function classNames(...classes) {
@@ -36,6 +37,7 @@ export default function Sidebar({ collapsed }) {
                 { name: 'Fitur POS', href: route('admin.pos.index'), icon: CalculatorIcon, current: route().current('admin.pos.*'), roles: ['admin', 'cs'] },
                 { name: 'Pesanan', href: route('admin.transaction.index'), icon: ShoppingCartIcon, current: route().current('admin.transaction.*'), roles: ['admin', 'cs'] },
                 { name: 'Laporan Terapis', href: route('admin.therapist.report'), icon: ClipboardDocumentListIcon, current: route().current('admin.therapist.*'), roles: ['admin', 'cs'] },
+                { name: 'Voucher', href: route('admin.voucher.index'), icon: TicketIcon, current: route().current('admin.voucher.*'), roles: ['admin', 'cs'] },
             ]
         },
         { 

@@ -23,6 +23,7 @@ class TransactionController extends Controller
                 $query->with('employee')->orderBy('guest_index', 'asc');
             },
             'testimoni',
+            'voucher',
         ]);
 
         // Search
@@ -128,6 +129,7 @@ class TransactionController extends Controller
             'transport_fee' => 'nullable|numeric',
             'discount_percent' => 'nullable|numeric',
             'discount_amount' => 'nullable|numeric',
+            'voucher_id' => 'nullable|exists:vouchers,id',
             'guests' => 'required|array',
         ]);
 
@@ -147,8 +149,13 @@ class TransactionController extends Controller
                     'transport_fee' => $validated['transport_fee'] ?? 0,
                     'discount_percent' => $validated['discount_percent'] ?? 0,
                     'discount_amount' => $validated['discount_amount'] ?? 0,
+                    'voucher_id' => $validated['voucher_id'] ?? null,
                     'status' => 'send_terapis', // Default status for POS as requested
                 ]);
+
+                if (!empty($validated['voucher_id'])) {
+                    \App\Models\Voucher::where('id', $validated['voucher_id'])->increment('used_count');
+                }
 
                 foreach ($validated['guests'] as $index => $guest) {
                     $guestCommission = 0;
@@ -214,6 +221,7 @@ class TransactionController extends Controller
             'source' => 'nullable|string',
             'notes' => 'nullable|string',
             'total_price' => 'required|numeric',
+            'voucher_id' => 'nullable|exists:vouchers,id',
             'guests' => 'required|array|min:1',
         ]);
 
@@ -231,8 +239,14 @@ class TransactionController extends Controller
                 'source' => $validated['source'],
                 'notes' => $validated['notes'],
                 'total_price' => $validated['total_price'],
+                'voucher_id' => $validated['voucher_id'] ?? null,
+                'discount_amount' => $validated['voucher_id'] ? (\App\Models\Voucher::find($validated['voucher_id'])->discount_amount ?? 0) : 0,
                 'status' => 'pending',
             ]);
+
+            if (!empty($validated['voucher_id'])) {
+                \App\Models\Voucher::where('id', $validated['voucher_id'])->increment('used_count');
+            }
 
             foreach ($validated['guests'] as $i => $guest) {
                 $guestCommission = 0;
@@ -295,7 +309,7 @@ class TransactionController extends Controller
 
     public function downloadPdf(Transaction $transaction)
     {
-        $transaction->load('items.employee');
+        $transaction->load(['items.employee', 'voucher']);
         $settings = Setting::first();
         $pdf = Pdf::loadView('pdf.invoice', compact('transaction', 'settings'));
         $filename = "Invoice-" . str_replace(['/', '\\'], '-', $transaction->order_number) . ".pdf";
@@ -307,7 +321,7 @@ class TransactionController extends Controller
         // Decode order number if it has slashes encoded
         $orderNumber = str_replace('-', '/', $orderNumber);
         
-        $transaction = Transaction::with('items.employee')->where('order_number', $orderNumber)->firstOrFail();
+        $transaction = Transaction::with(['items.employee', 'voucher'])->where('order_number', $orderNumber)->firstOrFail();
         $settings = Setting::first();
         $pdf = Pdf::loadView('pdf.invoice', compact('transaction', 'settings'));
         $filename = "Invoice-" . str_replace(['/', '\\'], '-', $transaction->order_number) . ".pdf";

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import axios from 'axios';
@@ -62,6 +62,7 @@ export default function Index({ transactions, filters, counts, employees, packag
     const [therapistId, setTherapistId] = useState(filters?.therapist_id || '');
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [expandedRows, setExpandedRows] = useState({});
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
@@ -345,6 +346,13 @@ export default function Index({ transactions, filters, counts, employees, packag
         setIsDetailModalOpen(true);
     };
 
+    const toggleRow = (id) => {
+        setExpandedRows(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Riwayat Transaksi" />
@@ -501,6 +509,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Order ID</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jadwal</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Voucher</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Diskon</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
@@ -511,10 +520,25 @@ export default function Index({ transactions, filters, counts, employees, packag
                                     {transactions.data.map((transaction) => {
                                         const StatusIcon = statusIcons[transaction.status];
                                         return (
-                                            <tr key={transaction.id} className="hover:bg-gray-50/50 transition-colors group">
+                                            <React.Fragment key={transaction.id}>
+                                                <tr className="hover:bg-gray-50/50 transition-colors group">
                                                 <td className="px-6 py-5">
-                                                    <span className="text-sm font-bold text-gray-900 block">{transaction.order_number}</span>
-                                                    <span className="text-[10px] font-medium text-gray-400">{new Date(transaction.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                    <div className="flex items-start gap-2">
+                                                        <button 
+                                                            onClick={() => toggleRow(transaction.id)}
+                                                            className="mt-0.5 text-gray-400 hover:text-zenith-orange transition-colors"
+                                                        >
+                                                            {expandedRows[transaction.id] ? (
+                                                                <span className="material-symbols-outlined text-[18px]">keyboard_arrow_up</span>
+                                                            ) : (
+                                                                <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+                                                            )}
+                                                        </button>
+                                                        <div>
+                                                            <span className="text-sm font-bold text-gray-900 block">{transaction.order_number}</span>
+                                                            <span className="text-[10px] font-medium text-gray-400">{new Date(transaction.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-5">
                                                     <div className="flex items-center gap-2">
@@ -537,7 +561,17 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                     <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">{transaction.schedule_time}</span>
                                                 </td>
                                                 <td className="px-6 py-5 text-center">
-                                                    {transaction.discount_amount > 0 ? (
+                                                    {transaction.voucher ? (
+                                                        <>
+                                                            <span className="text-xs font-bold text-blue-600 block">{transaction.voucher.code}</span>
+                                                            <span className="text-[9px] font-medium text-gray-400 uppercase">-{formatCurrency(transaction.voucher.discount_amount)}</span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-gray-300">—</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    {transaction.discount_percent > 0 ? (
                                                         <>
                                                             <span className="text-xs font-bold text-red-500 block">-{formatCurrency(transaction.discount_amount)}</span>
                                                             <span className="text-[9px] font-medium text-gray-400 uppercase">({parseFloat(transaction.discount_percent)}%)</span>
@@ -605,8 +639,64 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                     </div>
                                                 </td>
                                             </tr>
-                                        );
-                                    })}
+                                            {expandedRows[transaction.id] && (
+                                                <tr className="bg-gray-50/30">
+                                                    <td colSpan="8" className="px-12 py-4">
+                                                        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                                {Object.entries(
+                                                                    transaction.items.reduce((acc, item) => {
+                                                                        if (!acc[item.guest_index]) acc[item.guest_index] = [];
+                                                                        acc[item.guest_index].push(item);
+                                                                        return acc;
+                                                                    }, {})
+                                                                ).map(([guestIndex, items]) => {
+                                                                    const guestItem = items[0];
+                                                                    return (
+                                                                        <div key={guestIndex} className="border-l-2 border-zenith-orange/20 pl-4">
+                                                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Guest {guestIndex}</p>
+                                                                            <div className="space-y-1">
+                                                                                {items.map((it, idx) => (
+                                                                                    <p key={idx} className="text-xs text-gray-600 font-medium">
+                                                                                        • {it.package_name}
+                                                                                    </p>
+                                                                                ))}
+                                                                                <div className="mt-2 pt-2 border-t border-gray-50">
+                                                                                    <p className="text-[11px] font-bold text-green-600 uppercase">
+                                                                                        Terapis: {guestItem.employee?.name || 'Belum ditugaskan'}
+                                                                                    </p>
+                                                                                    <p className="text-[10px] font-bold text-gray-400 uppercase">
+                                                                                        Komisi: {formatCurrency(guestItem.therapist_commission || 0)}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                            {(transaction.discount_amount > 0 || transaction.voucher) && (
+                                                                <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-4">
+                                                                    {transaction.voucher && (
+                                                                        <div className="bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
+                                                                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Voucher</p>
+                                                                            <p className="text-xs font-bold text-blue-600">{transaction.voucher.code} (-{formatCurrency(transaction.voucher.discount_amount)})</p>
+                                                                        </div>
+                                                                    )}
+                                                                    {transaction.discount_percent > 0 && (
+                                                                        <div className="bg-red-50 px-4 py-2 rounded-xl border border-red-100">
+                                                                            <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Diskon {parseFloat(transaction.discount_percent)}%</p>
+                                                                            <p className="text-xs font-bold text-red-600">-{formatCurrency(transaction.discount_amount)}</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })}
                                     {transactions.data.length === 0 && (
                                         <tr>
                                             <td colSpan="6" className="px-6 py-20 text-center text-gray-400 italic text-sm">
@@ -855,6 +945,13 @@ export default function Index({ transactions, filters, counts, employees, packag
                                             <span className="text-[10px] font-bold text-zenith-orange uppercase">{items[0]?.guest_gender}</span>
                                         </div>
                                         <table className="w-full text-left text-sm">
+                                            <thead>
+                                                <tr className="border-b border-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                    <th className="px-4 py-2">Paket</th>
+                                                    <th className="px-4 py-2 text-right">Komisi</th>
+                                                    <th className="px-4 py-2 text-right">Harga</th>
+                                                </tr>
+                                            </thead>
                                             <tbody className="divide-y divide-gray-100">
                                                 {items.map((item, idx) => (
                                                     <tr key={idx}>
@@ -864,6 +961,9 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                             {item.employee && (
                                                                 <p className="text-[10px] text-green-600 font-bold mt-1 uppercase">Terapis: {item.employee.name}</p>
                                                             )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right text-[11px] font-bold text-gray-400">
+                                                            {formatCurrency(item.therapist_commission || 0)}
                                                         </td>
                                                         <td className="px-4 py-3 text-right font-bold text-gray-900">
                                                             {formatCurrency(item.price)}
@@ -876,7 +976,16 @@ export default function Index({ transactions, filters, counts, employees, packag
                                 ))}
 
                                 <div className="bg-zenith-orange/5 p-6 rounded-2xl border border-zenith-orange/10 flex justify-between items-center mt-6">
-                                    <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Grand Total</span>
+                                    <div>
+                                        <span className="text-sm font-bold text-gray-500 uppercase tracking-widest block">Grand Total</span>
+                                        <div className="mt-2 space-y-1">
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase">
+                                                Total Komisi: <span className="text-gray-900">{formatCurrency(
+                                                    selectedTransaction?.items.reduce((sum, item) => sum + (parseFloat(item.therapist_commission) || 0), 0)
+                                                )}</span>
+                                            </p>
+                                        </div>
+                                    </div>
                                     <div className="text-right">
                                         <span className="text-2xl font-black text-zenith-orange">
                                             {formatCurrency(selectedTransaction?.total_price)}
@@ -887,7 +996,12 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                     Sudah termasuk Biaya Transport {formatCurrency(selectedTransaction.transport_fee)}
                                                 </p>
                                             )}
-                                            {selectedTransaction?.discount_amount > 0 && (
+                                            {selectedTransaction?.voucher && (
+                                                <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">
+                                                    Voucher: {selectedTransaction.voucher.code} (-{formatCurrency(selectedTransaction.voucher.discount_amount)})
+                                                </p>
+                                            )}
+                                            {selectedTransaction?.discount_percent > 0 && (
                                                 <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
                                                     Potongan Diskon {parseFloat(selectedTransaction.discount_percent)}% ({formatCurrency(selectedTransaction.discount_amount)})
                                                 </p>

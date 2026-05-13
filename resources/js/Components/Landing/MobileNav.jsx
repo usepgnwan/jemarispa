@@ -6,8 +6,8 @@ export default function MobileNav({ setActiveService, lang = 'ID' }) {
     const [activeHash, setActiveHash] = useState('');
 
     const labels = {
-        'ID': { home: 'Beranda', blog: 'Blog', pricing: 'Harga', cart: 'Keranjang', contact: 'Kontak' },
-        'EN': { home: 'Home', blog: 'Blog', pricing: 'Prices', cart: 'Cart', contact: 'Contact' }
+        'ID': { home: 'Beranda', blog: 'Blog', pricing: 'Harga', cart: 'Keranjang', faq: 'FAQ' },
+        'EN': { home: 'Home', blog: 'Blog', pricing: 'Prices', cart: 'Cart', faq: 'FAQ' }
     };
 
     const t = labels[lang] || labels['ID'];
@@ -67,7 +67,7 @@ export default function MobileNav({ setActiveService, lang = 'ID' }) {
         { label: t.blog, icon: 'newspaper', href: '/blog', active: isActive('/blog') },
         { label: t.pricing, icon: 'receipt_long', href: '/pricing', active: isActive('/pricing') },
         { label: t.cart, icon: 'shopping_bag', href: '/cart', isCart: true, active: isActive('/cart') },
-        { label: t.contact, icon: 'chat_bubble', href: '/#contact', active: isActive('/', '#contact') },
+        { label: t.faq, icon: 'quiz', href: '/#faq', active: isActive('/', '#faq') },
     ];
 
     return (

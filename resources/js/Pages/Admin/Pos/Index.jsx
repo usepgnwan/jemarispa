@@ -22,7 +22,8 @@ import {
     TruckIcon,
     ClipboardDocumentListIcon,
     ChevronRightIcon,
-    UserGroupIcon
+    UserGroupIcon,
+    TicketIcon
 } from '@heroicons/react/24/outline';
 import Modal from '@/Components/Modal';
 
@@ -35,6 +36,9 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
     const [lastTransaction, setLastTransaction] = useState(null);
+    const [voucherCode, setVoucherCode] = useState('');
+    const [appliedVoucher, setAppliedVoucher] = useState(null);
+    const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
 
     const [pax, setPax] = useState(1);
     const [formData, setFormData] = useState({
@@ -117,7 +121,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         }
 
         activeGuest.packages.push(packageToAdd);
-        
+
         // Auto-calculate commission based on selected packages
         const totalCommission = activeGuest.packages.reduce((sum, p) => sum + (p.commission || 0), 0);
         activeGuest.therapist_commission = totalCommission;
@@ -132,11 +136,11 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
     const removePackageFromGuest = (guestIndex, pkgIndex) => {
         const newGuests = [...guests];
         newGuests[guestIndex].packages.splice(pkgIndex, 1);
-        
+
         // Recalculate commission after removal
         const totalCommission = newGuests[guestIndex].packages.reduce((sum, p) => sum + (p.commission || 0), 0);
         newGuests[guestIndex].therapist_commission = totalCommission;
-        
+
         setGuests(newGuests);
     };
 
@@ -146,15 +150,38 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         }, 0);
     };
 
-    const calculateDiscountAmount = () => {
+    const calculateManualDiscountAmount = () => {
         const itemsTotal = calculateItemsTotal();
         const percent = parseFloat(formData.discount_percent) || 0;
         return (itemsTotal * percent) / 100;
     };
 
+    const calculateDiscountAmount = () => {
+        const percentDiscount = calculateManualDiscountAmount();
+        // Voucher bundle nilainya tidak dihitung sebagai diskon nominal yang mengurangi total (karena totalnya sudah kita handle di calculateGrandTotal)
+        const voucherDiscount = (appliedVoucher && appliedVoucher.category !== 'bundle')
+            ? parseFloat(appliedVoucher.discount_amount)
+            : 0;
+        return percentDiscount + voucherDiscount;
+    };
+
     const calculateGrandTotal = () => {
-        const subtotal = calculateItemsTotal();
         const transport = parseFloat(formData.transport_fee) || 0;
+
+        // Jika voucher bundle, total bayar hanya menghitung item NON-bundle + transport
+        if (appliedVoucher && appliedVoucher.category === 'bundle') {
+            const nonBundleItemsTotal = guests.reduce((total, guest) => {
+                return total + guest.packages.reduce((pTotal, pkg) => {
+                    return pTotal + (pkg.isBundleItem ? 0 : pkg.price);
+                }, 0);
+            }, 0);
+            const subtotal = calculateItemsTotal();
+            // const percentDiscount = (nonBundleItemsTotal * (parseFloat(formData.discount_percent) || 0)) / 100;
+            // alert(subtotal)
+            return subtotal + transport;
+        }
+
+        const subtotal = calculateItemsTotal();
         const discount = calculateDiscountAmount();
         return subtotal + transport - discount;
     };
@@ -170,6 +197,80 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             (p.category_id && p.category_id.toLowerCase().includes(searchQuery.toLowerCase()));
         return hasDurations && matchesSearch;
     });
+
+    const handleApplyVoucher = async () => {
+        if (!voucherCode) return;
+        setIsValidatingVoucher(true);
+        try {
+            const response = await axios.post(route('admin.voucher.validate'), { code: voucherCode });
+            if (response.data.success) {
+                const voucher = response.data.voucher;
+                setAppliedVoucher(voucher);
+
+                // Auto-fill customer info if available
+                setFormData(prev => ({
+                    ...prev,
+                    name: voucher.customer_name || prev.name,
+                    phone: voucher.customer_phone || prev.phone
+                }));
+
+                // Special handling for bundle packets
+                if (voucher.category === 'bundle' && voucher.bundle_packages) {
+                    const newGuests = [...guests];
+
+                    // Add all bundle packages to the first guest
+                    voucher.bundle_packages.forEach(bp => {
+                        // Find original package data to get commission
+                        const masterPkg = packages.find(p => p.title_id === bp.name);
+                        const durationData = masterPkg?.durations.find(d => d.duration === bp.duration);
+
+                        newGuests[0].packages.push({
+                            name: `${bp.name} ${bp.duration}`,
+                            groupName: bp.name,
+                            price: parseFloat(bp.price), // Restore original price to show in subtotal
+                            duration: bp.duration,
+                            commission: parseFloat(durationData?.commission || 0),
+                            isBundleItem: true,
+                            voucherCode: voucher.code
+                        });
+                    });
+
+                    // Recalculate therapist commission for the first guest
+                    newGuests[0].therapist_commission = newGuests[0].packages.reduce((sum, p) => sum + (p.commission || 0), 0);
+
+                    setGuests(newGuests);
+                    showToast(`Voucher Bundle ${voucher.code} berhasil dipasang! ${voucher.bundle_packages.length} paket ditambahkan.`);
+                } else {
+                    showToast(`Voucher ${voucher.code} berhasil dipasang!`);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            showToast(error.response?.data?.message || 'Voucher tidak valid');
+            setAppliedVoucher(null);
+        } finally {
+            setIsValidatingVoucher(false);
+        }
+    };
+
+    const removeVoucher = () => {
+        if (appliedVoucher && appliedVoucher.category === 'bundle') {
+            const newGuests = guests.map(guest => ({
+                ...guest,
+                packages: guest.packages.filter(p => !p.isBundleItem)
+            }));
+
+            // Recalculate commissions for all guests
+            newGuests.forEach(guest => {
+                guest.therapist_commission = guest.packages.reduce((sum, p) => sum + (p.commission || 0), 0);
+            });
+
+            setGuests(newGuests);
+        }
+        setAppliedVoucher(null);
+        setVoucherCode('');
+        showToast('Voucher dihapus');
+    };
 
     const handleCheckout = async (e) => {
         e.preventDefault();
@@ -191,7 +292,8 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             total_price: calculateGrandTotal(),
             transport_fee: formData.transport_fee,
             discount_percent: formData.discount_percent,
-            discount_amount: calculateDiscountAmount(),
+            discount_amount: calculateManualDiscountAmount(),
+            voucher_id: appliedVoucher?.id,
             guests: guests,
         };
 
@@ -215,6 +317,8 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                     discount_percent: 0,
                     notes: ''
                 });
+                setAppliedVoucher(null);
+                setVoucherCode('');
                 setPax(1);
                 setGuests([{
                     guestGender: 'wanita',
@@ -225,7 +329,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                 }]);
 
                 showToast('Transaksi POS berhasil disimpan');
-                
+
                 // Refresh todayTransactions prop
                 router.reload({ only: ['todayTransactions'] });
             }
@@ -278,7 +382,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         const target = transaction || lastTransaction;
         if (!target) return;
         const message = getInvoiceMessage(target);
-        
+
         navigator.clipboard.writeText(message).then(() => {
             showToast('Teks invoice berhasil disalin!');
         }).catch(err => {
@@ -291,7 +395,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         const phone = transaction.phone || app_settings?.phone || '';
         const message = getInvoiceMessage(transaction);
         const encodedMessage = encodeURIComponent(message);
-        
+
         if (!phone) {
             showToast('Nomor WhatsApp tidak ditemukan');
             return;
@@ -304,7 +408,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         } else if (waPhone.startsWith('8')) {
             waPhone = '62' + waPhone;
         }
-        
+
         if (!waPhone) {
             showToast('Nomor WhatsApp tidak valid');
             return;
@@ -372,8 +476,8 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                 type="button"
                                                 onClick={() => handlePaxChange(n)}
                                                 className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${pax === n
-                                                        ? 'bg-zenith-orange text-white shadow-md'
-                                                        : 'text-gray-400 hover:text-zenith-orange'
+                                                    ? 'bg-zenith-orange text-white shadow-md'
+                                                    : 'text-gray-400 hover:text-zenith-orange'
                                                     }`}
                                             >
                                                 {n}
@@ -440,8 +544,15 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                             <div className="flex items-center gap-4">
                                                                 <div className="h-2 w-2 rounded-full bg-zenith-orange"></div>
                                                                 <div>
-                                                                    <p className="text-sm font-bold text-gray-900">{pkg.groupName || pkg.name}</p>
-                                                                    <p className="text-[10px] font-bold text-zenith-orange uppercase tracking-widest mt-0.5">{pkg.duration} • Rp {pkg.price.toLocaleString('id-ID')}</p>
+                                                                    <p className="text-sm font-bold text-gray-900">
+                                                                        {pkg.groupName || pkg.name}
+                                                                        {pkg.isBundleItem && (
+                                                                            <span className="ml-2 px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[8px] font-bold rounded uppercase">Voucher Bundle</span>
+                                                                        )}
+                                                                    </p>
+                                                                    <p className="text-[10px] font-bold text-zenith-orange uppercase tracking-widest mt-0.5">
+                                                                        {pkg.duration} • Rp {pkg.price.toLocaleString('id-ID')}
+                                                                    </p>
                                                                 </div>
                                                             </div>
                                                             <button
@@ -534,6 +645,17 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                             <div className="flex justify-between items-center text-sm font-medium text-red-400/80">
                                                 <span>Diskon ({formData.discount_percent}%)</span>
                                                 <span>- Rp {calculateDiscountAmount().toLocaleString('id-ID')}</span>
+                                            </div>
+                                        )}
+
+                                        {appliedVoucher && appliedVoucher.category !== 'bundle' && (
+                                            <div className="flex justify-between items-center text-sm font-medium text-red-400/80">
+                                                <span>
+                                                    Voucher
+                                                </span>
+                                                <span>
+                                                    (-Rp {parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID')})
+                                                </span>
                                             </div>
                                         )}
                                         <div className="pt-4 border-t border-white/10 flex justify-between items-end">
@@ -660,6 +782,46 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block px-1">Voucher</label>
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <TicketIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Kode Voucher"
+                                                        className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-11 pr-4 text-xs font-bold text-gray-700 focus:ring-zenith-orange uppercase"
+                                                        value={voucherCode}
+                                                        onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                                                        disabled={!!appliedVoucher}
+                                                    />
+                                                </div>
+                                                {appliedVoucher ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={removeVoucher}
+                                                        className="px-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-colors"
+                                                    >
+                                                        <TrashIcon className="w-4 h-4" />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleApplyVoucher}
+                                                        disabled={isValidatingVoucher || !voucherCode}
+                                                        className="px-4 bg-zenith-orange/10 text-zenith-orange rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-zenith-orange hover:text-white transition-all disabled:opacity-50"
+                                                    >
+                                                        {isValidatingVoucher ? '...' : 'Pasang'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {appliedVoucher && (
+                                                <p className="text-[9px] text-green-600 font-bold px-1">
+                                                    Terpasang: {appliedVoucher.description || appliedVoucher.code} (-Rp {parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID')})
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <button
@@ -678,7 +840,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
 
             {/* Modal & Toast Components */}
             {/* ... rest of the modal logic (unchanged) ... */}
-            
+
             <Modal show={showAddModal} onClose={() => setShowAddModal(false)} maxWidth="2xl">
                 <div className="p-5 sm:p-8">
                     <div className="flex justify-between items-center mb-6 sm:mb-8">
@@ -703,10 +865,10 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
 
                     <div className="max-h-[60vh] sm:max-h-[500px] overflow-y-auto pr-2 space-y-4">
                         {filteredPackages.map(pkg => {
-                             const durationIndex = selectedDurations[pkg.id] || 0;
-                             const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
+                            const durationIndex = selectedDurations[pkg.id] || 0;
+                            const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
 
-                             return (
+                            return (
                                 <div key={pkg.id} className="p-4 sm:p-5 rounded-3xl border border-gray-100 bg-gray-50/30 hover:border-zenith-orange/30 hover:bg-white transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                                     <div className="flex-1">
                                         <h4 className="font-bold text-gray-900 group-hover:text-zenith-orange transition-colors">{pkg.title_id}</h4>
@@ -746,7 +908,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                     <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                                 </button>
                                             </div>
-                                         ) : (
+                                        ) : (
                                             <button
                                                 onClick={() => addPackageToGuest(pkg)}
                                                 className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-zenith-orange text-white flex items-center justify-center hover:bg-zenith-charcoal transition-all shadow-lg shadow-zenith-orange/20"
@@ -754,10 +916,10 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                             >
                                                 <PlusIcon className="w-5 h-5" />
                                             </button>
-                                         )}
+                                        )}
                                     </div>
                                 </div>
-                             );
+                            );
                         })}
                     </div>
                 </div>
@@ -807,21 +969,21 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button 
+                                        <button
                                             onClick={() => sendInvoice(t)}
                                             className="p-3 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
                                             title="Kirim WA"
                                         >
                                             <ChatBubbleLeftRightIcon className="w-5 h-5" />
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => copyInvoiceText(t)}
                                             className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                                             title="Copy Text WA"
                                         >
                                             <ClipboardDocumentListIcon className="w-5 h-5" />
                                         </button>
-                                        <Link 
+                                        <Link
                                             href={route('admin.transaction.index', { search: t.order_number })}
                                             className="p-3 bg-gray-50 text-gray-400 rounded-xl hover:bg-zenith-charcoal hover:text-white transition-all shadow-sm"
                                         >
