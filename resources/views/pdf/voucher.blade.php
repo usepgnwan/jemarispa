@@ -83,6 +83,14 @@
             font-weight: bold;
             font-family: 'Times New Roman', serif;
         }
+        .voucher-card-content h3 {
+            font-size: 38px;
+            text-align: center;
+            margin: 0;
+            letter-spacing: 5px;
+            font-weight: bold;
+            font-family: 'Times New Roman', serif;
+        }
         .package-badge {
             background-color: #f97316;
             color: #fff;
@@ -232,8 +240,8 @@
         <div class="tear"></div>
         <div class="voucher-card-content">
             <img src="{{ public_path('images/Jemari Logo - 2.png') }}" class="logo-small" style="filter: brightness(0) invert(1);">
-            <h2>VOUCHER</h2>
-            
+            <h2> VOUCHER</h2>
+            <h3>{{ $voucher->code }}</h3>
             <div class="package-badge">
                 @if($voucher->category === 'bundle')
                     @foreach($voucher->bundle_packages as $pkg)
@@ -256,7 +264,6 @@
             </div>
         </div>
     </div>
-
     <div class="details-section">
         <h3>Rincian Pembelian :</h3>
         <table class="details-table">

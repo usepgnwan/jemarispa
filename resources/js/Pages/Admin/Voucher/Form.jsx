@@ -37,29 +37,29 @@ export default function Form({ auth, voucher = null, packages = [] }) {
     const updateBundlePackage = (index, field, value) => {
         const newBundles = [...data.bundle_packages];
         newBundles[index][field] = value;
-        
+
         let newData = { ...data, bundle_packages: newBundles };
-        
+
         // Calculate accumulated price if category is bundle
         if (data.category === 'bundle') {
             const total = newBundles.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
             newData.price = total;
             newData.discount_amount = total; // Default discount amount to total price for bundle
         }
-        
+
         setData(newData);
     };
 
     const removeBundlePackage = (index) => {
         const newBundles = data.bundle_packages.filter((_, i) => i !== index);
         let newData = { ...data, bundle_packages: newBundles };
-        
+
         if (data.category === 'bundle') {
             const total = newBundles.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
             newData.price = total;
             newData.discount_amount = total;
         }
-        
+
         setData(newData);
     };
 
@@ -110,24 +110,22 @@ export default function Form({ auth, voucher = null, packages = [] }) {
                                         <button
                                             type="button"
                                             onClick={() => setData('category', 'standard')}
-                                            className={`py-2 px-4 rounded-lg text-xs font-bold transition-all ${
-                                                data.category === 'standard' 
-                                                ? 'bg-white text-zenith-orange shadow-sm' 
-                                                : 'text-gray-400 hover:text-gray-600'
-                                            }`}
+                                            className={`py-2 px-4 rounded-lg text-xs font-bold transition-all ${data.category === 'standard'
+                                                    ? 'bg-white text-zenith-orange shadow-sm'
+                                                    : 'text-gray-400 hover:text-gray-600'
+                                                }`}
                                         >
-                                            Standard
+                                            Voucher Discount
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setData('category', 'bundle')}
-                                            className={`py-2 px-4 rounded-lg text-xs font-bold transition-all ${
-                                                data.category === 'bundle' 
-                                                ? 'bg-white text-purple-600 shadow-sm' 
-                                                : 'text-gray-400 hover:text-gray-600'
-                                            }`}
+                                            className={`py-2 px-4 rounded-lg text-xs font-bold transition-all ${data.category === 'bundle'
+                                                    ? 'bg-white text-purple-600 shadow-sm'
+                                                    : 'text-gray-400 hover:text-gray-600'
+                                                }`}
                                         >
-                                            Bundle Packet
+                                            Voucher Treatment
                                         </button>
                                     </div>
                                     <InputError message={errors.category} className="mt-2" />
