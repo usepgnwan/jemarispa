@@ -12,7 +12,7 @@ export default function Footer({ lang = 'ID', setLang }) {
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
                     <div className="md:col-span-2">
-                        <div className="flex gap-x-8">
+                        <div className="flex flex-col md:flex-row space-y-1  md:items-start gap-x-8">
                             <div className="flex-shrink-0">
                                 <img src="/images/logo-jemari.jpg" alt="Jemari Spa Logo" className="h-28 w-auto rounded-2xl shadow-2xl border border-white/10" />
                             </div>

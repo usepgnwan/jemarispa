@@ -10,7 +10,7 @@ import { TrashIcon, ArrowLeftIcon, PlusIcon, ClockIcon } from '@heroicons/react/
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-export default function Edit({ pkg }) {
+export default function Edit({ pkg, signaturePackages = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         title_id: pkg.title_id || '',
@@ -19,8 +19,9 @@ export default function Edit({ pkg }) {
         category_en: pkg.category_en || '',
         description_id: pkg.description_id || '',
         description_en: pkg.description_en || '',
+        parent_id: pkg.parent_id || '',
         is_signature: pkg.is_signature || false,
-        durations: pkg.durations.length > 0 
+        durations: pkg.durations.length > 0
             ? pkg.durations.map(d => ({ id: d.id, duration: d.duration, price: d.price, commission: d.commission || '' }))
             : [{ duration: '', price: '', commission: '' }]
     });
@@ -54,7 +55,7 @@ export default function Edit({ pkg }) {
             <div className="py-8">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="mb-6 px-2 sm:px-0">
-                        <Link 
+                        <Link
                             href={route('admin.package.index')}
                             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#0057B8] font-medium transition-colors mb-4"
                         >
@@ -67,9 +68,42 @@ export default function Edit({ pkg }) {
                     </div>
 
                     <form onSubmit={submit} className="space-y-8">
+                        {/* Parent Selection */}
+                        <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="bg-zenith-gold/10 px-8 py-4 border-b border-gray-100 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-zenith-gold">spa</span>
+                                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-widest">Layanan Utama (Treatments)</h3>
+                            </div>
+                            <div className="p-8">
+                                <InputLabel htmlFor="parent_id" value="Pilih Main Service (Opsional)" />
+                                <div className="mt-1 relative">
+                                    <select
+                                        id="parent_id"
+                                        value={data.parent_id}
+                                        className="mt-1 block w-full rounded-xl border-gray-300 focus:border-[#0057B8] focus:ring-[#0057B8] shadow-sm appearance-none pr-10"
+                                        onChange={(e) => setData('parent_id', e.target.value)}
+                                    >
+                                        <option value="">-- Tanpa Layanan Utama --</option>
+                                        {signaturePackages.map((s) => (
+                                            <option key={s.id} value={s.id}>
+                                                {s.title_id} {s.title_en ? `(${s.title_en})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                                        <span className="material-symbols-outlined text-gray-400">expand_more</span>
+                                    </div>
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Pilih layanan utama jika paket ini merupakan bagian dari kategori ritual tertentu.
+                                </p>
+                                <InputError message={errors.parent_id} className="mt-2" />
+                            </div>
+                        </div>
+
                         {/* Language Sections Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            
+
                             {/* Indonesian Version */}
                             <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
                                 <div className="bg-red-50/50 px-8 py-4 border-b border-gray-100 flex items-center gap-2">
@@ -105,9 +139,9 @@ export default function Edit({ pkg }) {
                                     <div>
                                         <InputLabel htmlFor="description_id" value="Deskripsi Paket" />
                                         <div className="mt-2">
-                                            <ReactQuill 
-                                                theme="snow" 
-                                                value={data.description_id} 
+                                            <ReactQuill
+                                                theme="snow"
+                                                value={data.description_id}
                                                 onChange={(content) => setData('description_id', content)}
                                                 className="bg-white h-[200px] mb-12 rounded-lg"
                                             />
@@ -151,9 +185,9 @@ export default function Edit({ pkg }) {
                                     <div>
                                         <InputLabel htmlFor="description_en" value="Package Description" />
                                         <div className="mt-2">
-                                            <ReactQuill 
-                                                theme="snow" 
-                                                value={data.description_en} 
+                                            <ReactQuill
+                                                theme="snow"
+                                                value={data.description_en}
                                                 onChange={(content) => setData('description_en', content)}
                                                 className="bg-white h-[200px] mb-12 rounded-lg"
                                             />

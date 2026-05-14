@@ -39,10 +39,10 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
     const t = translations[lang];
 
     // Generate dynamic slider items from signature packages
-    const sliderItems = signaturePackages.length > 0 
+    const sliderItems = signaturePackages.length > 0
         ? signaturePackages.map(pkg => ({
             title: lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id,
-            subtitle: lang === 'EN' ? (pkg.category_en || pkg.category_id || 'Signature Ritual') : (pkg.category_id || 'Ritual Signature'),
+            subtitle: lang === 'EN' ? (pkg.category_en || pkg.category_id || 'Treatments') : (pkg.category_id || 'Ritual Signature'),
             desc: lang === 'EN' ? (pkg.description_en || pkg.description_id) : pkg.description_id,
             bg: pkg.image ? `/storage/${pkg.image}` : "/images/services.jpg"
         }))
@@ -58,7 +58,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
     const handleSearch = (e) => {
         const value = e.target.value;
         setSearch(value);
-        
+
         // Debounce search
         const timeoutId = setTimeout(() => {
             router.get(route('blog.index'), { search: value }, {
@@ -91,12 +91,12 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                 <meta name="keywords" content="blog kesehatan, tips wellness, manfaat pijat, gaya hidup sehat, jemari spa articles" />
             </Head>
 
-            <Navbar 
-                auth={auth} 
-                lang={lang} 
-                setLang={setLang} 
+            <Navbar
+                auth={auth}
+                lang={lang}
+                setLang={setLang}
                 activeService="Blog"
-                setActiveService={() => {}}
+                setActiveService={() => { }}
                 signaturePackages={signaturePackages}
             />
 
@@ -104,7 +104,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                 {/* Hero Slider */}
                 <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center overflow-hidden">
                     {sliderItems.map((item, index) => (
-                        <div 
+                        <div
                             key={index}
                             className={`absolute inset-0 transition-all duration-1000 ${index === currentSlider ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
                         >
@@ -112,7 +112,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-zenith-surface"></div>
                         </div>
                     ))}
-                    
+
                     <div className="relative z-10 text-center px-6 max-w-4xl">
                         <div className="inline-flex items-center gap-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 mb-6">
                             <span className="h-1.5 w-1.5 rounded-full bg-zenith-orange animate-pulse"></span>
@@ -121,7 +121,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                         <h1 className="text-4xl md:text-6xl font-serif text-white mb-6 leading-tight">
                             {sliderItems[currentSlider]?.title}
                         </h1>
-                        <div 
+                        <div
                             className="text-white/80 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed line-clamp-2"
                             dangerouslySetInnerHTML={{ __html: sliderItems[currentSlider]?.desc }}
                         />
@@ -137,8 +137,8 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                 <p className="text-zenith-charcoal/40 text-sm font-medium tracking-wide">{t.discoverRecent}</p>
                             </div>
                             <div className="relative w-full md:w-96">
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     placeholder={t.searchPlaceholder}
                                     className="w-full pl-12 pr-6 py-4 rounded-2xl bg-zenith-surface border-none focus:ring-2 focus:ring-zenith-orange transition-all text-sm font-medium"
                                     value={search}
@@ -151,8 +151,8 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                         {/* Blog Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                             {blogs.data.length > 0 ? blogs.data.map((blog) => (
-                                <Link 
-                                    key={blog.id} 
+                                <Link
+                                    key={blog.id}
                                     href={route('blog.show', blog.slug)}
                                     className="group flex flex-col bg-zenith-surface rounded-3xl overflow-hidden border border-transparent hover:border-zenith-orange/20 transition-all hover:-translate-y-2 hover:shadow-2xl shadow-zenith-orange/5"
                                 >
@@ -171,12 +171,12 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                         <h3 className="text-xl font-bold text-zenith-charcoal mb-4 leading-tight group-hover:text-zenith-orange transition-colors">
                                             {blog.title}
                                         </h3>
-                                        <div 
+                                        <div
                                             className="text-zenith-charcoal/50 text-sm leading-relaxed mb-6 flex-1 line-clamp-3 prose prose-sm max-w-none"
                                             dangerouslySetInnerHTML={{ __html: blog.description }}
                                         />
                                         <div className="flex items-center gap-x-2 text-zenith-orange font-bold text-[10px] uppercase tracking-widest pt-4 border-t border-zenith-orange/5">
-                                            {t.readMore} 
+                                            {t.readMore}
                                             <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                                         </div>
                                     </div>
@@ -194,11 +194,10 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                 <Link
                                     key={i}
                                     href={link.url || '#'}
-                                    className={`h-10 min-w-[40px] px-3 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                                        link.active 
-                                            ? 'bg-zenith-orange text-white shadow-lg shadow-zenith-orange/20' 
+                                    className={`h-10 min-w-[40px] px-3 rounded-full flex items-center justify-center text-sm font-bold transition-all ${link.active
+                                            ? 'bg-zenith-orange text-white shadow-lg shadow-zenith-orange/20'
                                             : 'border border-zenith-orange/10 text-zenith-charcoal/40 hover:bg-zenith-orange/5'
-                                    } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                 />
                             ))}

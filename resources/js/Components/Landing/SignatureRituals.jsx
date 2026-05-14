@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 
-export default function SignatureRituals({ lang, rituals = [] }) {
+export default function SignatureRituals({ lang, rituals = [], setActiveService }) {
     const [activeTab, setActiveTab] = useState(null);
 
     if (!rituals || rituals.length === 0) return null;
+
+    const handleRitualClick = (ritual, index) => {
+        setActiveTab(activeTab === index ? null : index);
+        if (setActiveService) {
+            const serviceTitle = ritual.title_id;
+            setActiveService(activeTab === index ? 'Default' : serviceTitle);
+        }
+    };
 
     return (
         <section id="packages" className="py-24 md:py-32 bg-white overflow-hidden">
@@ -17,7 +25,7 @@ export default function SignatureRituals({ lang, rituals = [] }) {
                     {rituals.map((ritual, i) => (
                         <div
                             key={i}
-                            onClick={() => setActiveTab(activeTab === i ? null : i)}
+                            onClick={() => handleRitualClick(ritual, i)}
                             className="relative flex-none w-[85vw] md:w-auto h-[35rem] md:h-[40rem] rounded-[3rem] overflow-hidden group cursor-pointer snap-center shadow-2xl shadow-black/5"
                         >
                             {/* Background Image */}

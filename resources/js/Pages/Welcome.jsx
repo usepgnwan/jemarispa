@@ -61,7 +61,13 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
             setActiveService(pending);
             localStorage.removeItem('pending_service');
         }
-    }, []);
+        
+        // Expose setter for child components like Pricing
+        window.setActiveServiceGlobal = setActiveService;
+        return () => {
+            delete window.setActiveServiceGlobal;
+        };
+    }, [setActiveService]);
 
     const getMeta = () => {
         const config = {
@@ -159,8 +165,8 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
             <main>
                 <Hero activeService={activeService} lang={lang} />
                 <Highlights />
-                <SignatureRituals rituals={signaturePackages} lang={lang} />
-                <Pricing packages={packages} lang={lang} />
+                <SignatureRituals rituals={signaturePackages} lang={lang} setActiveService={setActiveService} />
+                <Pricing packages={packages} lang={lang} activeService={activeService} signaturePackages={signaturePackages} />
                 <Testimonials testimonials={testimonials} lang={lang} />
 
                 {/* Multi-Platform Booking Section */}
@@ -241,7 +247,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-xs text-zenith-charcoal">Pijat Tradisional</p>
-                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">90 Minutes</p>
+                                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{lang === 'EN' ? '90 Minutes' : '90 Menit'}</p>
                                                 </div>
                                             </div>
 
@@ -263,7 +269,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                                                 onClick={() => logAnalytic('CTA', 'Klik Pesan Sekarang (Mobile Mockup)')}
                                                 className="w-full bg-zenith-orange text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-zenith-orange/30 block text-center"
                                             >
-                                                Pesan Sekarang
+                                                {lang === 'EN' ? 'Book Now' : 'Pesan Sekarang'}
                                             </Link>
                                         </div>
                                     </div>

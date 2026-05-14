@@ -17,10 +17,21 @@ class Package extends Model
         'description_en',
         'is_signature',
         'image',
+        'parent_id',
     ];
 
     public function durations()
     {
         return $this->hasMany(PackageDuration::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Package::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Package::class, 'parent_id');
     }
 }

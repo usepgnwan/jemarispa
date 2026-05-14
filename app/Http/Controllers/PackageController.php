@@ -38,7 +38,10 @@ class PackageController extends Controller
 
     public function create()
     {
-        return Inertia::render('Admin/Package/Create');
+        $signaturePackages = Package::where('is_signature', true)->get();
+        return Inertia::render('Admin/Package/Create', [
+            'signaturePackages' => $signaturePackages
+        ]);
     }
 
     public function store(Request $request)
@@ -50,6 +53,7 @@ class PackageController extends Controller
             'category_en' => 'nullable|string|max:255',
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
+            'parent_id' => 'nullable|exists:packages,id',
             'durations' => 'required|array|min:1',
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
@@ -64,6 +68,7 @@ class PackageController extends Controller
                 'category_en' => $validated['category_en'],
                 'description_id' => $validated['description_id'],
                 'description_en' => $validated['description_en'],
+                'parent_id' => $validated['parent_id'],
                 'is_signature' => false,
             ]);
 
@@ -86,9 +91,11 @@ class PackageController extends Controller
         }
 
         $package->load('durations');
+        $signaturePackages = Package::where('is_signature', true)->get();
 
         return Inertia::render('Admin/Package/Edit', [
-            'pkg' => $package // Changed to 'pkg' to match my earlier Edit.jsx cleanup
+            'pkg' => $package,
+            'signaturePackages' => $signaturePackages
         ]);
     }
 
@@ -101,6 +108,7 @@ class PackageController extends Controller
             'category_en' => 'nullable|string|max:255',
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
+            'parent_id' => 'nullable|exists:packages,id',
             'durations' => 'required|array|min:1',
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
@@ -115,6 +123,7 @@ class PackageController extends Controller
                 'category_en' => $validated['category_en'],
                 'description_id' => $validated['description_id'],
                 'description_en' => $validated['description_en'],
+                'parent_id' => $validated['parent_id'],
                 'is_signature' => false,
             ]);
 

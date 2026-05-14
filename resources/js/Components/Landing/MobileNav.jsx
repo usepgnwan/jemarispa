@@ -78,7 +78,7 @@ export default function MobileNav({ setActiveService, lang = 'ID' }) {
                         <Link 
                             key={i} 
                             href={item.href} 
-                            onClick={item.label === 'Home' ? handleHomeClick : undefined}
+                            onClick={item.icon === 'home' ? handleHomeClick : undefined}
                             className="flex flex-col items-center gap-y-1 relative group"
                         >
                             <div className="relative">

@@ -270,7 +270,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
         const d = pkg.durations[durationIndex];
 
         const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
-        const packageNameWithDuration = `${title} ${d.duration}`;
+        const packageNameWithDuration = `${title} ${formatDuration(d.duration)}`;
 
         const newGuests = [...guests];
         const activeGuest = newGuests[activeGuestIndex];
@@ -355,11 +355,11 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
     });
 
     const formatDuration = (d) => {
+        if (!d) return '';
         const durationStr = String(d);
-        if (durationStr.toLowerCase().includes('menit') || durationStr.toLowerCase().includes('min')) {
-            return durationStr;
-        }
-        return `${durationStr} ${t.minute}`;
+        // Clean any existing duration labels to ensure reactivity
+        const numericPart = durationStr.replace(/(menit|minutes|mins|min)/gi, '').trim();
+        return `${numericPart} ${t.minute}`;
     };
 
     const handleCheckout = async (e) => {
@@ -411,7 +411,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                 const allGenders = guests.map((g, i) => `Pelanggan ${i + 1}: ${g.guestGender === 'pria' ? t.pria : t.wanita}`).join(', ');
                 const allTherapistGenders = guests.map((g, i) => `Pelanggan ${i + 1}: ${g.therapistGender === 'pria' ? t.pria : t.wanita}`).join(', ');
                 const groupedPackages = guests.map((g, i) => {
-                    const pkgs = g.packages.map(p => `${p.name} @ Rp ${p.price.toLocaleString('id-ID')}`).join('\n  - ');
+                    const pkgs = g.packages.map(p => `${p.groupName} ${formatDuration(p.duration)} @ Rp ${p.price.toLocaleString('id-ID')}`).join('\n  - ');
                     return `Pelanggan ${i + 1}:\n  - ${pkgs}`;
                 }).join('\n');
 
@@ -634,7 +634,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                         <div key={pIndex} className="flex flex-col md:flex-row md:items-center bg-zenith-surface/50 p-4 rounded-2xl group transition-all hover:bg-zenith-orange/[0.03]">
                                                             <div className="flex-1">
                                                                 <span className="text-[7px] font-bold text-zenith-orange uppercase tracking-[0.2em] mb-1 block">{pkg.groupName}</span>
-                                                                <h4 className="text-sm text-zenith-charcoal">{pkg.name}</h4>
+                                                                <h4 className="text-sm text-zenith-charcoal">{pkg.groupName} {formatDuration(pkg.duration)}</h4>
                                                                 <p className="md:hidden text-[10px] font-bold text-zenith-orange mt-1">{formatDuration(pkg.duration)} • Rp {pkg.price.toLocaleString('id-ID')}</p>
                                                             </div>
 
@@ -925,7 +925,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                     <p className="text-sm font-bold text-zenith-charcoal">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                                 </div>
 
-                                                {guests[activeGuestIndex]?.packages.findIndex(p => p.name === `${title} ${currentDuration.duration}`) !== -1 ? (
+                                                {guests[activeGuestIndex]?.packages.findIndex(p => p.name === `${title} ${formatDuration(currentDuration.duration)}`) !== -1 ? (
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         {/* Checklist Status */}
                                                         <div className="h-10 w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
@@ -934,7 +934,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                         {/* Unchecklist Action */}
                                                         <button
                                                             onClick={() => {
-                                                                const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => p.name === `${title} ${currentDuration.duration}`);
+                                                                const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => p.name === `${title} ${formatDuration(currentDuration.duration)}`);
                                                                 if (pkgIdx !== -1) removePackageFromGuest(activeGuestIndex, pkgIdx);
                                                             }}
                                                             className="h-10 w-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"

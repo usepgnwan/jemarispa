@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
@@ -11,7 +11,7 @@ const translations = {
         badge: 'Menu Lengkap',
         title: 'Daftar Harga & Paket',
         desc: 'Temukan berbagai pilihan layanan spa profesional untuk kebugaran maksimal Anda.',
-        investment: 'Investasi',
+        investment: 'Harga',
         selectDuration: 'Pilih Durasi',
         pkgName: 'Nama Paket',
         duration: 'Durasi',
@@ -19,7 +19,10 @@ const translations = {
         toastAdd: 'Berhasil menambahkan {name} ke keranjang!',
         loading: 'Memuat paket...',
         noData: 'Belum ada paket tersedia.',
-        selected: 'Selected'
+        selected: 'Selected',
+        minute: 'Menit',
+        filterLabel: 'Filter',
+        clearLabel: 'Hapus'
     },
     'EN': {
         metaTitle: 'Pricing & Packages Home Service Massage Bandung - Jemari Spa',
@@ -27,7 +30,7 @@ const translations = {
         badge: 'Complete Menu',
         title: 'Pricelist & Packages',
         desc: 'Discover our full range of professional home spa treatments designed for your ultimate wellness.',
-        investment: 'Investment',
+        investment: 'Price',
         selectDuration: 'Select Duration',
         pkgName: 'Package Name',
         duration: 'Duration',
@@ -35,12 +38,16 @@ const translations = {
         toastAdd: 'Successfully added {name} to cart!',
         loading: 'Loading packages...',
         noData: 'No packages available yet.',
-        selected: 'Selected'
+        selected: 'Selected',
+        minute: 'Minutes',
+        filterLabel: 'Filter',
+        clearLabel: 'Clear'
     }
 };
 
 export default function Index({ auth, packages = [], signaturePackages = [] }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
+    const [activeService, setActiveService] = useState(() => localStorage.getItem('active_service') || 'Default');
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
     const [cartItems, setCartItems] = useState([]);
@@ -54,10 +61,83 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             savedGuests.forEach(guest => (guest.packages || []).forEach(p => { if (p.id) selectedIds.add(String(p.id)); }));
             setCartItems(Array.from(selectedIds));
         };
+
+        const syncService = () => {
+            const currentService = localStorage.getItem('active_service') || 'Default';
+            setActiveService(currentService);
+        };
+
         checkSelection();
+        syncService();
+
         window.addEventListener('cart-updated', checkSelection);
-        return () => window.removeEventListener('cart-updated', checkSelection);
+        window.addEventListener('storage', syncService);
+        
+        // Listen for custom event if Navbar uses it
+        window.addEventListener('active-service-updated', syncService);
+
+        return () => {
+            window.removeEventListener('cart-updated', checkSelection);
+            window.removeEventListener('storage', syncService);
+            window.removeEventListener('active-service-updated', syncService);
+        };
     }, []);
+
+    // Also update setActiveService to sync with localStorage
+    const handleSetActiveService = (service) => {
+        setActiveService(service);
+        localStorage.setItem('active_service', service);
+        window.dispatchEvent(new Event('active-service-updated'));
+    };
+
+    // Filter packages based on activeService
+    const filteredPackages = useMemo(() => {
+        if (!activeService || activeService === 'Default') return packages;
+        
+        // Find matching signature package by title
+        const matchingSignature = signaturePackages.find(s => 
+            s.title_id.toLowerCase() === activeService.toLowerCase() ||
+            (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
+        );
+
+        const search = activeService.toLowerCase();
+        
+        return packages.filter(pkg => {
+            // If we found a matching Signature Ritual (Main Service), 
+            // filter EXCLUSIVELY by parent_id for maximum precision.
+            if (matchingSignature) {
+                return String(pkg.parent_id) === String(matchingSignature.id);
+            }
+
+            // Fallback: If chosen service isn't a Signature Ritual (e.g. from a text search or legacy link),
+            // use the title/category LIKE search.
+            const catId = (pkg.category_id || '').toLowerCase();
+            const catEn = (pkg.category_en || '').toLowerCase();
+            const titleId = (pkg.title_id || '').toLowerCase();
+            const titleEn = (pkg.title_en || '').toLowerCase();
+            
+            return catId.includes(search) || 
+                   catEn.includes(search) || 
+                   titleId.includes(search) || 
+                   titleEn.includes(search);
+        });
+    }, [packages, activeService, signaturePackages]);
+
+    // Get reactive display name for the active service
+    const displayService = useMemo(() => {
+        if (!activeService || activeService === 'Default') return '';
+        
+        const matchingSignature = signaturePackages.find(s => 
+            s.title_id.toLowerCase() === activeService.toLowerCase() ||
+            (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
+        );
+
+        if (matchingSignature) {
+            return lang === 'EN' ? (matchingSignature.title_en || matchingSignature.title_id) : matchingSignature.title_id;
+        }
+
+        return activeService;
+    }, [activeService, signaturePackages, lang]);
 
     const t = translations[lang];
 
@@ -71,6 +151,14 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             ...prev,
             [packageId]: parseInt(durationIndex)
         }));
+    };
+
+    const formatDuration = (d) => {
+        if (!d) return '';
+        const durationStr = String(d);
+        // Clean any existing duration labels to ensure reactivity
+        const numericPart = durationStr.replace(/(menit|minutes|mins|min)/gi, '').trim();
+        return `${numericPart} ${t.minute}`;
     };
 
     const addToCart = (pkg) => {
@@ -93,7 +181,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
         const service = {
             id: `${pkg.id}-${durationItem.duration}`,
-            name: `${title} ${durationItem.duration}`,
+            name: `${title} ${formatDuration(durationItem.duration)}`,
             price: parseFloat(durationItem.price),
             duration: durationItem.duration,
             category: category
@@ -115,7 +203,15 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                 <meta name="keywords" content="harga pijat panggilan bandung, pricelist jemari spa, biaya bekam bandung, paket spa rumah bandung" />
             </Head>
 
-            <Navbar auth={auth} lang={lang} setLang={setLang} forceSolid={true} signaturePackages={signaturePackages} />
+            <Navbar 
+                auth={auth} 
+                lang={lang} 
+                setLang={setLang} 
+                forceSolid={true} 
+                signaturePackages={signaturePackages} 
+                activeService={activeService} 
+                setActiveService={handleSetActiveService}
+            />
 
             <main className="pt-32 md:pt-40 pb-20 px-6">
                 <div className="max-w-5xl mx-auto">
@@ -123,6 +219,22 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                         <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[8px] md:text-[10px] mb-3 md:mb-4 block">{t.badge}</span>
                         <h1 className="text-3xl md:text-6xl font-bold text-zenith-charcoal mb-4 md:mb-6 leading-tight">{t.title}</h1>
                         <p className="text-zenith-charcoal/60 text-xs md:text-sm max-w-md mx-auto px-4 md:px-0 leading-relaxed">{t.desc}</p>
+                        
+                        {/* Filter Status */}
+                        {activeService !== 'Default' && (
+                            <div className="mt-8 flex items-center justify-center gap-4">
+                                <span className="px-4 py-2 rounded-full bg-zenith-orange/10 text-zenith-orange text-[10px] font-bold uppercase tracking-widest border border-zenith-orange/20">
+                                    {t.filterLabel}: {displayService}
+                                </span>
+                                <button 
+                                    onClick={() => handleSetActiveService('Default')}
+                                    className="text-[10px] font-bold text-gray-400 hover:text-zenith-orange transition-colors uppercase tracking-widest flex items-center gap-1"
+                                >
+                                    <span className="material-symbols-outlined text-sm">close</span>
+                                    {t.clearLabel}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="bg-white rounded-[3rem] shadow-2xl shadow-zenith-orange/5 overflow-hidden border border-zenith-orange/5">
@@ -134,8 +246,8 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                 <span className="w-40 text-right text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest pr-20">{t.price}</span>
                             </div>
 
-                            {packages.length > 0 ? (
-                                packages.map((pkg) => {
+                            {filteredPackages.length > 0 ? (
+                                filteredPackages.map((pkg) => {
                                     const durationIndex = selectedDurations[pkg.id] || 0;
                                     const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
 
@@ -182,9 +294,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                             >
                                                                 {pkg.durations.map((d, i) => (
                                                                     <option key={d.id} value={i}>
-                                                                        {d.duration.toLowerCase().includes('menit') || d.duration.toLowerCase().includes('min')
-                                                                            ? d.duration
-                                                                            : `${d.duration} ${lang === 'EN' ? 'Min' : 'Menit'}`}
+                                                                        {formatDuration(d.duration)}
                                                                     </option>
                                                                 ))}
                                                             </select>
@@ -193,9 +303,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                     ) : (
                                                         <div className="bg-zenith-orange/5 border border-zenith-orange/10 rounded-xl px-4 py-3">
                                                             <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">
-                                                                {currentDuration.duration.toLowerCase().includes('menit') || currentDuration.duration.toLowerCase().includes('min')
-                                                                    ? currentDuration.duration
-                                                                    : `${currentDuration.duration} ${lang === 'EN' ? 'Min' : 'Menit'}`}
+                                                                {formatDuration(currentDuration.duration)}
                                                             </span>
                                                         </div>
                                                     )}
@@ -250,7 +358,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             )}
 
             <Footer lang={lang} setLang={setLang} />
-            <MobileNav lang={lang} />
+            <MobileNav lang={lang} setActiveService={handleSetActiveService} />
         </div>
     );
 }

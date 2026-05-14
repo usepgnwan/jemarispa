@@ -10,7 +10,9 @@ const translations = {
         seeAll: 'Lihat Semua Paket',
         minute: 'Menit',
         toastAdd: '{name} berhasil ditambahkan!',
-        selected: 'Selected'
+        selected: 'Selected',
+        filterLabel: 'Filter',
+        clearLabel: 'Hapus'
     },
     'EN': {
         tagline: '',
@@ -20,14 +22,77 @@ const translations = {
         seeAll: 'See All Packages',
         minute: 'Minutes',
         toastAdd: '{name} added successfully!',
-        selected: 'Selected'
+        selected: 'Selected',
+        filterLabel: 'Filter',
+        clearLabel: 'Clear'
     }
 };
 
-export default function Pricing({ packages = [], lang = 'ID' }) {
+export default function Pricing({ packages = [], lang = 'ID', activeService = 'Default', signaturePackages = [] }) {
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
     const [cartItems, setCartItems] = useState([]);
+
+    // Filter packages based on activeService
+    const filteredPackages = useMemo(() => {
+        if (!activeService || activeService === 'Default') return packages;
+        
+        // Find matching signature package by title
+        const matchingSignature = signaturePackages.find(s => 
+            s.title_id.toLowerCase() === activeService.toLowerCase() ||
+            (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
+        );
+
+        const search = activeService.toLowerCase();
+        
+        return packages.filter(pkg => {
+            // If we found a matching Signature Ritual (Main Service), 
+            // filter EXCLUSIVELY by parent_id for maximum precision.
+            if (matchingSignature) {
+                return String(pkg.parent_id) === String(matchingSignature.id);
+            }
+
+            // Fallback: If chosen service isn't a Signature Ritual (e.g. from a text search or legacy link),
+            // use the title/category LIKE search.
+            const catId = (pkg.category_id || '').toLowerCase();
+            const catEn = (pkg.category_en || '').toLowerCase();
+            const titleId = (pkg.title_id || '').toLowerCase();
+            const titleEn = (pkg.title_en || '').toLowerCase();
+            
+            return catId.includes(search) || 
+                   catEn.includes(search) || 
+                   titleId.includes(search) || 
+                   titleEn.includes(search);
+        });
+    }, [packages, activeService, signaturePackages]);
+
+    // Get reactive display name for the active service
+    const displayService = useMemo(() => {
+        if (!activeService || activeService === 'Default') return '';
+        
+        const matchingSignature = signaturePackages.find(s => 
+            s.title_id.toLowerCase() === activeService.toLowerCase() ||
+            (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
+        );
+
+        if (matchingSignature) {
+            return lang === 'EN' ? (matchingSignature.title_en || matchingSignature.title_id) : matchingSignature.title_id;
+        }
+
+        return activeService;
+    }, [activeService, signaturePackages, lang]);
+
+    const handleClearFilter = () => {
+        const setActiveService = window.setActiveServiceGlobal;
+        if (setActiveService) {
+            setActiveService('Default');
+        } else {
+            // Fallback: manually update localStorage and dispatch
+            localStorage.setItem('active_service', 'Default');
+            window.dispatchEvent(new Event('active-service-updated'));
+            window.location.reload(); // Last resort for home page if state isn't shared properly
+        }
+    };
 
     useEffect(() => {
         const checkSelection = () => {
@@ -73,11 +138,11 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
     };
 
     const formatDuration = (d) => {
+        if (!d) return '';
         const durationStr = String(d);
-        if (durationStr.toLowerCase().includes('menit') || durationStr.toLowerCase().includes('min')) {
-            return durationStr;
-        }
-        return `${durationStr} ${t.minute}`;
+        // Clean any existing duration labels to ensure reactivity
+        const numericPart = durationStr.replace(/(menit|minutes|mins|min)/gi, '').trim();
+        return `${numericPart} ${t.minute}`;
     };
 
     const addToCart = (pkg) => {
@@ -121,11 +186,11 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
     // Chunks packages into pairs for the mobile 2-row layout
     const packagePairs = useMemo(() => {
         const pairs = [];
-        for (let i = 0; i < packages.length; i += 2) {
-            pairs.push(packages.slice(i, i + 2));
+        for (let i = 0; i < filteredPackages.length; i += 2) {
+            pairs.push(filteredPackages.slice(i, i + 2));
         }
         return pairs;
-    }, [packages]);
+    }, [filteredPackages]);
 
     const renderCard = (pkg, index, isMobile = false) => {
         const durationIndex = selectedDurations[pkg.id] || 0;
@@ -202,6 +267,22 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
             <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center mb-12 md:mb-20">
                 <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.tagline}</span>
                 <h2 className="text-4xl md:text-5xl font-bold text-zenith-charcoal">{t.title}</h2>
+                
+                {/* Filter Status */}
+                {activeService !== 'Default' && (
+                    <div className="mt-8 flex items-center justify-center gap-4">
+                        <span className="px-4 py-2 rounded-full bg-zenith-orange/10 text-zenith-orange text-[10px] font-bold uppercase tracking-widest border border-zenith-orange/20">
+                            {t.filterLabel}: {displayService}
+                        </span>
+                        <button 
+                            onClick={handleClearFilter}
+                            className="text-[10px] font-bold text-gray-400 hover:text-zenith-orange transition-colors uppercase tracking-widest flex items-center gap-1"
+                        >
+                            <span className="material-symbols-outlined text-sm">close</span>
+                            {t.clearLabel}
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
@@ -216,7 +297,7 @@ export default function Pricing({ packages = [], lang = 'ID' }) {
 
                 {/* Desktop View: Grid */}
                 <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-12 items-stretch">
-                    {packages.map((pkg, index) => renderCard(pkg, index, false))}
+                    {filteredPackages.map((pkg, index) => renderCard(pkg, index, false))}
                 </div>
 
                 <div className="mt-8 md:mt-20 text-center">
