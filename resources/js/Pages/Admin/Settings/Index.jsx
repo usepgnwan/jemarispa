@@ -19,6 +19,7 @@ export default function Index({ auth, settings, serviceAreas }) {
         url_instagram: settings?.url_instagram || '',
         url_x: settings?.url_x || '',
         url_tiktok: settings?.url_tiktok || '',
+        voucher_instructions: settings?.voucher_instructions || '',
     });
 
     const [newArea, setNewArea] = useState('');
@@ -325,6 +326,19 @@ export default function Index({ auth, settings, serviceAreas }) {
                                         />
                                     </div>
                                     <p className="mt-2 text-xs text-gray-400">Placeholders: [name], [invoice_no], [details], [transport], [total], [link], [link_review]</p>
+                                </div>
+
+                                <div>
+                                    <label className="block font-medium text-sm text-gray-700 mb-2">Voucher Instructions Template</label>
+                                    <div className="bg-white">
+                                        <ReactQuill 
+                                            theme="snow" 
+                                            value={data.voucher_instructions} 
+                                            onChange={val => setData('voucher_instructions', val)}
+                                            modules={modules}
+                                        />
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-400">Customizes the instructions on the generated Voucher PDF.</p>
                                 </div>
 
                                 <div className="flex items-center gap-4">

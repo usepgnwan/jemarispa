@@ -241,7 +241,6 @@
         <div class="voucher-card-content">
             <img src="{{ public_path('images/Jemari Logo - 2.png') }}" class="logo-small" style="filter: brightness(0) invert(1);">
             <h2> VOUCHER</h2>
-            <h3>{{ $voucher->code }}</h3>
             <div class="package-badge">
                 @if($voucher->category === 'bundle')
                     @foreach($voucher->bundle_packages as $pkg)
@@ -279,25 +278,35 @@
                 <td class="label">Masa berlaku voucher</td>
                 <td class="value">: {{ $voucher->created_at->translatedFormat('d F Y') }} - {{ \Carbon\Carbon::parse($voucher->expired_at)->translatedFormat('d F Y') }}</td>
             </tr>
+            <tr>
+                <td class="label">Kode Voucher</td>
+                <td class="value">: {{ $voucher->code }}</td>
+            </tr>
         </table>
     </div>
 
-    <div class="instructions">
-        <h4>Cara Penukaran E-Voucher :</h4>
-        <ul>
-            <li>Wajib reservasi minimal 1 jam sebelum jadwal treatment melalui Whatsapp <strong>0895 1616 6090</strong> di jam operasional pada pukul 08.00 - 21.00</li>
-            <li>Kirimkan voucher yang telah dibeli ke admin Jemari Home Spa untuk proses penukaran</li>
-            <li>Penggantian jadwal treatment bisa dilakukan sebelum terapis menuju atau tiba di tempat customer. Jika terapis sudah dalam perjalanan atau tiba di tempat, maka customer wajib mengganti biaya transportasi sebesar Rp. 30.000</li>
-        </ul>
+    @if(isset($setting) && $setting->voucher_instructions)
+        <div class="instructions">
+            {!! $setting->voucher_instructions !!}
+        </div>
+    @else
+        <div class="instructions">
+            <h4>Cara Penukaran E-Voucher :</h4>
+            <ul>
+                <li>Wajib reservasi minimal 1 jam sebelum jadwal treatment melalui Whatsapp <strong>0895 1616 6090</strong> di jam operasional pada pukul 08.00 - 21.00</li>
+                <li>Kirimkan voucher yang telah dibeli ke admin Jemari Home Spa untuk proses penukaran</li>
+                <li>Penggantian jadwal treatment bisa dilakukan sebelum terapis menuju atau tiba di tempat customer. Jika terapis sudah dalam perjalanan atau tiba di tempat, maka customer wajib mengganti biaya transportasi sebesar Rp. 30.000</li>
+            </ul>
 
-        <h4>Syarat & Ketentuan :</h4>
-        <ul>
-            <li>E-voucher tidak bisa diganti dengan treatment lain</li>
-            <li>Berlaku setiap hari termasuk Sabtu, Minggu, dan hari libur nasional</li>
-            <li>Voucher yang sudah dibeli tidak dapat dikembalikan (non-refundable).</li>
-            <li>Voucher dianggap hangus jika sudah melewati masa berlaku dan tidak dapat ditukarkan ataupun di refund</li>
-        </ul>
-    </div>
+            <h4>Syarat & Ketentuan :</h4>
+            <ul>
+                <li>E-voucher tidak bisa diganti dengan treatment lain</li>
+                <li>Berlaku setiap hari termasuk Sabtu, Minggu, dan hari libur nasional</li>
+                <li>Voucher yang sudah dibeli tidak dapat dikembalikan (non-refundable).</li>
+                <li>Voucher dianggap hangus jika sudah melewati masa berlaku dan tidak dapat ditukarkan ataupun di refund</li>
+            </ul>
+        </div>
+    @endif
 
     <div class="footer">
         <div class="footer-left">

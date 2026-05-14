@@ -82,12 +82,13 @@ class VoucherController extends Controller
 
     public function downloadPdf(Voucher $voucher)
     {
-        $pdf = Pdf::loadView('pdf.voucher', compact('voucher'));
+        $setting = \App\Models\Setting::first();
+        $pdf = Pdf::loadView('pdf.voucher', compact('voucher', 'setting'));
         
         // Use the voucher code for the filename
         $filename = 'Voucher-' . strtoupper($voucher->code) . '.pdf';
         
-        return $pdf->download($filename);
+        return $pdf->stream($filename);
     }
 
     public function destroy(Voucher $voucher)

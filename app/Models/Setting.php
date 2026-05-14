@@ -20,5 +20,6 @@ class Setting extends Model
         'url_instagram',
         'url_x',
         'url_tiktok',
+        'voucher_instructions',
     ];
 }

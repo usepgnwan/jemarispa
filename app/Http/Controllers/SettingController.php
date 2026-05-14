@@ -36,6 +36,7 @@ class SettingController extends Controller
             'url_instagram' => 'nullable|string|max:255',
             'url_x' => 'nullable|string|max:255',
             'url_tiktok' => 'nullable|string|max:255',
+            'voucher_instructions' => 'nullable|string',
         ]);
 
         $setting = Setting::first();
