@@ -99,6 +99,26 @@ export default function Calendar({ auth, events, summary, employees }) {
         .filter(t => t.count > 0 || selectedTherapist == t.id);
     }, [employees, events, visibleRange, selectedTherapist]);
 
+    const visibleSummary = useMemo(() => {
+        if (!events || !Array.isArray(events)) return { pending: 0, send_terapis: 0, invoice: 0, success: 0, failed: 0, total: 0 };
+        
+        return events.filter(event => {
+            const eventDate = new Date(event.start);
+            return visibleRange.start && visibleRange.end 
+                ? (eventDate >= visibleRange.start && eventDate < visibleRange.end)
+                : true;
+        }).reduce((acc, event) => {
+            const status = event.extendedProps.status;
+            if (status === 'pending') acc.pending++;
+            else if (status === 'send_terapis') acc.send_terapis++;
+            else if (status === 'invoice') acc.invoice++;
+            else if (status === 'success') acc.success++;
+            else if (status === 'failed') acc.failed++;
+            acc.total++;
+            return acc;
+        }, { pending: 0, send_terapis: 0, invoice: 0, success: 0, failed: 0, total: 0 });
+    }, [events, visibleRange]);
+
     const statusColors = {
         pending: 'bg-slate-100 text-slate-700 border-slate-200',
         send_terapis: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -198,7 +218,7 @@ export default function Calendar({ auth, events, summary, employees }) {
                                     <ClockIcon className="w-4 h-4" />
                                 </div>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900">{summary.pending}</p>
+                            <p className="text-2xl font-bold text-gray-900">{visibleSummary.pending}</p>
                         </div>
                         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                             <div className="flex items-center justify-between mb-2">
@@ -207,7 +227,7 @@ export default function Calendar({ auth, events, summary, employees }) {
                                     <InformationCircleIcon className="w-4 h-4" />
                                 </div>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900">{summary.send_terapis + summary.invoice}</p>
+                            <p className="text-2xl font-bold text-gray-900">{visibleSummary.send_terapis + visibleSummary.invoice}</p>
                         </div>
                         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                             <div className="flex items-center justify-between mb-2">
@@ -216,7 +236,7 @@ export default function Calendar({ auth, events, summary, employees }) {
                                     <CheckCircleIcon className="w-4 h-4" />
                                 </div>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900">{summary.success}</p>
+                            <p className="text-2xl font-bold text-gray-900">{visibleSummary.success}</p>
                         </div>
                         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                             <div className="flex items-center justify-between mb-2">
@@ -225,7 +245,7 @@ export default function Calendar({ auth, events, summary, employees }) {
                                     <XMarkIcon className="w-4 h-4" />
                                 </div>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900">{summary.failed}</p>
+                            <p className="text-2xl font-bold text-gray-900">{visibleSummary.failed}</p>
                         </div>
                         <div className="bg-zenith-orange p-6 rounded-3xl shadow-lg shadow-zenith-orange/20">
                             <div className="flex items-center justify-between mb-2">
@@ -234,7 +254,7 @@ export default function Calendar({ auth, events, summary, employees }) {
                                     <CalendarIcon className="w-4 h-4" />
                                 </div>
                             </div>
-                            <p className="text-2xl font-bold text-white">{summary.total}</p>
+                            <p className="text-2xl font-bold text-white">{visibleSummary.total}</p>
                         </div>
                     </div>
 
