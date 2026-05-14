@@ -13,7 +13,8 @@ import {
     SparklesIcon,
     Cog6ToothIcon,
     ClipboardDocumentListIcon,
-    TicketIcon
+    TicketIcon,
+    CalendarDaysIcon
 } from '@heroicons/react/24/outline';
 
 function classNames(...classes) {
@@ -29,6 +30,7 @@ export default function Sidebar({ collapsed }) {
             items: [
                 { name: 'Dashboard', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard'), roles: ['admin', 'cs'] },
                 { name: 'Analitik', href: route('admin.analytics.index'), icon: ChartBarIcon, current: route().current('admin.analytics.index'), roles: ['admin', 'marketing'] },
+                { name: 'Kalender Pesanan', href: route('admin.calendar.index'), icon: CalendarDaysIcon, current: route().current('admin.calendar.*'), roles: ['admin', 'marketing', 'cs'] },
             ]
         },
         { 

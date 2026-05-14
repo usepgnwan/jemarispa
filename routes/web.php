@@ -225,6 +225,7 @@ Route::middleware(['auth'])->group(function () {
     // ── DIGITAL MARKETING & ADMIN ──────────────────────────────────────────
     Route::middleware(['role:admin,marketing'])->group(function() {
         Route::get('admin/analytics', [AnalyticController::class, 'index'])->name('admin.analytics.index');
+        Route::get('admin/calendar', [\App\Http\Controllers\CalendarController::class, 'index'])->name('admin.calendar.index');
         Route::resource('testimoni', TestimoniController::class)->except(['show']);
         Route::patch('testimoni/{testimoni}/publish', [TestimoniController::class, 'togglePublish'])->name('testimoni.publish');
         Route::resource('admin/blog', BlogController::class)->names('admin.blog')->except(['show']);

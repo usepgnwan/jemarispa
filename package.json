@@ -22,7 +22,13 @@
         "vite": "^8.0.0"
     },
     "dependencies": {
+        "@fullcalendar/core": "^6.1.20",
+        "@fullcalendar/daygrid": "^6.1.20",
+        "@fullcalendar/interaction": "^6.1.20",
+        "@fullcalendar/react": "^6.1.20",
+        "@fullcalendar/timegrid": "^6.1.20",
         "@heroicons/react": "^2.2.0",
+        "preact": "^10.29.1",
         "react-is": "^19.2.6",
         "react-quill": "^2.0.0",
         "recharts": "^3.8.1"
