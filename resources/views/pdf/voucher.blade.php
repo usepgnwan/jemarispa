@@ -257,9 +257,9 @@
             </div>
 
             <div class="social-info">
-                <span>jemarihomespa.com</span>
-                <span>0895 1616 6090</span>
-                <span>@jemari.homespa</span>
+                <span>{{ $setting->website ?? 'jemarihomespa.com' }}</span>
+                <span>{{ $setting->phone ?? '0895 1616 6090' }}</span>
+                <span>{{ isset($setting->url_instagram) ? '@' . ltrim(parse_url($setting->url_instagram, PHP_URL_PATH), '/') : '@jemari.homespa' }}</span>
             </div>
         </div>
     </div>
@@ -293,7 +293,7 @@
         <div class="instructions">
             <h4>Cara Penukaran E-Voucher :</h4>
             <ul>
-                <li>Wajib reservasi minimal 1 jam sebelum jadwal treatment melalui Whatsapp <strong>0895 1616 6090</strong> di jam operasional pada pukul 08.00 - 21.00</li>
+                <li>Wajib reservasi minimal 1 jam sebelum jadwal treatment melalui Whatsapp <strong>{{ $setting->phone ?? '0895 1616 6090' }}</strong> di jam operasional pada pukul 08.00 - 21.00</li>
                 <li>Kirimkan voucher yang telah dibeli ke admin Jemari Home Spa untuk proses penukaran</li>
                 <li>Penggantian jadwal treatment bisa dilakukan sebelum terapis menuju atau tiba di tempat customer. Jika terapis sudah dalam perjalanan atau tiba di tempat, maka customer wajib mengganti biaya transportasi sebesar Rp. 30.000</li>
             </ul>
@@ -311,7 +311,7 @@
     <div class="footer">
         <div class="footer-left">
             Info lebih lanjut, hubungi admin melalui whatsapp
-            <span class="wa">0895 1616 6090</span>
+            <span class="wa">{{ $setting->phone ?? '0895 1616 6090' }}</span>
         </div>
         <div class="footer-right">
             Nomor invoice :

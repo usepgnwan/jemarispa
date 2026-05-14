@@ -20,6 +20,7 @@ export default function Index({ auth, settings, serviceAreas }) {
         url_x: settings?.url_x || '',
         url_tiktok: settings?.url_tiktok || '',
         voucher_instructions: settings?.voucher_instructions || '',
+        website: settings?.website || '',
     });
 
     const [newArea, setNewArea] = useState('');
@@ -126,6 +127,17 @@ export default function Index({ auth, settings, serviceAreas }) {
                                             placeholder="e.g. Jemari Spa"
                                         />
                                         {errors.title && <div className="text-red-500 text-xs mt-1">{errors.title}</div>}
+                                    </div>
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">Website URL / Domain</label>
+                                        <input
+                                            type="text"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.website}
+                                            onChange={e => setData('website', e.target.value)}
+                                            placeholder="e.g. jemarihomespa.com"
+                                        />
+                                        {errors.website && <div className="text-red-500 text-xs mt-1">{errors.website}</div>}
                                     </div>
                                 </div>
 
