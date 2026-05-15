@@ -1,11 +1,17 @@
 import { usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function FloatingWhatsApp() {
     const { app_settings } = usePage().props;
     const [isOpen, setIsOpen] = useState(false);
     const [formData, setFormData] = useState({ name: '', question: '' });
+
+    useEffect(() => {
+        const handleOpen = () => setIsOpen(true);
+        window.addEventListener('open-wa-popover', handleOpen);
+        return () => window.removeEventListener('open-wa-popover', handleOpen);
+    }, []);
 
     const phone = app_settings?.phone || '6289516166090';
     const rawTemplate = app_settings?.template_question || 'Halo Jemari Home Spa, saya [name] ingin bertanya mengenai: [question]';

@@ -20,7 +20,9 @@ import {
     StarIcon,
     LinkIcon,
     ClipboardDocumentListIcon,
-    CreditCardIcon
+    CreditCardIcon,
+    PlusIcon,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
 
 // Custom debounce function
@@ -35,6 +37,31 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+
+const calculateEndTime = (startTime, durationMinutes) => {
+    if (!startTime) return '';
+    // Handle both HH:mm and HH.mm formats
+    const [hours, minutes] = startTime.split(/[:.]/).map(Number);
+    const date = new Date();
+    date.setHours(hours);
+    date.setMinutes(minutes + parseInt(durationMinutes || 0));
+    const h = date.getHours().toString().padStart(2, '0');
+    const m = date.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
+};
+
+const getTransactionTimeRange = (transaction) => {
+    if (!transaction || !transaction.items) return transaction?.schedule_time || '';
+    const guestDurations = {};
+    transaction.items.forEach(item => {
+        const gIdx = item.guest_index || 1;
+        guestDurations[gIdx] = (guestDurations[gIdx] || 0) + parseInt(item.package_duration || 0);
+    });
+    const maxDuration = Math.max(...Object.values(guestDurations), 0);
+    const startTime = (transaction.schedule_time || '00:00').substring(0, 5).replace('.', ':');
+    const endTime = calculateEndTime(startTime, maxDuration);
+    return `${startTime} - ${endTime}`;
+};
 
 const statusColors = {
     pending: 'bg-gray-100 text-gray-700 border-gray-200',
@@ -67,6 +94,10 @@ export default function Index({ transactions, filters, counts, employees, packag
     const [toastMessage, setToastMessage] = useState('');
 
     const [reviewLinkCopied, setReviewLinkCopied] = useState(null);
+    const [originalScheduleDate, setOriginalScheduleDate] = useState(null);
+    const [newItems, setNewItems] = useState([]);
+    const [deletedItems, setDeletedItems] = useState([]);
+    const [penaltyPercent, setPenaltyPercent] = useState(0);
     const { patch, delete: destroy, processing } = useForm();
 
     const fetchFilteredData = useCallback(
@@ -124,12 +155,34 @@ export default function Index({ transactions, filters, counts, employees, packag
     };
 
     const saveTransaction = () => {
+        // Calculate total price including existing items, new items, transport, and penalty
+        const baseTotal = selectedTransaction.items.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+        const newItemsTotal = newItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+        const transport = parseFloat(selectedTransaction.transport_fee || 0);
+
+        // Apply discount if exists
+        const subtotal = baseTotal + newItemsTotal;
+        const discountAmount = parseFloat(selectedTransaction.discount_amount || 0);
+
+        const totalBeforePenalty = subtotal + transport - discountAmount;
+        const pPercent = parseFloat(penaltyPercent || 0);
+        const penaltyAmount = totalBeforePenalty * (pPercent / 100);
+        const finalTotal = totalBeforePenalty + penaltyAmount;
+
         router.patch(route('admin.transaction.update', selectedTransaction.id), {
-            status: selectedTransaction.status,
-            transport_fee: selectedTransaction.transport_fee
+            ...selectedTransaction,
+            new_items: newItems,
+            deleted_items: deletedItems,
+            items: selectedTransaction.items,
+            penalty_percent: pPercent,
+            penalty_amount: penaltyAmount,
+            total_price: finalTotal
         }, {
             onSuccess: () => {
                 setIsDetailModalOpen(false);
+                setNewItems([]);
+                setDeletedItems([]);
+                setPenaltyPercent(0);
                 setToastMessage('Transaksi berhasil diperbarui');
                 setShowToast(true);
                 setTimeout(() => setShowToast(false), 3000);
@@ -150,18 +203,15 @@ export default function Index({ transactions, filters, counts, employees, packag
         let totalCommission = 0;
 
         guestItems.forEach(item => {
-            // Robust matching: check for exact title_id or if item.package_name starts with it
             const pkg = packages.find(p =>
                 item.package_name === p.title_id ||
                 (item.package_name && item.package_name.startsWith(p.title_id))
             );
 
             if (pkg) {
-                // Normalize duration: handle "90 Menit Menit" and missing "Menit"
                 let cleanDuration = item.package_duration || '';
                 cleanDuration = cleanDuration.replace(/ Menit Menit/g, ' Menit');
 
-                // If it doesn't have "Menit" at all, try to append it if it's just numbers
                 if (cleanDuration && !cleanDuration.includes(' Menit')) {
                     const match = cleanDuration.match(/^\d+/);
                     if (match) cleanDuration = match[0] + ' Menit';
@@ -174,13 +224,11 @@ export default function Index({ transactions, filters, counts, employees, packag
             }
         });
 
-        // Optimistic local update
         const updatedItems = selectedTransaction.items.map(it =>
             it.guest_index == guestIndex ? { ...it, therapist_commission: totalCommission } : it
         );
         setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
 
-        // Persist
         guestItems.forEach(item => updateTherapistData(item.id, { therapist_commission: totalCommission }));
     };
 
@@ -204,10 +252,8 @@ export default function Index({ transactions, filters, counts, employees, packag
     const prepareInvoiceMessage = async (transaction) => {
         if (!transaction) return '';
 
-        // 1. Get Template (Setting or Fallback)
         let message = app_settings?.template_invoice || `Halo, Kak [name],\n\nTerlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :\n\n[details]\n\nBiaya Transport : [transport]\n\nTotal Pembayaran : [total]\n\nUntuk file invoice bisa di download di sini [link]\n\n-\n\nPembayaran bisa melalui terapis kami atau transfer melalui rekening berikut :\n\nBCA a.n Acep Dani : 7772554756\n(Kirimkan bukti transfer, dan nama pemilik rekening setelah melakukan pembayaran)\n\n-\n\nUntuk kritik dan saran, silahkan lampirkan di link berikut\n[link_review]\n\nTerima kasih telah menggunakan jasa Jemari Home Spa\n\njemarihomespa.com`;
 
-        // 2. Fetch Review Link if needed
         let linkReview = '';
         if (message.includes('[link_review]')) {
             try {
@@ -220,7 +266,6 @@ export default function Index({ transactions, filters, counts, employees, packag
             }
         }
 
-        // 3. Generate Details Text
         const grouped = transaction.items?.reduce((acc, item) => {
             if (!acc[item.guest_index]) acc[item.guest_index] = [];
             acc[item.guest_index].push(item);
@@ -235,7 +280,6 @@ export default function Index({ transactions, filters, counts, employees, packag
         const safeOrderNumber = transaction.order_number.replace(/\//g, '-');
         const link = `${window.location.origin}/invoice/${safeOrderNumber}`;
 
-        // 4. Clean up HTML Tags (Quill output)
         message = message.replace(/<\/p><p>/g, '\n')
             .replace(/<p>/g, '')
             .replace(/<\/p>/g, '\n')
@@ -243,9 +287,8 @@ export default function Index({ transactions, filters, counts, employees, packag
             .replace(/<\/strong>/g, '*')
             .replace(/<br\s*\/?>/g, '\n')
             .replace(/&nbsp;/g, ' ')
-            .replace(/<[^>]*>?/gm, ''); // Strip all other tags
+            .replace(/<[^>]*>?/gm, '');
 
-        // 5. Replace Placeholders
         const data = {
             name: transaction.customer_name,
             invoice_no: transaction.order_number,
@@ -259,7 +302,6 @@ export default function Index({ transactions, filters, counts, employees, packag
 
         Object.keys(data).forEach(key => {
             const placeholder = `[${key}]`;
-            // Use split/join for global replacement
             message = message.split(placeholder).join(data[key] || '');
         });
 
@@ -321,13 +363,11 @@ export default function Index({ transactions, filters, counts, employees, packag
             const data = response.data;
 
             if (data.success) {
-                // Try modern clipboard API first, fall back to prompt() on HTTP
                 try {
                     await navigator.clipboard.writeText(data.link);
                     setReviewLinkCopied(transaction.id);
                     setToastMessage('✅ Link review disalin! Berlaku 24 jam.');
                 } catch {
-                    // Fallback: show the link so admin can copy manually
                     window.prompt('Salin link review ini (berlaku 24 jam):', data.link);
                     setReviewLinkCopied(transaction.id);
                     setToastMessage('Link review berhasil dibuat!');
@@ -342,7 +382,29 @@ export default function Index({ transactions, filters, counts, employees, packag
     };
 
     const openDetails = (transaction) => {
-        setSelectedTransaction(transaction);
+        // Automatically fill missing/zero commissions for existing items from package defaults
+        const enrichedItems = (transaction.items || []).map(item => {
+            const currentCommission = parseFloat(item.therapist_commission) || 0;
+            if (currentCommission === 0) {
+                const pkg = packages.find(p =>
+                    p.title_id === item.package_name ||
+                    (item.package_name && item.package_name.startsWith(p.title_id))
+                );
+                if (pkg) {
+                    const duration = pkg.durations.find(d => d.duration === item.package_duration);
+                    if (duration) {
+                        return { ...item, therapist_commission: duration.commission };
+                    }
+                }
+            }
+            return item;
+        });
+
+        setSelectedTransaction({ ...transaction, items: enrichedItems });
+        setOriginalScheduleDate(transaction.schedule_date);
+        setPenaltyPercent(transaction.penalty_percent || 0);
+        setNewItems([]);
+        setDeletedItems([]);
         setIsDetailModalOpen(true);
     };
 
@@ -511,6 +573,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jadwal</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Voucher</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Diskon</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Reschedule</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Aksi</th>
@@ -522,181 +585,206 @@ export default function Index({ transactions, filters, counts, employees, packag
                                         return (
                                             <React.Fragment key={transaction.id}>
                                                 <tr className="hover:bg-gray-50/50 transition-colors group">
-                                                <td className="px-6 py-5">
-                                                    <div className="flex items-start gap-2">
-                                                        <button 
-                                                            onClick={() => toggleRow(transaction.id)}
-                                                            className="mt-0.5 text-gray-400 hover:text-zenith-orange transition-colors"
-                                                        >
-                                                            {expandedRows[transaction.id] ? (
-                                                                <span className="material-symbols-outlined text-[18px]">keyboard_arrow_up</span>
-                                                            ) : (
-                                                                <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
-                                                            )}
-                                                        </button>
-                                                        <div>
-                                                            <span className="text-sm font-bold text-gray-900 block">{transaction.order_number}</span>
-                                                            <span className="text-[10px] font-medium text-gray-400">{new Date(transaction.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="flex items-center gap-2">
-                                                        <div>
-                                                            <span className="text-sm font-semibold text-gray-700 block">{transaction.customer_name}</span>
-                                                            <span className="text-[10px] font-medium text-gray-400">{transaction.phone}</span>
-                                                        </div>
-                                                        {transaction.testimoni && (
-                                                            <span
-                                                                title={`Sudah review · ${transaction.testimoni.star}⭐`}
-                                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex items-start gap-2">
+                                                            <button
+                                                                onClick={() => toggleRow(transaction.id)}
+                                                                className="mt-0.5 text-gray-400 hover:text-zenith-orange transition-colors"
                                                             >
-                                                                ⭐ Reviewed
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <span className="text-sm font-medium text-gray-700 block">{new Date(transaction.schedule_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                                                    <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">{transaction.schedule_time}</span>
-                                                </td>
-                                                <td className="px-6 py-5 text-center">
-                                                    {transaction.voucher ? (
-                                                        <>
-                                                            <span className="text-xs font-bold text-blue-600 block">{transaction.voucher.code}</span>
-                                                            <span className="text-[9px] font-medium text-gray-400 uppercase">-{formatCurrency(transaction.voucher.discount_amount)}</span>
-                                                        </>
-                                                    ) : (
-                                                        <span className="text-gray-300">—</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-5 text-center">
-                                                    {transaction.discount_percent > 0 ? (
-                                                        <>
-                                                            <span className="text-xs font-bold text-red-500 block">-{formatCurrency(transaction.discount_amount)}</span>
-                                                            <span className="text-[9px] font-medium text-gray-400 uppercase">({parseFloat(transaction.discount_percent)}%)</span>
-                                                        </>
-                                                    ) : (
-                                                        <span className="text-gray-300">—</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <span className="text-sm font-bold text-gray-900">{formatCurrency(transaction.total_price)}</span>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="flex justify-center">
-                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusColors[transaction.status]}`}>
-                                                            <StatusIcon className="w-3 h-3" />
-                                                            {transaction.status.replace('_', ' ')}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="flex justify-end gap-2">
-                                                        <button
-                                                            onClick={() => sendInvoice(transaction)}
-                                                            className="p-2 text-gray-400 hover:text-green-500 transition-colors"
-                                                            title="Kirim Invoice (WA)"
-                                                        >
-                                                            <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => copyInvoiceText(transaction)}
-                                                            className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
-                                                            title="Copy Text WA"
-                                                        >
-                                                            <ClipboardDocumentListIcon className="w-5 h-5" />
-                                                        </button>
-                                                        <a
-                                                            href={route('admin.transaction.pdf', transaction.id)}
-                                                            target="_blank"
-                                                            className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
-                                                            title="Download PDF"
-                                                        >
-                                                            <ArrowDownTrayIcon className="w-5 h-5" />
-                                                        </a>
-                                                        <button
-                                                            onClick={() => openDetails(transaction)}
-                                                            className="p-2 text-gray-400 hover:text-zenith-orange transition-colors"
-                                                            title="Detail"
-                                                        >
-                                                            <EyeIcon className="w-5 h-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => generateReviewLink(transaction)}
-                                                            className={`p-2 transition-colors ${reviewLinkCopied === transaction.id ? 'text-amber-500' : 'text-gray-400 hover:text-amber-400'}`}
-                                                            title="Generate Link Review (1x24 jam)"
-                                                        >
-                                                            <StarIcon className="w-5 h-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => confirmDelete(transaction.id)}
-                                                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                                            title="Hapus"
-                                                        >
-                                                            <TrashIcon className="w-5 h-5" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {expandedRows[transaction.id] && (
-                                                <tr className="bg-gray-50/30">
-                                                    <td colSpan="8" className="px-12 py-4">
-                                                        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                                {Object.entries(
-                                                                    transaction.items.reduce((acc, item) => {
-                                                                        if (!acc[item.guest_index]) acc[item.guest_index] = [];
-                                                                        acc[item.guest_index].push(item);
-                                                                        return acc;
-                                                                    }, {})
-                                                                ).map(([guestIndex, items]) => {
-                                                                    const guestItem = items[0];
-                                                                    return (
-                                                                        <div key={guestIndex} className="border-l-2 border-zenith-orange/20 pl-4">
-                                                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Guest {guestIndex}</p>
-                                                                            <div className="space-y-1">
-                                                                                {items.map((it, idx) => (
-                                                                                    <p key={idx} className="text-xs text-gray-600 font-medium">
-                                                                                        • {it.package_name}
-                                                                                    </p>
-                                                                                ))}
-                                                                                <div className="mt-2 pt-2 border-t border-gray-50">
-                                                                                    <p className="text-[11px] font-bold text-green-600 uppercase">
-                                                                                        Terapis: {guestItem.employee?.name || 'Belum ditugaskan'}
-                                                                                    </p>
-                                                                                    <p className="text-[10px] font-bold text-gray-400 uppercase">
-                                                                                        Komisi: {formatCurrency(guestItem.therapist_commission || 0)}
-                                                                                    </p>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
+                                                                {expandedRows[transaction.id] ? (
+                                                                    <span className="material-symbols-outlined text-[18px]">keyboard_arrow_up</span>
+                                                                ) : (
+                                                                    <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+                                                                )}
+                                                            </button>
+                                                            <div>
+                                                                <span className="text-sm font-bold text-gray-900 block">{transaction.order_number}</span>
+                                                                <span className="text-[10px] font-medium text-gray-400">{new Date(transaction.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                                             </div>
-                                                            {(transaction.discount_amount > 0 || transaction.voucher) && (
-                                                                <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-4">
-                                                                    {transaction.voucher && (
-                                                                        <div className="bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
-                                                                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Voucher</p>
-                                                                            <p className="text-xs font-bold text-blue-600">{transaction.voucher.code} (-{formatCurrency(transaction.voucher.discount_amount)})</p>
-                                                                        </div>
-                                                                    )}
-                                                                    {transaction.discount_percent > 0 && (
-                                                                        <div className="bg-red-50 px-4 py-2 rounded-xl border border-red-100">
-                                                                            <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Diskon {parseFloat(transaction.discount_percent)}%</p>
-                                                                            <p className="text-xs font-bold text-red-600">-{formatCurrency(transaction.discount_amount)}</p>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex items-center gap-2">
+                                                            <div>
+                                                                <span className="text-sm font-semibold text-gray-700 block">{transaction.customer_name}</span>
+                                                                <span className="text-[10px] font-medium text-gray-400">{transaction.phone}</span>
+                                                            </div>
+                                                            {transaction.testimoni && (
+                                                                <span
+                                                                    title={`Sudah review · ${transaction.testimoni.star}⭐`}
+                                                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+                                                                >
+                                                                    ⭐ Reviewed
+                                                                </span>
                                                             )}
                                                         </div>
                                                     </td>
+                                                    <td className="px-6 py-5">
+                                                        <span className="text-sm font-medium text-gray-700 block">{new Date(transaction.schedule_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                                                        <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">{getTransactionTimeRange(transaction)}</span>
+                                                    </td>
+                                                    <td className="px-6 py-5 text-center">
+                                                        {transaction.voucher ? (
+                                                            <>
+                                                                <span className="text-xs font-bold text-blue-600 block">{transaction.voucher.code}</span>
+                                                                <span className="text-[9px] font-medium text-gray-400 uppercase">-{formatCurrency(transaction.voucher.discount_amount)}</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-gray-300">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-5 text-center">
+                                                        {transaction.discount_percent > 0 ? (
+                                                            <>
+                                                                <span className="text-xs font-bold text-red-500 block">-{formatCurrency(transaction.discount_amount)}</span>
+                                                                <span className="text-[9px] font-medium text-gray-400 uppercase">({parseFloat(transaction.discount_percent)}%)</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-gray-300">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-5 text-center">
+                                                        {transaction.penalty_amount > 0 ? (
+                                                            <>
+                                                                <span className="text-xs font-bold text-orange-500 block">+{formatCurrency(transaction.penalty_amount)}</span>
+                                                                <span className="text-[9px] font-medium text-gray-400 uppercase">({parseFloat(transaction.penalty_percent)}%)</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-gray-300">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <span className="text-sm font-bold text-gray-900">{formatCurrency(transaction.total_price)}</span>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex justify-center">
+                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusColors[transaction.status]}`}>
+                                                                <StatusIcon className="w-3 h-3" />
+                                                                {transaction.status.replace('_', ' ')}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex justify-end gap-2">
+                                                            <button
+                                                                onClick={() => sendInvoice(transaction)}
+                                                                className="p-2 text-gray-400 hover:text-green-500 transition-colors"
+                                                                title="Kirim Invoice (WA)"
+                                                            >
+                                                                <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => copyInvoiceText(transaction)}
+                                                                className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+                                                                title="Copy Text WA"
+                                                            >
+                                                                <ClipboardDocumentListIcon className="w-5 h-5" />
+                                                            </button>
+                                                            <a
+                                                                href={route('admin.transaction.pdf', transaction.id)}
+                                                                target="_blank"
+                                                                className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+                                                                title="Download PDF"
+                                                            >
+                                                                <ArrowDownTrayIcon className="w-5 h-5" />
+                                                            </a>
+                                                            <button
+                                                                onClick={() => openDetails(transaction)}
+                                                                className="p-2 text-gray-400 hover:text-zenith-orange transition-colors"
+                                                                title="Detail"
+                                                            >
+                                                                <EyeIcon className="w-5 h-5" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => generateReviewLink(transaction)}
+                                                                className={`p-2 transition-colors ${reviewLinkCopied === transaction.id ? 'text-amber-500' : 'text-gray-400 hover:text-amber-400'}`}
+                                                                title="Generate Link Review (1x24 jam)"
+                                                            >
+                                                                <StarIcon className="w-5 h-5" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => confirmDelete(transaction.id)}
+                                                                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                                                title="Hapus"
+                                                            >
+                                                                <TrashIcon className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
                                                 </tr>
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                })}
+                                                {expandedRows[transaction.id] && (
+                                                    <tr className="bg-gray-50/30">
+                                                        <td colSpan="8" className="px-12 py-4">
+                                                            <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                                    {Object.entries(
+                                                                        transaction.items.reduce((acc, item) => {
+                                                                            if (!acc[item.guest_index]) acc[item.guest_index] = [];
+                                                                            acc[item.guest_index].push(item);
+                                                                            return acc;
+                                                                        }, {})
+                                                                    ).map(([guestIndex, items]) => {
+                                                                        const guestItem = items[0];
+                                                                        return (
+                                                                            <div key={guestIndex} className="border-l-2 border-zenith-orange/20 pl-4">
+                                                                                <div className="flex items-center justify-between mb-2">
+                                                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Orang {guestIndex}</p>
+                                                                                    <span className="text-[10px] font-bold text-zenith-orange">
+                                                                                        {(() => {
+                                                                                            const duration = items.reduce((sum, item) => sum + parseInt(item.package_duration || 0), 0);
+                                                                                            const startTime = (transaction.schedule_time || '00:00').substring(0, 5).replace('.', ':');
+                                                                                            return `${startTime} - ${calculateEndTime(startTime, duration)}`;
+                                                                                        })()}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    {items.map((it, idx) => (
+                                                                                        <p key={idx} className="text-xs text-gray-600 font-medium">
+                                                                                            • {it.package_name}
+                                                                                        </p>
+                                                                                    ))}
+                                                                                    <div className="mt-2 pt-2 border-t border-gray-50">
+                                                                                        <p className="text-[11px] font-bold text-green-600 uppercase">
+                                                                                            Terapis: {guestItem.employee?.name || 'Belum ditugaskan'}
+                                                                                        </p>
+                                                                                        <p className="text-[10px] font-bold text-gray-400 uppercase">
+                                                                                            Komisi: {formatCurrency(guestItem.therapist_commission || 0)}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                                {(transaction.discount_amount > 0 || transaction.voucher || transaction.penalty_amount > 0) && (
+                                                                    <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-4">
+                                                                        {transaction.voucher && (
+                                                                            <div className="bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
+                                                                                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Voucher</p>
+                                                                                <p className="text-xs font-bold text-blue-600">{transaction.voucher.code} (-{formatCurrency(transaction.voucher.discount_amount)})</p>
+                                                                            </div>
+                                                                        )}
+                                                                        {transaction.discount_percent > 0 && (
+                                                                            <div className="bg-red-50 px-4 py-2 rounded-xl border border-red-100">
+                                                                                <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Diskon {parseFloat(transaction.discount_percent)}%</p>
+                                                                                <p className="text-xs font-bold text-red-600">-{formatCurrency(transaction.discount_amount)}</p>
+                                                                            </div>
+                                                                        )}
+                                                                        {transaction.penalty_amount > 0 && (
+                                                                            <div className="bg-orange-50 px-4 py-2 rounded-xl border border-orange-100">
+                                                                                <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Reschedule {parseFloat(transaction.penalty_percent)}%</p>
+                                                                                <p className="text-xs font-bold text-orange-600">+{formatCurrency(transaction.penalty_amount)}</p>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
                                     {transactions.data.length === 0 && (
                                         <tr>
                                             <td colSpan="6" className="px-6 py-20 text-center text-gray-400 italic text-sm">
@@ -768,14 +856,22 @@ export default function Index({ transactions, filters, counts, employees, packag
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jadwal</label>
-                                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                            <p className="text-xs font-bold text-gray-900">
-                                            {selectedTransaction?.schedule_date 
-                                                ? new Date(selectedTransaction.schedule_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) 
-                                                : '-'
-                                            }
-                                        </p>
-                                            <p className="text-[10px] text-gray-500 font-medium uppercase mt-0.5">{selectedTransaction?.schedule_time || '-'}</p>
+                                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2">
+                                            <input
+                                                type="date"
+                                                className="w-full bg-transparent border-none p-0 text-xs font-bold text-gray-900 focus:ring-0 cursor-pointer"
+                                                value={selectedTransaction?.schedule_date || ''}
+                                                onChange={(e) => setSelectedTransaction({ ...selectedTransaction, schedule_date: e.target.value })}
+                                            />
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="time"
+                                                    className="bg-transparent border-none p-0 text-[10px] text-gray-500 font-medium uppercase focus:ring-0 cursor-pointer"
+                                                    value={selectedTransaction?.schedule_time || ''}
+                                                    onChange={(e) => setSelectedTransaction({ ...selectedTransaction, schedule_time: e.target.value })}
+                                                />
+                                                <span className="text-[10px] text-gray-400 font-bold">— {getTransactionTimeRange(selectedTransaction).split(' - ')[1]}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <div>
@@ -794,84 +890,6 @@ export default function Index({ transactions, filters, counts, employees, packag
                                     </p>
                                 </div>
 
-                                {/* Therapist Assignment per Guest - MOVED HERE */}
-                                <div className="pt-4 border-t border-gray-100">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-3">Penugasan Terapis</label>
-                                    <div className="space-y-4">
-                                        {Object.entries(
-                                            selectedTransaction?.items.reduce((acc, item) => {
-                                                if (!acc[item.guest_index]) acc[item.guest_index] = item;
-                                                return acc;
-                                            }, {}) || {}
-                                        ).map(([guestIndex, guestItem]) => (
-                                            <div key={guestIndex} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-xs font-bold text-gray-700">PERSON {guestIndex}</span>
-                                                    <span className="text-[9px] font-medium text-gray-400 uppercase">Pref: {guestItem.therapist_gender_preference}</span>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    <select
-                                                        className="w-full text-sm py-2 border-gray-200 rounded-xl bg-gray-50 focus:ring-zenith-orange focus:border-zenith-orange"
-                                                        value={guestItem.employee_id ?? ''}
-                                                        onChange={(e) => {
-                                                            const newId = e.target.value;
-                                                            // 1. Optimistic local state update so dropdown shows new value immediately
-                                                            const updatedItems = selectedTransaction.items.map(it =>
-                                                                it.guest_index == guestIndex
-                                                                    ? { ...it, employee_id: newId, employee: employees.find(emp => emp.id == newId) }
-                                                                    : it
-                                                            );
-                                                            setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
-                                                            // 2. Persist to backend for each item in this guest
-                                                            selectedTransaction.items
-                                                                .filter(item => item.guest_index == guestIndex)
-                                                                .forEach(item => updateTherapistData(item.id, { employee_id: newId }));
-                                                        }}
-                                                    >
-                                                        <option value="">Pilih Karyawan...</option>
-                                                        {employees.map(emp => (
-                                                            <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                                        ))}
-                                                    </select>
-
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="relative flex-1">
-                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">Rp</span>
-                                                            <input
-                                                                type="number"
-                                                                placeholder="Bayaran Terapis"
-                                                                className="w-full pl-8 pr-3 py-2 text-xs border-gray-200 rounded-xl bg-white focus:ring-zenith-orange focus:border-zenith-orange"
-                                                                value={guestItem.therapist_commission ?? ''}
-                                                                onChange={(e) => {
-                                                                    // Optimistic update for commission too
-                                                                    const val = e.target.value;
-                                                                    const updatedItems = selectedTransaction.items.map(it =>
-                                                                        it.guest_index == guestIndex ? { ...it, therapist_commission: val } : it
-                                                                    );
-                                                                    setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
-                                                                }}
-                                                                onBlur={(e) => {
-                                                                    selectedTransaction.items
-                                                                        .filter(item => item.guest_index == guestIndex)
-                                                                        .forEach(item => updateTherapistData(item.id, { therapist_commission: e.target.value }));
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-[9px] text-gray-400 font-medium">Bayaran</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => recalculateCommission(guestIndex)}
-                                                            className="p-1.5 hover:bg-zenith-orange/10 rounded-lg transition-colors group/btn"
-                                                            title="Reset Ke Komisi Paket"
-                                                        >
-                                                            <ArrowPathIcon className="w-3.5 h-3.5 text-gray-400 group-hover/btn:text-zenith-orange" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
                             </div>
 
                             {/* Column Right: Status & Transport Update */}
@@ -916,6 +934,28 @@ export default function Index({ transactions, filters, counts, employees, packag
                                     </div>
                                 </div>
 
+                                {selectedTransaction?.schedule_date !== originalScheduleDate && (
+                                    <div className="animate-fade-in">
+                                        <label className="text-[10px] font-bold text-red-500 uppercase tracking-widest block mb-1 flex items-center gap-2">
+                                            <span>Penalti Perubahan Tanggal (%)</span>
+                                            <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[8px]">DUE TO RESCHEDULE</span>
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                                            <input
+                                                type="number"
+                                                className="w-full pr-8 bg-red-50 border-red-100 text-red-600 rounded-xl text-sm focus:ring-red-500 focus:border-red-500 font-bold"
+                                                placeholder="0"
+                                                value={penaltyPercent}
+                                                onChange={(e) => setPenaltyPercent(e.target.value)}
+                                            />
+                                        </div>
+                                        <p className="text-[9px] text-gray-400 mt-1 italic leading-tight">
+                                            * Penalti akan ditambahkan ke total pembayaran.
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Metode Pembayaran</label>
                                     <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
@@ -933,16 +973,115 @@ export default function Index({ transactions, filters, counts, employees, packag
                             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-3">Daftar Paket & Guest</label>
                             <div className="space-y-4">
                                 {Object.entries(
-                                    selectedTransaction?.items.reduce((acc, item) => {
-                                        if (!acc[item.guest_index]) acc[item.guest_index] = [];
-                                        acc[item.guest_index].push(item);
+                                    [...(selectedTransaction?.items || []), ...newItems].reduce((acc, item) => {
+                                        const gIdx = item.guest_index || 1;
+                                        if (!acc[gIdx]) acc[gIdx] = [];
+                                        acc[gIdx].push(item);
                                         return acc;
-                                    }, {}) || {}
+                                    }, {})
                                 ).map(([guestIndex, items]) => (
                                     <div key={guestIndex} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                                        <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100 flex justify-between items-center">
-                                            <span className="text-xs font-bold text-gray-700">PERSON {guestIndex}</span>
-                                            <span className="text-[10px] font-bold text-zenith-orange uppercase">{items[0]?.guest_gender}</span>
+                                        <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-100 flex flex-wrap gap-4 justify-between items-center">
+                                            <div className="flex items-center gap-4">
+                                                <div>
+                                                    <span className="text-xs font-bold text-gray-700 block">Customer ke-{guestIndex}</span>
+                                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
+                                                        {(() => {
+                                                            const existingDuration = items.filter(it => !it.isNew).reduce((sum, item) => sum + parseInt(item.package_duration || 0), 0);
+                                                            const newDuration = items.filter(it => it.isNew).reduce((sum, item) => sum + parseInt(item.package_duration || 0), 0);
+                                                            const totalDuration = existingDuration + newDuration;
+                                                            const startTime = (selectedTransaction.schedule_time || '00:00').substring(0, 5).replace('.', ':');
+                                                            return `${startTime} - ${calculateEndTime(startTime, totalDuration)}`;
+                                                        })()}
+                                                    </span>
+                                                </div>
+
+                                                {/* Therapist Selector Integrated */}
+                                                <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+                                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Terapis:</span>
+                                                    <select
+                                                        className="appearance-none bg-white border border-gray-200 text-[10px] font-bold text-gray-600 px-3 py-1.5 rounded-xl pr-8 focus:ring-zenith-orange focus:border-zenith-orange cursor-pointer"
+                                                        value={items[0]?.employee_id || ''}
+                                                        onChange={(e) => {
+                                                            const newId = e.target.value;
+                                                            const selectedEmp = employees.find(emp => emp.id == newId);
+
+                                                            const updatedItems = selectedTransaction.items.map(it =>
+                                                                it.guest_index == guestIndex ? { ...it, employee_id: newId, employee: selectedEmp } : it
+                                                            );
+                                                            setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+
+                                                            setNewItems(newItems.map(ni =>
+                                                                ni.guest_index == guestIndex ? { ...ni, employee_id: newId } : ni
+                                                            ));
+                                                        }}
+                                                    >
+                                                        <option value="">Pilih Terapis...</option>
+                                                        {employees.map(emp => (
+                                                            <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                                        ))}
+                                                    </select>
+
+                                                    {/* Auto-computed commission badge for this guest */}
+                                                    <div className="bg-gray-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                                                        <span className="text-[8px] text-gray-400 font-bold uppercase">Komisi</span>
+                                                        <span className="text-[10px] font-black text-gray-700">
+                                                            {formatCurrency(
+                                                                items.reduce((sum, it) => sum + (parseFloat(it.therapist_commission) || 0), 0)
+                                                            )}
+                                                        </span>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => recalculateCommission(guestIndex)}
+                                                        className="p-1.5 hover:bg-zenith-orange/10 rounded-lg transition-colors group/btn border border-gray-200 bg-white"
+                                                        title="Reset Komisi ke Default Paket"
+                                                    >
+                                                        <ArrowPathIcon className="w-3 h-3 text-gray-400 group-hover/btn:text-zenith-orange" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <div className="relative">
+                                                    <select
+                                                        className="appearance-none bg-zenith-orange/10 border-none text-[9px] font-bold text-zenith-orange uppercase px-3 py-1 rounded-full pr-7 focus:ring-0 cursor-pointer"
+                                                        onChange={(e) => {
+                                                            if (!e.target.value) return;
+                                                            const [pkgId, durIdx] = e.target.value.split('|');
+                                                            const pkg = packages.find(p => p.id == pkgId);
+                                                            const duration = pkg.durations[durIdx];
+
+                                                            const currentTherapistId = items[0]?.employee_id || '';
+
+                                                            const newItem = {
+                                                                guest_index: parseInt(guestIndex),
+                                                                package_name: pkg.title_id,
+                                                                package_duration: duration.duration,
+                                                                price: parseFloat(duration.price),
+                                                                therapist_commission: parseFloat(duration.commission),
+                                                                employee_id: currentTherapistId,
+                                                                guest_gender: items[0]?.guest_gender || 'wanita',
+                                                                isNew: true,
+                                                                tempId: Date.now() + Math.random()
+                                                            };
+
+                                                            setNewItems([...newItems, newItem]);
+                                                            e.target.value = '';
+                                                        }}
+                                                    >
+                                                        <option value="">+ Tambah Paket</option>
+                                                        {packages.filter(p => !p.is_signature).map(pkg => pkg.durations.map((dur, dIdx) => (
+                                                            <option key={`${pkg.id}-${dIdx}`} value={`${pkg.id}|${dIdx}`}>
+                                                                {pkg.title_id} ({dur.duration}) - {formatCurrency(dur.price)}
+                                                            </option>
+                                                        )))}
+                                                    </select>
+                                                    <PlusIcon className="w-3 h-3 text-zenith-orange absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                </div>
+                                                <span className="text-[10px] font-bold text-zenith-orange uppercase">{items[0]?.guest_gender}</span>
+                                            </div>
                                         </div>
                                         <table className="w-full text-left text-sm">
                                             <thead>
@@ -954,13 +1093,39 @@ export default function Index({ transactions, filters, counts, employees, packag
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
                                                 {items.map((item, idx) => (
-                                                    <tr key={idx}>
+                                                    <tr key={idx} className={item.isNew ? 'bg-green-50/30' : ''}>
                                                         <td className="px-4 py-3">
-                                                            <span className="font-medium text-gray-800">{item.package_name}</span>
-                                                            <span className="text-xs text-gray-400 ml-2">({item.package_duration})</span>
-                                                            {item.employee && (
-                                                                <p className="text-[10px] text-green-600 font-bold mt-1 uppercase">Terapis: {item.employee.name}</p>
-                                                            )}
+                                                            <div className="flex items-center gap-2">
+                                                                {item.isNew && <span className="bg-green-100 text-green-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">BARU</span>}
+                                                                <span className="font-medium text-gray-800">{item.package_name}</span>
+                                                                <span className="text-xs text-gray-400">({item.package_duration})</span>
+                                                                {!item.isNew && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (confirm('Hapus paket ini?')) {
+                                                                                setDeletedItems([...deletedItems, item.id]);
+                                                                                const updatedItems = selectedTransaction.items.filter(it => it.id !== item.id);
+                                                                                setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+                                                                            }
+                                                                        }}
+                                                                        className="text-red-400 hover:text-red-600 transition-colors"
+                                                                    >
+                                                                        <XMarkIcon className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                )}
+                                                                {item.isNew && (
+                                                                    <button
+                                                                        onClick={() => setNewItems(newItems.filter(ni => ni.tempId !== item.tempId))}
+                                                                        className="text-red-400 hover:text-red-600 transition-colors"
+                                                                    >
+                                                                        <XMarkIcon className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                            <div className="mt-1 flex items-center gap-2">
+                                                                <span className="text-[10px] font-bold text-green-600 uppercase tracking-tight">Terapis:</span>
+                                                                <span className="text-[10px] font-medium text-gray-500 uppercase">{item.employee?.name || employees.find(e => e.id == item.employee_id)?.name || 'Belum dipilih'}</span>
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-3 text-right text-[11px] font-bold text-gray-400">
                                                             {formatCurrency(item.therapist_commission || 0)}
@@ -975,37 +1140,88 @@ export default function Index({ transactions, filters, counts, employees, packag
                                     </div>
                                 ))}
 
-                                <div className="bg-zenith-orange/5 p-6 rounded-2xl border border-zenith-orange/10 flex justify-between items-center mt-6">
-                                    <div>
-                                        <span className="text-sm font-bold text-gray-500 uppercase tracking-widest block">Grand Total</span>
-                                        <div className="mt-2 space-y-1">
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase">
-                                                Total Komisi: <span className="text-gray-900">{formatCurrency(
-                                                    selectedTransaction?.items.reduce((sum, item) => sum + (parseFloat(item.therapist_commission) || 0), 0)
-                                                )}</span>
-                                            </p>
+                                <div className="bg-zenith-orange/5 p-6 rounded-2xl border border-zenith-orange/10 mt-6">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <span className="text-sm font-bold text-gray-500 uppercase tracking-widest block mb-3">Ringkasan Komisi</span>
+                                            <div className="space-y-2">
+                                                {(() => {
+                                                    const allItems = [...(selectedTransaction?.items || []), ...newItems];
+                                                    // Group by guest_index
+                                                    const byGuest = allItems.reduce((acc, item) => {
+                                                        const g = item.guest_index || 1;
+                                                        if (!acc[g]) acc[g] = { items: [], employee_id: item.employee_id, employee: item.employee };
+                                                        acc[g].items.push(item);
+                                                        return acc;
+                                                    }, {});
+
+                                                    return Object.entries(byGuest).map(([gIdx, data]) => {
+                                                        const therapistName = data.employee?.name ||
+                                                            employees.find(e => e.id == data.employee_id)?.name ||
+                                                            'Belum dipilih';
+                                                        const totalKomisi = data.items.reduce((s, it) => s + (parseFloat(it.therapist_commission) || 0), 0);
+                                                        return (
+                                                            <div key={gIdx} className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-gray-100">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[9px] font-bold text-zenith-orange uppercase tracking-widest">Terapis ke-{gIdx}</span>
+                                                                    <span className="text-xs font-bold text-gray-700 uppercase">{therapistName}</span>
+                                                                </div>
+                                                                <span className="text-xs font-black text-gray-900">{formatCurrency(totalKomisi)}</span>
+                                                            </div>
+                                                        );
+                                                    });
+                                                })()}
+
+                                                {/* Grand total commission */}
+                                                <div className="flex items-center justify-between pt-2 border-t border-zenith-orange/20">
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total Komisi</span>
+                                                    <span className="text-sm font-black text-gray-900">
+                                                        {formatCurrency(
+                                                            [...(selectedTransaction?.items || []), ...newItems].reduce((s, it) => s + (parseFloat(it.therapist_commission) || 0), 0)
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-2xl font-black text-zenith-orange">
-                                            {formatCurrency(selectedTransaction?.total_price)}
-                                        </span>
-                                        <div className="flex flex-col items-end gap-1 mt-1">
-                                            {selectedTransaction?.transport_fee > 0 && (
-                                                <p className="text-[10px] text-gray-400 font-medium">
-                                                    Sudah termasuk Biaya Transport {formatCurrency(selectedTransaction.transport_fee)}
-                                                </p>
-                                            )}
-                                            {selectedTransaction?.voucher && (
-                                                <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">
-                                                    Voucher: {selectedTransaction.voucher.code} (-{formatCurrency(selectedTransaction.voucher.discount_amount)})
-                                                </p>
-                                            )}
-                                            {selectedTransaction?.discount_percent > 0 && (
-                                                <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
-                                                    Potongan Diskon {parseFloat(selectedTransaction.discount_percent)}% ({formatCurrency(selectedTransaction.discount_amount)})
-                                                </p>
-                                            )}
+
+                                        <div className="text-right ml-8">
+                                            <span className="text-sm font-bold text-gray-500 uppercase tracking-widest block mb-1">Grand Total</span>
+                                            <span className="text-2xl font-black text-zenith-orange">
+                                                {formatCurrency(
+                                                    ([...(selectedTransaction?.items || []), ...newItems].reduce((sum, item) => sum + parseFloat(item.price), 0)) +
+                                                    parseFloat(selectedTransaction?.transport_fee || 0) -
+                                                    (selectedTransaction?.discount_amount || 0) +
+                                                    ((([...(selectedTransaction?.items || []), ...newItems].reduce((sum, item) => sum + parseFloat(item.price), 0)) +
+                                                        parseFloat(selectedTransaction?.transport_fee || 0) -
+                                                        (selectedTransaction?.discount_amount || 0)) * (penaltyPercent / 100))
+                                                )}
+                                            </span>
+                                            <div className="flex flex-col items-end gap-1 mt-1">
+                                                {selectedTransaction?.transport_fee > 0 && (
+                                                    <p className="text-[10px] text-gray-400 font-medium">
+                                                        Sudah termasuk Biaya Transport {formatCurrency(selectedTransaction.transport_fee)}
+                                                    </p>
+                                                )}
+                                                {selectedTransaction?.voucher && (
+                                                    <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">
+                                                        Voucher: {selectedTransaction.voucher.code} (-{formatCurrency(selectedTransaction.voucher.discount_amount)})
+                                                    </p>
+                                                )}
+                                                {selectedTransaction?.discount_percent > 0 && (
+                                                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                                                        Potongan Diskon {parseFloat(selectedTransaction.discount_percent)}% ({formatCurrency(selectedTransaction.discount_amount)})
+                                                    </p>
+                                                )}
+                                                {penaltyPercent > 0 && (
+                                                    <p className="text-[10px] text-red-600 font-bold uppercase tracking-wider">
+                                                        Penalti Perubahan Tanggal {penaltyPercent}% ({formatCurrency(
+                                                            ((([...(selectedTransaction?.items || []), ...newItems].reduce((sum, item) => sum + parseFloat(item.price), 0)) +
+                                                                parseFloat(selectedTransaction?.transport_fee || 0) -
+                                                                (selectedTransaction?.discount_amount || 0)) * (penaltyPercent / 100))
+                                                        )})
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -299,12 +299,57 @@ class TransactionController extends Controller
             'schedule_time' => 'nullable|string',
             'notes' => 'nullable|string',
             'transport_fee' => 'nullable|numeric',
+            'penalty_percent' => 'nullable|numeric',
+            'penalty_amount' => 'nullable|numeric',
+            'total_price' => 'nullable|numeric',
             'status' => 'nullable|in:pending,send_terapis,invoice,success,failed',
+            'new_items' => 'nullable|array',
+            'items' => 'nullable|array',
+            'deleted_items' => 'nullable|array',
         ]);
 
-        $transaction->update($validated);
+        return DB::transaction(function() use ($validated, $transaction) {
+            $transaction->update(collect($validated)->except(['new_items', 'items', 'deleted_items'])->toArray());
 
-        return back()->with('message', 'Transaksi berhasil diperbarui');
+            // Handle deletions
+            if (!empty($validated['deleted_items'])) {
+                TransactionItem::whereIn('id', $validated['deleted_items'])->where('transaction_id', $transaction->id)->delete();
+            }
+
+            // Handle existing item updates
+            if (!empty($validated['items'])) {
+                foreach ($validated['items'] as $itemData) {
+                    if (isset($itemData['id'])) {
+                        TransactionItem::where('id', $itemData['id'])
+                            ->where('transaction_id', $transaction->id)
+                            ->update([
+                                'employee_id' => $itemData['employee_id'] ?? null,
+                                'therapist_commission' => $itemData['therapist_commission'] ?? 0,
+                                'guest_gender' => $itemData['guest_gender'] ?? 'wanita',
+                            ]);
+                    }
+                }
+            }
+
+            // Handle new items
+            if (!empty($validated['new_items'])) {
+                foreach ($validated['new_items'] as $item) {
+                    TransactionItem::create([
+                        'transaction_id' => $transaction->id,
+                        'guest_index' => $item['guest_index'],
+                        'guest_gender' => $item['guest_gender'] ?? 'wanita',
+                        'therapist_gender_preference' => $item['therapist_gender_preference'] ?? 'wanita',
+                        'package_name' => $item['package_name'],
+                        'package_duration' => $item['package_duration'],
+                        'price' => $item['price'],
+                        'therapist_commission' => $item['therapist_commission'] ?? 0,
+                        'employee_id' => $item['employee_id'] ?? null,
+                    ]);
+                }
+            }
+
+            return back()->with('message', 'Transaksi berhasil diperbarui');
+        });
     }
 
     public function downloadPdf(Transaction $transaction)

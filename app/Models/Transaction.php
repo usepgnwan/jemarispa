@@ -12,6 +12,7 @@ class Transaction extends Model
         'source', 'notes', 'total_price', 'transport_fee', 
         'discount_percent', 'discount_amount', 'status',
         'review_token', 'review_expires_at', 'voucher_id',
+        'penalty_percent', 'penalty_amount',
     ];
 
     protected $casts = [

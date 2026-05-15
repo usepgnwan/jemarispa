@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\TransactionItem;
+use App\Models\Package;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +13,7 @@ class CalendarController extends Controller
     public function index()
     {
         // Fetch transactions with items for detail view
-        $transactions = Transaction::with(['items.employee'])
+        $transactions = Transaction::with(['items.employee', 'voucher'])
             ->whereNotNull('schedule_date')
             ->get()
             ->map(function ($t) {
@@ -30,14 +31,21 @@ class CalendarController extends Controller
                     'backgroundColor' => $color,
                     'borderColor' => $color,
                     'extendedProps' => [
-                        'customer_name' => $t->customer_name,
-                        'phone' => $t->phone,
-                        'address' => $t->address,
-                        'status' => $t->status,
-                        'total_price' => $t->total_price,
-                        'items' => $t->items,
-                        'notes' => $t->notes,
-                        'schedule_time' => $t->schedule_time
+                        'customer_name'    => $t->customer_name,
+                        'phone'            => $t->phone,
+                        'address'          => $t->address,
+                        'status'           => $t->status,
+                        'total_price'      => $t->total_price,
+                        'transport_fee'    => $t->transport_fee,
+                        'discount_percent' => $t->discount_percent,
+                        'discount_amount'  => $t->discount_amount,
+                        'penalty_percent'  => $t->penalty_percent,
+                        'penalty_amount'   => $t->penalty_amount,
+                        'voucher'          => $t->voucher,
+                        'items'            => $t->items,
+                        'notes'            => $t->notes,
+                        'schedule_date'    => $t->schedule_date,
+                        'schedule_time'    => $t->schedule_time,
                     ]
                 ];
             });
@@ -61,7 +69,9 @@ class CalendarController extends Controller
         return Inertia::render('Admin/Calendar', [
             'events' => $transactions,
             'summary' => $summary,
-            'employees' => $employees
+            'employees' => $employees,
+            'packages' => Package::with('durations')->get(),
+            'app_settings' => \App\Models\Setting::first()
         ]);
     }
 }

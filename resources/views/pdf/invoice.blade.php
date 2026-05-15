@@ -283,9 +283,33 @@
                         <td>{{ \Carbon\Carbon::parse($transaction->created_at)->format('d M Y') }}</td>
                     </tr>
                     <tr>
-                        <td class="meta-label">Tgl. Jatuh Tempo</td>
+                        <td class="meta-label">Tgl. Layanan</td>
                         <td class="meta-separator">:</td>
                         <td>{{ \Carbon\Carbon::parse($transaction->schedule_date)->format('d M Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Waktu</td>
+                        <td class="meta-separator">:</td>
+                        <td>
+                                @php
+                                    $timeStr = str_replace('.', ':', $transaction->schedule_time);
+                                    // Ensure it has at least HH:mm
+                                    if (strlen($timeStr) < 5 && strpos($timeStr, ':') !== false) {
+                                        $parts = explode(':', $timeStr);
+                                        $timeStr = sprintf('%02d:%02d', $parts[0], $parts[1]);
+                                    }
+                                    $startTime = \Carbon\Carbon::parse($timeStr)->format('H:i');
+                                    
+                                    $guestDurations = $transaction->items->groupBy('guest_index')->map(function($items) {
+                                        return $items->sum(function($item) {
+                                            return (int) filter_var($item->package_duration, FILTER_SANITIZE_NUMBER_INT);
+                                        });
+                                    });
+                                    $maxDuration = $guestDurations->max() ?? 0;
+                                    $endTime = \Carbon\Carbon::parse($timeStr)->addMinutes($maxDuration)->format('H:i');
+                                @endphp
+                                {{ $startTime }} - {{ $endTime }}
+                        </td>
                     </tr>
                     <tr>
                         <td class="meta-label">Terapis</td>

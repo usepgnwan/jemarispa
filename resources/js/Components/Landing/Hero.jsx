@@ -199,7 +199,10 @@ export default function Hero({ activeService, lang }) {
                         {b.book}
                     </Link>
                     <button
-                        onClick={() => logAnalytic('CTA', 'Klik Hubungi Kami (Hero)')}
+                        onClick={() => {
+                            logAnalytic('CTA', 'Klik Hubungi Kami (Hero)');
+                            window.dispatchEvent(new CustomEvent('open-wa-popover'));
+                        }}
                         className="w-full sm:w-auto rounded-full border border-white/30 backdrop-blur-md px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all"
                     >
                         {b.contact}
