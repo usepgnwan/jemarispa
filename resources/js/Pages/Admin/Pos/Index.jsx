@@ -466,37 +466,45 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                         {/* LEFT: Guest & Package Area (8/12) */}
                         <div className="xl:col-span-8 space-y-8">
                             {/* Control Bar */}
-                            <div className="bg-white p-4 rounded-[2rem] border border-gray-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2">Jumlah Orang:</span>
-                                    <div className="flex bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
-                                        {[1, 2, 3, 4, 5].map(n => (
+                            <div className="bg-white p-5 sm:p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full md:w-auto">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest sm:ml-2">Jumlah Orang:</span>
+                                    <div className="grid grid-cols-4 sm:flex sm:flex-wrap bg-gray-50 p-1.5 rounded-2xl border border-gray-100 w-full sm:w-fit gap-2">
+                                        {[1, 2, 3, 4, 5, 6].map(n => (
                                             <button
                                                 key={n}
                                                 type="button"
                                                 onClick={() => handlePaxChange(n)}
-                                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${pax === n
-                                                    ? 'bg-zenith-orange text-white shadow-md'
+                                                className={`h-10 rounded-xl text-sm font-bold transition-all sm:w-10 ${pax === n
+                                                    ? 'bg-zenith-orange text-white shadow-md shadow-zenith-orange/20'
                                                     : 'text-gray-400 hover:text-zenith-orange'
                                                     }`}
                                             >
                                                 {n}
                                             </button>
                                         ))}
-                                        <select
-                                            className="bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-400 w-12 cursor-pointer"
-                                            value={pax > 5 ? pax : ''}
-                                            onChange={(e) => handlePaxChange(e.target.value)}
-                                        >
-                                            <option value="" disabled>+</option>
-                                            {[6, 7, 8, 9, 10].map(n => <option key={n} value={n}>{n}</option>)}
-                                        </select>
+                                        <div className="relative col-span-2 sm:col-span-1">
+                                            <select
+                                                className={`w-full h-10 pl-3 pr-8 rounded-xl text-[10px] font-bold appearance-none cursor-pointer border-none focus:ring-0 transition-all ${pax > 6
+                                                    ? 'bg-zenith-orange text-white'
+                                                    : 'bg-transparent text-gray-400'
+                                                    }`}
+                                                value={pax > 6 ? pax : ''}
+                                                onChange={(e) => handlePaxChange(e.target.value)}
+                                            >
+                                                <option value="" disabled>Lain</option>
+                                                {[7, 8, 9, 10, 11, 12, 13, 14, 15].map(n => <option key={n} value={n} className="text-gray-900">{n}</option>)}
+                                            </select>
+                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <ChevronRightIcon className={`w-3 h-3 rotate-90 ${pax > 6 ? 'text-white' : 'text-gray-300'}`} />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 text-zenith-orange bg-zenith-orange/5 px-4 py-2 rounded-full">
-                                    <InformationCircleIcon className="w-4 h-4" />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest">Pilih paket untuk setiap orang</span>
+                                <div className="flex items-center gap-2 text-zenith-orange bg-zenith-orange/5 px-5 py-3 rounded-2xl md:rounded-full w-fit">
+                                    <InformationCircleIcon className="w-4 h-4 shrink-0" />
+                                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest leading-none">Pilih paket untuk setiap orang</span>
                                 </div>
                             </div>
 

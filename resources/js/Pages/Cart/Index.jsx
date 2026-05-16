@@ -779,7 +779,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-3">
                                                 {t.haveVoucher}
                                             </label>
-                                            <div className="flex gap-2">
+                                            <div className="flex flex-col md:flex-row gap-2">
                                                 <input
                                                     type="text"
                                                     placeholder={t.enterVoucher}
@@ -801,7 +801,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                         type="button"
                                                         onClick={handleApplyVoucher}
                                                         disabled={!voucherCode || isValidatingVoucher}
-                                                        className="px-6 bg-zenith-charcoal text-white rounded-xl text-[10px] font-bold uppercase transition-all hover:bg-zenith-orange disabled:opacity-50"
+                                                        className="px-6 bg-zenith-charcoal text-white rounded-xl text-[10px] font-bold uppercase transition-all hover:bg-zenith-orange disabled:opacity-50  h-10"
                                                     >
                                                         {isValidatingVoucher ? '...' : t.apply}
                                                     </button>

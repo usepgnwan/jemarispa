@@ -410,44 +410,44 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                 </select>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-2xl border border-gray-100">
+                                <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 overflow-x-auto scrollbar-hide max-w-[90vw] sm:max-w-none">
                                     <button
                                         onClick={() => setSelectedStatus('all')}
-                                        className={`px-4 py-1.5 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'all' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+                                        className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'all' ? 'bg-white text-gray-900 shadow-sm border border-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
                                     >
                                         Semua
                                     </button>
                                     <button
                                         onClick={() => setSelectedStatus('pending')}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'pending' ? 'bg-slate-400 text-white shadow-sm' : 'bg-white text-slate-500 border border-gray-100'}`}
+                                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'pending' ? 'bg-slate-400 text-white shadow-sm' : 'bg-white text-slate-500 border border-gray-100'}`}
                                     >
                                         <span className={`w-2 h-2 rounded-full ${selectedStatus === 'pending' ? 'bg-white' : 'bg-slate-400'}`}></span>
                                         Pending
                                     </button>
                                     <button
                                         onClick={() => setSelectedStatus('send_terapis')}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'send_terapis' ? 'bg-blue-400 text-white shadow-sm' : 'bg-white text-blue-500 border border-gray-100'}`}
+                                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'send_terapis' ? 'bg-blue-400 text-white shadow-sm' : 'bg-white text-blue-500 border border-gray-100'}`}
                                     >
                                         <span className={`w-2 h-2 rounded-full ${selectedStatus === 'send_terapis' ? 'bg-white' : 'bg-blue-400'}`}></span>
                                         Proses
                                     </button>
                                     <button
                                         onClick={() => setSelectedStatus('invoice')}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'invoice' ? 'bg-amber-400 text-white shadow-sm' : 'bg-white text-amber-500 border border-gray-100'}`}
+                                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'invoice' ? 'bg-amber-400 text-white shadow-sm' : 'bg-white text-amber-500 border border-gray-100'}`}
                                     >
                                         <span className={`w-2 h-2 rounded-full ${selectedStatus === 'invoice' ? 'bg-white' : 'bg-amber-400'}`}></span>
                                         Invoice
                                     </button>
                                     <button
                                         onClick={() => setSelectedStatus('success')}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'success' ? 'bg-emerald-400 text-white shadow-sm' : 'bg-white text-emerald-500 border border-gray-100'}`}
+                                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'success' ? 'bg-emerald-400 text-white shadow-sm' : 'bg-white text-emerald-500 border border-gray-100'}`}
                                     >
                                         <span className={`w-2 h-2 rounded-full ${selectedStatus === 'success' ? 'bg-white' : 'bg-emerald-400'}`}></span>
                                         Selesai
                                     </button>
                                     <button
                                         onClick={() => setSelectedStatus('failed')}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'failed' ? 'bg-red-400 text-white shadow-sm' : 'bg-white text-red-500 border border-gray-100'}`}
+                                        className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${selectedStatus === 'failed' ? 'bg-red-400 text-white shadow-sm' : 'bg-white text-red-500 border border-gray-100'}`}
                                     >
                                         <span className={`w-2 h-2 rounded-full ${selectedStatus === 'failed' ? 'bg-white' : 'bg-red-400'}`}></span>
                                         Batal
@@ -615,7 +615,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                     </Transition.Child>
 
                     <div className="fixed inset-0 z-10 overflow-y-auto">
-                        <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                        <div className="flex min-h-full items-center justify-center p-2 sm:p-4 text-center">
                             <Transition.Child
                                 as={Fragment}
                                 enter="ease-out duration-300"
@@ -625,7 +625,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                             >
-                                <Dialog.Panel className="relative transform overflow-hidden rounded-[2.5rem] bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+                                <Dialog.Panel className="relative w-full max-w-[95%] sm:max-w-2xl transform overflow-hidden rounded-[2rem] sm:rounded-[3rem] bg-white text-left shadow-2xl transition-all border border-gray-100 mx-auto">
                                     {(selectedEvent || selectedTransaction) && (() => {
                                         const currentData = isEditing ? selectedTransaction : selectedEvent;
                                         if (!currentData) return null;
@@ -647,19 +647,19 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                         return (
                                             <>
                                                 {/* Modal Header */}
-                                                <div className="px-8 pt-8 pb-4 border-b border-gray-100">
+                                                <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6 border-b border-gray-100 bg-gradient-to-b from-gray-50/50 to-white sticky top-0 z-10 backdrop-blur-md">
                                                     <div className="flex items-start justify-between">
                                                         <div>
                                                             <div className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border mb-2 ${statusColors[currentData.status]}`}>
                                                                 {statusLabels[currentData.status]}
                                                             </div>
                                                             <h3 className="text-xl font-black text-gray-900">{currentData.customer_name}</h3>
-                                                            <div className="flex flex-wrap items-center gap-3 mt-1.5">
-                                                                <span className="flex items-center gap-1 text-[11px] font-medium text-gray-400">
+                                                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5">
+                                                                <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400">
                                                                     <PhoneIcon className="w-3 h-3" />
                                                                     {currentData.phone}
                                                                 </span>
-                                                                <span className="flex items-center gap-1 text-[11px] font-medium text-gray-400">
+                                                                <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400 shrink-0">
                                                                     <MapPinIcon className="w-3 h-3" />
                                                                     {currentData.address}
                                                                 </span>
@@ -682,8 +682,8 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                     </div>
 
                                                     {/* Schedule info row */}
-                                                    <div className="flex items-center gap-2 mt-4 bg-zenith-orange/5 rounded-2xl px-4 py-3">
-                                                        <div className="p-1.5 rounded-xl bg-zenith-orange/10 text-zenith-orange">
+                                                    <div className="flex items-start sm:items-center gap-2 mt-4 bg-zenith-orange/5 rounded-2xl px-4 py-3">
+                                                        <div className="p-1.5 rounded-xl bg-zenith-orange/10 text-zenith-orange shrink-0">
                                                             <ClockIcon className="w-4 h-4" />
                                                         </div>
                                                         <div className="flex-1">
@@ -715,9 +715,9 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                 </div>
 
                                                 {/* Per-Guest Cards */}
-                                                <div className="px-8 py-6 space-y-6 max-h-[50vh] overflow-y-auto custom-scrollbar">
+                                                <div className="px-6 sm:px-10 py-8 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar bg-white">
                                                     {isEditing && (
-                                                        <div className="grid grid-cols-2 gap-4">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                                             <div>
                                                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Update Status</label>
                                                                 <div className="grid grid-cols-1 gap-1.5">
@@ -780,17 +780,17 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                         const guestCommission = items.reduce((s, it) => s + parseFloat(it.therapist_commission || 0), 0);
 
                                                         return (
-                                                            <div key={guestIdx} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                                                            <div key={guestIdx} className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                                                                 {/* Guest Header */}
-                                                                <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-100 flex flex-wrap gap-4 justify-between items-center">
-                                                                    <div className="flex items-center gap-4">
+                                                                <div className="bg-gray-50/50 px-4 py-4 border-b border-gray-100 flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
+                                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                                                         <div>
                                                                             <span className="text-xs font-bold text-gray-700 block">Customer ke-{guestIdx}</span>
                                                                             <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
                                                                                 {startTime} - {calculateEndTime(startTime, guestDuration)}
                                                                             </span>
                                                                         </div>
-                                                                        <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+                                                                        <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-gray-200 pt-3 sm:pt-0 sm:pl-4">
                                                                             <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Terapis:</span>
                                                                             {isEditing ? (
                                                                                 <select 
@@ -903,8 +903,8 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                 </div>
 
                                                 {/* Footer Summary */}
-                                                <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem]">
-                                                    <div className="flex gap-6 justify-between items-end">
+                                                <div className="px-6 sm:px-10 py-8 bg-gray-50/80 border-t border-gray-100 rounded-b-[3rem] sticky bottom-0 z-10 backdrop-blur-md">
+                                                    <div className="flex flex-col sm:flex-row gap-6 justify-between sm:items-end">
                                                         <div className="flex-1 space-y-2">
                                                             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ringkasan Komisi</p>
                                                             {Object.entries(byGuest).map(([gIdx, items]) => {
@@ -922,7 +922,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                             })}
                                                         </div>
 
-                                                        <div className="text-right ml-8 shrink-0">
+                                                        <div className="text-left sm:text-right sm:ml-8 shrink-0 border-t sm:border-t-0 border-gray-100 pt-4 sm:pt-0">
                                                             <span className="text-sm font-bold text-gray-500 uppercase tracking-widest block mb-1">Grand Total</span>
                                                             <span className="text-2xl font-black text-zenith-orange">
                                                                 {(() => {
@@ -966,60 +966,103 @@ export default function Calendar({ auth, events, summary, employees, packages, a
             </Transition.Root>
 
             <style dangerouslySetInnerHTML={{
-                __html: `
-                .full-calendar-custom .fc {
+                __html: `                .full-calendar-custom .fc {
                     --fc-border-color: #f1f5f9;
                     --fc-daygrid-event-dot-width: 8px;
                     --fc-today-bg-color: #fff7ed;
                     font-family: inherit;
                 }
                 .full-calendar-custom .fc-header-toolbar {
-                    margin-bottom: 2rem !important;
+                    display: flex !important;
+                    flex-direction: row !important;
+                    flex-wrap: wrap !important;
+                    gap: 1rem !important;
+                    margin-bottom: 2.5rem !important;
+                    justify-content: space-between !important;
+                }
+                @media (max-width: 640px) {
+                    .full-calendar-custom .fc-header-toolbar {
+                        flex-direction: column !important;
+                        align-items: center !important;
+                        text-align: center !important;
+                    }
+                    .full-calendar-custom .fc-toolbar-chunk {
+                        display: flex !important;
+                        justify-content: center !important;
+                        width: 100% !important;
+                    }
+                    .full-calendar-custom .fc-toolbar-title {
+                        font-size: 1.5rem !important;
+                        order: -1 !important;
+                    }
                 }
                 .full-calendar-custom .fc-toolbar-title {
-                    font-size: 1.25rem !important;
+                    font-size: 1.75rem !important;
                     font-weight: 800 !important;
                     color: #1e293b;
                     font-family: serif;
                     font-style: italic;
+                    letter-spacing: -0.02em;
+                }
+                .full-calendar-custom .fc-button-group {
+                    background: #f8fafc !important;
+                    padding: 3px !important;
+                    border-radius: 1rem !important;
+                    border: 1px solid #e2e8f0 !important;
                 }
                 .full-calendar-custom .fc-button {
-                    background: white !important;
-                    border: 1px solid #e2e8f0 !important;
+                    background: transparent !important;
+                    border: none !important;
                     color: #64748b !important;
-                    font-size: 0.75rem !important;
-                    font-weight: 700 !important;
+                    font-size: 0.7rem !important;
+                    font-weight: 800 !important;
                     text-transform: uppercase !important;
                     letter-spacing: 0.05em !important;
-                    padding: 0.5rem 1rem !important;
-                    border-radius: 0.75rem !important;
+                    padding: 0.6rem 1rem !important;
+                    border-radius: 0.8rem !important;
                     transition: all 0.2s !important;
+                    box-shadow: none !important;
+                    margin: 0 !important;
+                }
+                @media (max-width: 640px) {
+                    .full-calendar-custom .fc-button {
+                        padding: 0.5rem 0.8rem !important;
+                        font-size: 0.65rem !important;
+                    }
+                }
+                .full-calendar-custom .fc-today-button {
+                    background: white !important;
+                    border: 1px solid #e2e8f0 !important;
+                    margin-left: 0.5rem !important;
+                    border-radius: 0.8rem !important;
                     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
                 }
-                .full-calendar-custom .fc-button:hover {
-                    background: #f8fafc !important;
+                .full-calendar-custom .fc-button:hover:not(.fc-button-active) {
+                    background: white !important;
                     color: #f47c51 !important;
-                    border-color: #f47c51 !important;
                 }
-                .full-calendar-custom .fc-button-active {
+                .full-calendar-custom .fc-button-active, 
+                .full-calendar-custom .fc-today-button:disabled {
                     background: #f47c51 !important;
                     color: white !important;
-                    border-color: #f47c51 !important;
+                    opacity: 1 !important;
                 }
                 .full-calendar-custom .fc-event {
-                    border-radius: 0.5rem !important;
-                    padding: 2px 4px !important;
+                    border-radius: 0.6rem !important;
+                    padding: 4px 6px !important;
                     font-size: 10px !important;
                     font-weight: 700 !important;
                     border: none !important;
                     cursor: pointer !important;
-                    transition: transform 0.2s !important;
+                    transition: all 0.2s !important;
+                    margin: 1px 0 !important;
                 }
                 .full-calendar-custom .fc-event:hover {
-                    transform: scale(1.02);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
                 }
                 .full-calendar-custom .fc-col-header-cell {
-                    padding: 1rem 0 !important;
+                    padding: 1.25rem 0 !important;
                     background: #f8fafc !important;
                     border: none !important;
                 }
@@ -1035,11 +1078,25 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                     border-color: #f1f5f9 !important;
                 }
                 .full-calendar-custom .fc-daygrid-day-number {
-                    font-size: 12px !important;
-                    font-weight: 600 !important;
+                    font-size: 13px !important;
+                    font-weight: 700 !important;
                     color: #64748b !important;
-                    padding: 10px !important;
+                    padding: 12px !important;
                     text-decoration: none !important;
+                }
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: #f1f5f9;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #cbd5e1;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #94a3b8;
                 }
             `}} />
         </AuthenticatedLayout>
