@@ -98,6 +98,7 @@ export default function Index({ transactions, filters, counts, employees, packag
     const [newItems, setNewItems] = useState([]);
     const [deletedItems, setDeletedItems] = useState([]);
     const [penaltyPercent, setPenaltyPercent] = useState(0);
+    const [pendingDeleteItemId, setPendingDeleteItemId] = useState(null);
     const { patch, delete: destroy, processing } = useForm();
 
     const fetchFilteredData = useCallback(
@@ -1100,18 +1101,35 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                 <span className="font-medium text-gray-800">{item.package_name}</span>
                                                                 <span className="text-xs text-gray-400">({item.package_duration})</span>
                                                                 {!item.isNew && (
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            if (confirm('Hapus paket ini?')) {
-                                                                                setDeletedItems([...deletedItems, item.id]);
-                                                                                const updatedItems = selectedTransaction.items.filter(it => it.id !== item.id);
-                                                                                setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
-                                                                            }
-                                                                        }}
-                                                                        className="text-red-400 hover:text-red-600 transition-colors"
-                                                                    >
-                                                                        <XMarkIcon className="w-3.5 h-3.5" />
-                                                                    </button>
+                                                                    pendingDeleteItemId === item.id ? (
+                                                                        <div className="flex items-center gap-1">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setDeletedItems([...deletedItems, item.id]);
+                                                                                    const updatedItems = selectedTransaction.items.filter(it => it.id !== item.id);
+                                                                                    setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+                                                                                    setPendingDeleteItemId(null);
+                                                                                }}
+                                                                                className="text-[9px] font-black text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-full transition-colors"
+                                                                            >
+                                                                                Hapus?
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setPendingDeleteItemId(null)}
+                                                                                className="text-[9px] font-black text-gray-400 hover:text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 transition-colors"
+                                                                            >
+                                                                                Batal
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => setPendingDeleteItemId(item.id)}
+                                                                            className="text-red-300 hover:text-red-500 transition-colors"
+                                                                            title="Hapus paket"
+                                                                        >
+                                                                            <XMarkIcon className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    )
                                                                 )}
                                                                 {item.isNew && (
                                                                     <button
@@ -1141,8 +1159,8 @@ export default function Index({ transactions, filters, counts, employees, packag
                                 ))}
 
                                 <div className="bg-zenith-orange/5 p-6 rounded-2xl border border-zenith-orange/10 mt-6">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
+                                    <div className="flex justify-between items-start md:flex-row flex-col gap-6">
+                                        <div className="flex-1 w-full">
                                             <span className="text-sm font-bold text-gray-500 uppercase tracking-widest block mb-3">Ringkasan Komisi</span>
                                             <div className="space-y-2">
                                                 {(() => {
@@ -1184,7 +1202,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                             </div>
                                         </div>
 
-                                        <div className="text-right ml-8">
+                                        <div className="text-right ml-0 md:ml-8 w-full md:w-auto">
                                             <span className="text-sm font-bold text-gray-500 uppercase tracking-widest block mb-1">Grand Total</span>
                                             <span className="text-2xl font-black text-zenith-orange">
                                                 {formatCurrency(
@@ -1228,40 +1246,46 @@ export default function Index({ transactions, filters, counts, employees, packag
                             </div>
                         </div>
 
-                        <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 border-t border-gray-100">
-                            <div className="flex gap-2">
-                                <PrimaryButton
-                                    onClick={saveTransaction}
-                                    className="bg-zenith-orange hover:bg-zenith-orange/90 shadow-lg shadow-zenith-orange/20"
-                                >
-                                    <span className="material-symbols-outlined text-[16px] mr-2">save</span>
-                                    Simpan Perubahan
-                                </PrimaryButton>
-                                <PrimaryButton
-                                    onClick={() => sendInvoice(selectedTransaction)}
-                                    className="bg-green-600 hover:bg-green-700 border-green-600"
-                                >
-                                    <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
-                                    Kirim Invoice (WA)
-                                </PrimaryButton>
-                                <PrimaryButton
-                                    onClick={() => copyInvoiceText(selectedTransaction)}
-                                    className="bg-blue-600 hover:bg-blue-700 border-blue-600"
-                                >
-                                    <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
-                                    Copy Text
-                                </PrimaryButton>
-                            </div>
-                            <div className="flex gap-2">
+                        <div className="mt-8 flex flex-wrap justify-between items-center gap-3 pt-6 border-t border-gray-100">
+                            {/* Left: Action buttons */}
+                            <div className="flex flex-wrap gap-2">
                                 <a
                                     href={route('admin.transaction.pdf', selectedTransaction?.id || 0)}
                                     target="_blank"
-                                    className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-full font-bold text-[10px] text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-900 border border-transparent rounded-full font-bold text-[10px] text-white uppercase tracking-widest transition-all"
                                 >
-                                    <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                                    <ArrowDownTrayIcon className="w-4 h-4" />
                                     PDF
                                 </a>
-                                <SecondaryButton onClick={() => setIsDetailModalOpen(false)}>Batal</SecondaryButton>
+                                <PrimaryButton
+                                    onClick={() => sendInvoice(selectedTransaction)}
+                                    className="bg-green-600 hover:bg-green-700 border-green-600 inline-flex items-center gap-2 whitespace-nowrap"
+                                >
+                                    <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                                    Kirim WA
+                                </PrimaryButton>
+                                <PrimaryButton
+                                    onClick={() => copyInvoiceText(selectedTransaction)}
+                                    className="bg-blue-500 hover:bg-blue-600 border-blue-500 inline-flex items-center gap-2 whitespace-nowrap"
+                                >
+                                    <ClipboardDocumentListIcon className="w-4 h-4" />
+                                    Copy Text
+                                </PrimaryButton>
+                            </div>
+
+                            {/* Right: PDF + Cancel */}
+                            <div className="flex items-center gap-2">
+
+                                <PrimaryButton
+                                    onClick={saveTransaction}
+                                    className="bg-zenith-orange hover:bg-zenith-orange/90 shadow-lg shadow-zenith-orange/20 inline-flex items-center gap-2 whitespace-nowrap"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]">save</span>
+                                    Simpan Perubahan
+                                </PrimaryButton>
+                                <SecondaryButton onClick={() => setIsDetailModalOpen(false)}>
+                                    Batal
+                                </SecondaryButton>
                             </div>
                         </div>
                     </div>
