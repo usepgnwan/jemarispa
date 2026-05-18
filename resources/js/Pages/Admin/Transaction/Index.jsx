@@ -24,6 +24,7 @@ import {
     PlusIcon,
     XMarkIcon
 } from '@heroicons/react/24/outline';
+import { Select } from '@headlessui/react';
 
 // Custom debounce function
 function debounce(func, wait) {
@@ -981,9 +982,9 @@ export default function Index({ transactions, filters, counts, employees, packag
                                         return acc;
                                     }, {})
                                 ).map(([guestIndex, items]) => (
-                                    <div key={guestIndex} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                                    <div key={guestIndex} className="bg-white border border-gray-100 rounded-2xl overflow-x-auto shadow-sm">
                                         <div className="bg-gray-50/50 px-4 py-3 border-b border-gray-100 flex flex-wrap gap-4 justify-between items-center">
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex-col w-full md:flex-row flex md:items-center md:justify-between gap-4">
                                                 <div>
                                                     <span className="text-xs font-bold text-gray-700 block">Customer ke-{guestIndex}</span>
                                                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
@@ -998,7 +999,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                 </div>
 
                                                 {/* Therapist Selector Integrated */}
-                                                <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+                                                <div className="flex-col md:flex-row flex md:items-center gap-2 md:border-l md:border-gray-200 md:pl-4 pl-0 w-full">
                                                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Terapis:</span>
                                                     <select
                                                         className="appearance-none bg-white border border-gray-200 text-[10px] font-bold text-gray-600 px-3 py-1.5 rounded-xl pr-8 focus:ring-zenith-orange focus:border-zenith-orange cursor-pointer"
@@ -1044,10 +1045,10 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-2">
+                                            <div className="gap-2">
                                                 <div className="relative">
-                                                    <select
-                                                        className="appearance-none bg-zenith-orange/10 border-none text-[9px] font-bold text-zenith-orange uppercase px-3 py-1 rounded-full pr-7 focus:ring-0 cursor-pointer"
+                                                    <Select
+                                                        className="appearance-none block w-full bg-zenith-orange/10 border-none text-[9px] font-bold text-zenith-orange uppercase px-3 py-1 rounded-full pr-7 focus:ring-0 cursor-pointer"
                                                         onChange={(e) => {
                                                             if (!e.target.value) return;
                                                             const [pkgId, durIdx] = e.target.value.split('|');
@@ -1078,83 +1079,86 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                 {pkg.title_id} ({dur.duration}) - {formatCurrency(dur.price)}
                                                             </option>
                                                         )))}
-                                                    </select>
-                                                    <PlusIcon className="w-3 h-3 text-zenith-orange absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                    </Select>
+                                                    {/* <PlusIcon className="w-3 h-3 text-zenith-orange absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" /> */}
                                                 </div>
-                                                <span className="text-[10px] font-bold text-zenith-orange uppercase">{items[0]?.guest_gender}</span>
+                                                <span className="text-[10px] font-bold text-zenith-orange uppercase">Pelanggan Request : {items[0]?.guest_gender}</span>
                                             </div>
                                         </div>
-                                        <table className="w-full text-left text-sm">
-                                            <thead>
-                                                <tr className="border-b border-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                                    <th className="px-4 py-2">Paket</th>
-                                                    <th className="px-4 py-2 text-right">Komisi</th>
-                                                    <th className="px-4 py-2 text-right">Harga</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-100">
-                                                {items.map((item, idx) => (
-                                                    <tr key={idx} className={item.isNew ? 'bg-green-50/30' : ''}>
-                                                        <td className="px-4 py-3">
-                                                            <div className="flex items-center gap-2">
-                                                                {item.isNew && <span className="bg-green-100 text-green-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">BARU</span>}
-                                                                <span className="font-medium text-gray-800">{item.package_name}</span>
-                                                                <span className="text-xs text-gray-400">({item.package_duration})</span>
-                                                                {!item.isNew && (
-                                                                    pendingDeleteItemId === item.id ? (
-                                                                        <div className="flex items-center gap-1">
+
+                                        <div class="overflow-auto overflow-x-auto">
+                                            <table className="w-full text-left text-sm">
+                                                <thead>
+                                                    <tr className="border-b border-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                        <th className="px-4 py-2">Paket</th>
+                                                        <th className="px-4 py-2 text-right">Komisi</th>
+                                                        <th className="px-4 py-2 text-right">Harga</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    {items.map((item, idx) => (
+                                                        <tr key={idx} className={item.isNew ? 'bg-green-50/30' : ''}>
+                                                            <td className="px-4 py-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    {item.isNew && <span className="bg-green-100 text-green-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">BARU</span>}
+                                                                    <span className="font-medium text-gray-800">{item.package_name}</span>
+                                                                    <span className="text-xs text-gray-400">({item.package_duration})</span>
+                                                                    {!item.isNew && (
+                                                                        pendingDeleteItemId === item.id ? (
+                                                                            <div className="flex items-center gap-1">
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        setDeletedItems([...deletedItems, item.id]);
+                                                                                        const updatedItems = selectedTransaction.items.filter(it => it.id !== item.id);
+                                                                                        setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+                                                                                        setPendingDeleteItemId(null);
+                                                                                    }}
+                                                                                    className="text-[9px] font-black text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-full transition-colors"
+                                                                                >
+                                                                                    Hapus?
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => setPendingDeleteItemId(null)}
+                                                                                    className="text-[9px] font-black text-gray-400 hover:text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 transition-colors"
+                                                                                >
+                                                                                    Batal
+                                                                                </button>
+                                                                            </div>
+                                                                        ) : (
                                                                             <button
-                                                                                onClick={() => {
-                                                                                    setDeletedItems([...deletedItems, item.id]);
-                                                                                    const updatedItems = selectedTransaction.items.filter(it => it.id !== item.id);
-                                                                                    setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
-                                                                                    setPendingDeleteItemId(null);
-                                                                                }}
-                                                                                className="text-[9px] font-black text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-full transition-colors"
+                                                                                onClick={() => setPendingDeleteItemId(item.id)}
+                                                                                className="text-red-300 hover:text-red-500 transition-colors"
+                                                                                title="Hapus paket"
                                                                             >
-                                                                                Hapus?
+                                                                                <XMarkIcon className="w-3.5 h-3.5" />
                                                                             </button>
-                                                                            <button
-                                                                                onClick={() => setPendingDeleteItemId(null)}
-                                                                                className="text-[9px] font-black text-gray-400 hover:text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 transition-colors"
-                                                                            >
-                                                                                Batal
-                                                                            </button>
-                                                                        </div>
-                                                                    ) : (
+                                                                        )
+                                                                    )}
+                                                                    {item.isNew && (
                                                                         <button
-                                                                            onClick={() => setPendingDeleteItemId(item.id)}
-                                                                            className="text-red-300 hover:text-red-500 transition-colors"
-                                                                            title="Hapus paket"
+                                                                            onClick={() => setNewItems(newItems.filter(ni => ni.tempId !== item.tempId))}
+                                                                            className="text-red-400 hover:text-red-600 transition-colors"
                                                                         >
                                                                             <XMarkIcon className="w-3.5 h-3.5" />
                                                                         </button>
-                                                                    )
-                                                                )}
-                                                                {item.isNew && (
-                                                                    <button
-                                                                        onClick={() => setNewItems(newItems.filter(ni => ni.tempId !== item.tempId))}
-                                                                        className="text-red-400 hover:text-red-600 transition-colors"
-                                                                    >
-                                                                        <XMarkIcon className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                            <div className="mt-1 flex items-center gap-2">
-                                                                <span className="text-[10px] font-bold text-green-600 uppercase tracking-tight">Terapis:</span>
-                                                                <span className="text-[10px] font-medium text-gray-500 uppercase">{item.employee?.name || employees.find(e => e.id == item.employee_id)?.name || 'Belum dipilih'}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right text-[11px] font-bold text-gray-400">
-                                                            {formatCurrency(item.therapist_commission || 0)}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right font-bold text-gray-900">
-                                                            {formatCurrency(item.price)}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                                    )}
+                                                                </div>
+                                                                <div className="mt-1 flex items-center gap-2">
+                                                                    <span className="text-[10px] font-bold text-green-600 uppercase tracking-tight">Terapis:</span>
+                                                                    <span className="text-[10px] font-medium text-gray-500 uppercase">{item.employee?.name || employees.find(e => e.id == item.employee_id)?.name || 'Belum dipilih'}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right text-[11px] font-bold text-gray-400">
+                                                                {formatCurrency(item.therapist_commission || 0)}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right font-bold text-gray-900">
+                                                                {formatCurrency(item.price)}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 ))}
 
