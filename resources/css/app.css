@@ -29,50 +29,78 @@
 }
 
 .ql-editor h1 {
-    font-size: 2.25rem !important;
+    font-size: 1.75rem !important;
     font-weight: 700 !important;
     margin-top: 1.5rem !important;
     margin-bottom: 1rem !important;
     line-height: 1.25 !important;
+    word-break: break-word !important;
 }
 
 .ql-editor h2 {
-    font-size: 1.875rem !important;
+    font-size: 1.4rem !important;
     font-weight: 700 !important;
     margin-top: 1.5rem !important;
     margin-bottom: 0.75rem !important;
     line-height: 1.3 !important;
+    word-break: break-word !important;
 }
 
 .ql-editor h3 {
-    font-size: 1.5rem !important;
+    font-size: 1.2rem !important;
     font-weight: 600 !important;
     margin-top: 1.25rem !important;
     margin-bottom: 0.5rem !important;
+    word-break: break-word !important;
+}
+
+.ql-editor h4 {
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin-top: 1.25rem !important;
+    margin-bottom: 0.5rem !important;
+    word-break: break-word !important;
+}
+
+.ql-editor h5 {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    word-break: break-word !important;
+}
+
+.ql-editor h6 {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    word-break: break-word !important;
+}
+
+@media (min-width: 768px) {
+    .ql-editor h1 {
+        font-size: 2.25rem !important;
+    }
+    .ql-editor h2 {
+        font-size: 1.875rem !important;
+    }
+    .ql-editor h3 {
+        font-size: 1.5rem !important;
+    }
+    .ql-editor h4 {
+        font-size: 1.25rem !important;
+    }
+    .ql-editor h5 {
+        font-size: 1.125rem !important;
+    }
+    .ql-editor h6 {
+        font-size: 1rem !important;
+    }
 }
 
 .ql-editor p {
     margin-bottom: 1rem !important;
-}
-
-/* Override Tailwind Preflight list styles inside Quill content */
-.ql-editor ol {
-    list-style-type: decimal !important;
-    padding-left: 1.5rem !important;
-    margin-top: 0.75rem !important;
-    margin-bottom: 0.75rem !important;
-}
-
-.ql-editor ul {
-    list-style-type: disc !important;
-    padding-left: 1.5rem !important;
-    margin-top: 0.75rem !important;
-    margin-bottom: 0.75rem !important;
-}
-
-.ql-editor li {
-    display: list-item !important;
-    margin-bottom: 0.25rem !important;
 }
 
 /* Custom Horizontal Rule style for Quill divider */
@@ -84,9 +112,94 @@
     opacity: 1 !important;
 }
 
-/* Tables spacing and alignment */
-.ql-editor table {
-    margin: 1.5rem 0 !important;
+/* Responsive padding for Quill editor inside the article */
+.ql-container.ql-snow .ql-editor {
+    padding: 0px 12px !important;
+}
+
+@media (min-width: 768px) {
+    .ql-container.ql-snow .ql-editor {
+        padding: 0px 24px !important;
+    }
+}
+
+/* Force standard browser list styles inside Quill container to bypass clipping / preflight issues */
+.ql-container.ql-snow .ql-editor ul {
+    list-style: disc inside !important;
+    padding-left: 1rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.ql-container.ql-snow .ql-editor ol {
+    list-style: decimal inside !important;
+    padding-left: 1rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+@media (min-width: 768px) {
+    .ql-container.ql-snow .ql-editor ul,
+    .ql-container.ql-snow .ql-editor ol {
+        padding-left: 1.75rem !important;
+    }
+}
+
+.ql-container.ql-snow .ql-editor li {
+    display: list-item !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.ql-container.ql-snow .ql-editor ul li {
+    list-style-type: disc !important;
+}
+
+.ql-container.ql-snow .ql-editor ol li {
+    list-style-type: decimal !important;
+}
+
+/* Hide Quill's custom pseudo-bullets to prevent double-bullet rendering */
+.ql-container.ql-snow .ql-editor li::before {
+    display: none !important;
+}
+
+/* Tables spacing, beautiful borders, and mobile responsiveness */
+.ql-container.ql-snow .ql-editor table {
+    display: block !important;
     width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-collapse: collapse !important;
+    margin: 2rem 0 !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(220, 100, 50, 0.15) !important;
+    background: white !important;
+}
+
+.ql-container.ql-snow .ql-editor th,
+.ql-container.ql-snow .ql-editor td {
+    padding: 14px 20px !important;
+    border: 1px solid rgba(220, 100, 50, 0.1) !important;
+    text-align: left !important;
+    font-size: 0.95rem !important;
+    min-width: 150px !important; /* Prevents cells from collapsing on small screens */
+    color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.ql-container.ql-snow .ql-editor th {
+    background-color: rgba(220, 100, 50, 0.06) !important;
+    color: rgb(220, 100, 50) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.85rem !important;
+    letter-spacing: 0.05em !important;
+}
+
+.ql-container.ql-snow .ql-editor tr:nth-child(even) {
+    background-color: rgba(220, 100, 50, 0.02) !important;
+}
+
+.ql-container.ql-snow .ql-editor tr:hover {
+    background-color: rgba(220, 100, 50, 0.04) !important;
 }
 

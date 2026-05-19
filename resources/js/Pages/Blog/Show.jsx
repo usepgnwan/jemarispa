@@ -132,7 +132,9 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                             </div>
 
                             <div className="max-w-none text-zenith-charcoal/70 leading-relaxed font-sans text-lg">
-                                <div className="ql-editor" style={{ padding: 0 }} dangerouslySetInnerHTML={{ __html: blog.description }} />
+                                <div className="ql-container ql-snow" style={{ border: 'none' }}>
+                                    <div className="ql-editor" dangerouslySetInnerHTML={{ __html: blog.description }} />
+                                </div>
                             </div>
 
                             {/* Share & Tags */}
