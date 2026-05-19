@@ -2,8 +2,8 @@ const CACHE_NAME = 'jemari-spa-v1';
 const ASSETS_TO_CACHE = [
   '/login',
   '/manifest.json',
-  '/images/logo-pwa-192.png',
-  '/images/logo-pwa-512.png'
+  '/images/logo-pwa-192.jpg',
+  '/images/logo-pwa-512.jpg'
 ];
 
 // Install Event

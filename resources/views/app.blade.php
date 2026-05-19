@@ -20,7 +20,7 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Jemari Spa">
-        <link rel="apple-touch-icon" href="/images/logo-pwa-192.png">
+        <link rel="apple-touch-icon" href="/images/logo-pwa-192.jpg">
 
         <!-- PWA Toast Styling -->
         <style>
@@ -173,7 +173,7 @@
             <div class="pwa-toast-content">
                 <button id="pwa-toast-close" class="pwa-toast-close">&times;</button>
                 <div class="pwa-toast-body">
-                    <img src="/images/logo-pwa-192.png" alt="Jemari Spa" class="pwa-toast-logo">
+                    <img src="/images/logo-pwa-192.jpg" alt="Jemari Spa" class="pwa-toast-logo">
                     <div class="pwa-toast-text">
                         <h4 class="pwa-toast-title">Instal Aplikasi Jemari</h4>
                         <p class="pwa-toast-desc">Instal aplikasi untuk akses dashboard & kasir yang lebih cepat, responsif, dan stabil.</p>
@@ -190,11 +190,17 @@
         <script>
             // Register Service Worker
             if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
+                const registerSW = () => {
                     navigator.serviceWorker.register('/sw.js')
                         .then(reg => console.log('Jemari PWA Service Worker registered successfully!', reg))
                         .catch(err => console.error('Jemari PWA Service Worker registration failed:', err));
-                });
+                };
+
+                if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                    registerSW();
+                } else {
+                    window.addEventListener('load', registerSW);
+                }
             }
 
             // PWA Custom Install Toast Logic
