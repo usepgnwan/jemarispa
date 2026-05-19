@@ -36,7 +36,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event (Required for PWA install prompt)
 self.addEventListener('fetch', (event) => {
-  // Let the browser handle standard requests naturally (network-first style)
+  // Only handle GET requests to avoid intercepting POST logins, API updates, or Inertia actions
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request).catch(() => {
       return caches.match(event.request);

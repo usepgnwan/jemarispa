@@ -20,7 +20,7 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="Jemari Spa">
-        <link rel="apple-touch-icon" href="/images/logo-pwa-192.jpg">
+        <link rel="apple-touch-icon" href="/images/logo-pwa-192.png">
 
         <!-- PWA Toast Styling -->
         <style>
@@ -157,6 +157,60 @@
                     transform: translateY(0) scale(1);
                 }
             }
+
+            /* Custom PWA Step-by-Step Instructions Styling */
+            .pwa-instructions-header {
+                border-bottom: 1px solid rgba(220, 100, 50, 0.1);
+                padding-bottom: 8px;
+                margin-bottom: 12px;
+            }
+
+            .pwa-step-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 10px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 12px;
+                color: #4b5563;
+                line-height: 1.45;
+            }
+
+            .pwa-step-number {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 18px;
+                height: 18px;
+                background: #dc6432;
+                color: white;
+                font-size: 10px;
+                font-weight: 600;
+                border-radius: 50%;
+                flex-shrink: 0;
+                margin-top: 1px;
+            }
+
+            .pwa-step-text {
+                flex: 1;
+            }
+
+            .pwa-step-highlight {
+                font-weight: 600;
+                color: #dc6432;
+            }
+            
+            .pwa-warning-box {
+                background: rgba(239, 68, 68, 0.06);
+                border: 1px dashed rgba(239, 68, 68, 0.25);
+                border-radius: 12px;
+                padding: 10px 12px;
+                margin-bottom: 12px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 11px;
+                color: #b91c1c;
+                line-height: 1.5;
+            }
         </style>
 
         <!-- Scripts -->
@@ -172,16 +226,35 @@
         <div id="pwa-install-toast" class="pwa-toast">
             <div class="pwa-toast-content">
                 <button id="pwa-toast-close" class="pwa-toast-close">&times;</button>
-                <div class="pwa-toast-body">
-                    <img src="/images/logo-pwa-192.jpg" alt="Jemari Spa" class="pwa-toast-logo">
-                    <div class="pwa-toast-text">
-                        <h4 class="pwa-toast-title">Instal Aplikasi Jemari</h4>
-                        <p class="pwa-toast-desc">Instal aplikasi untuk akses dashboard & kasir yang lebih cepat, responsif, dan stabil.</p>
+                
+                <!-- Main PWA Prompt View -->
+                <div id="pwa-main-view">
+                    <div class="pwa-toast-body">
+                        <img src="/images/logo-pwa-192.png" alt="Jemari Spa" class="pwa-toast-logo">
+                        <div class="pwa-toast-text">
+                            <h4 class="pwa-toast-title">Instal Aplikasi Jemari</h4>
+                            <p class="pwa-toast-desc">Instal aplikasi untuk akses dashboard & kasir yang lebih cepat, responsif, dan stabil.</p>
+                        </div>
+                    </div>
+                    <div class="pwa-toast-actions">
+                        <button id="pwa-toast-btn-dismiss" class="pwa-toast-btn pwa-toast-btn-secondary">Nanti saja</button>
+                        <button id="pwa-toast-btn-action" class="pwa-toast-btn pwa-toast-btn-primary">Instal</button>
                     </div>
                 </div>
-                <div class="pwa-toast-actions">
-                    <button id="pwa-toast-btn-dismiss" class="pwa-toast-btn pwa-toast-btn-secondary">Nanti saja</button>
-                    <button id="pwa-toast-btn-action" class="pwa-toast-btn pwa-toast-btn-primary">Instal</button>
+
+                <!-- Custom Step-by-Step Instructions View (Dynamic) -->
+                <div id="pwa-instructions-view" style="display: none;">
+                    <div class="pwa-instructions-header">
+                        <h4 class="pwa-toast-title">Panduan Pemasangan</h4>
+                        <p class="pwa-toast-desc" style="margin-bottom: 0;">Langkah mudah menginstal Aplikasi Jemari Spa:</p>
+                    </div>
+                    <div class="pwa-instructions-steps" id="pwa-instructions-steps-content">
+                        <!-- Instantly injected by javascript -->
+                    </div>
+                    <div class="pwa-toast-actions" style="margin-top: 14px; gap: 8px;">
+                        <button id="pwa-toast-btn-back" class="pwa-toast-btn pwa-toast-btn-secondary" style="padding: 6px 14px; font-size: 12px;">&larr; Kembali</button>
+                        <button id="pwa-toast-btn-gotit" class="pwa-toast-btn pwa-toast-btn-primary" style="padding: 6px 14px; font-size: 12px; background: #dc6432;">Saya Mengerti</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -209,6 +282,13 @@
             const closeBtn = document.getElementById('pwa-toast-close');
             const dismissBtn = document.getElementById('pwa-toast-btn-dismiss');
             const actionBtn = document.getElementById('pwa-toast-btn-action');
+            
+            // Interactive instruction elements
+            const mainView = document.getElementById('pwa-main-view');
+            const instructionsView = document.getElementById('pwa-instructions-view');
+            const instructionsStepsContent = document.getElementById('pwa-instructions-steps-content');
+            const backBtn = document.getElementById('pwa-toast-btn-back');
+            const gotitBtn = document.getElementById('pwa-toast-btn-gotit');
 
             function showToast() {
                 // Bypass the 24-hour dismissal limit on localhost/127.0.0.1 for frictionless testing!
@@ -229,11 +309,18 @@
                 toast.classList.add('show');
             }
 
+            function resetToastViews() {
+                instructionsView.style.display = 'none';
+                mainView.style.display = 'block';
+            }
+
             function hideToast(userDismissed = false) {
                 toast.classList.remove('show');
                 if (userDismissed) {
                     localStorage.setItem('pwa-prompt-dismissed', Date.now());
                 }
+                // Reset views after transition animation finishes (400ms)
+                setTimeout(resetToastViews, 400);
             }
 
             function checkRouteAndPrompt() {
@@ -264,6 +351,83 @@
                 checkRouteAndPrompt();
             });
 
+            // Render Dynamic step-by-step instructions inside the toast
+            function showInstallInstructions() {
+                const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+                const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                const isAndroid = /Android/i.test(userAgent);
+                const isSecureOrigin = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+                let html = '';
+
+                if (!isSecureOrigin) {
+                    html = `
+                        <div class="pwa-warning-box">
+                            <strong>⚠️ Koneksi Tidak Aman (HTTP)</strong><br>
+                            PWA memerlukan koneksi aman (<strong>HTTPS</strong>) atau <strong>localhost</strong>. Karena Anda mengakses melalui <span class="pwa-step-highlight">${window.location.hostname}</span> via HTTP biasa, browser Anda memblokir fitur instalasi.
+                        </div>
+                        <div class="pwa-step-item">
+                            <div class="pwa-step-number">1</div>
+                            <div class="pwa-step-text">Gunakan protokol <span class="pwa-step-highlight">https://</span> di server produksi.</div>
+                        </div>
+                        <div class="pwa-step-item">
+                            <div class="pwa-step-number">2</div>
+                            <div class="pwa-step-text">Jika Anda testing di HP menggunakan IP lokal (misalnya <span class="pwa-step-highlight">192.168.x.x</span>), browser otomatis memblokir instalasi PWA karena bukan koneksi HTTPS. Gunakan <span class="pwa-step-highlight">localhost</span> di komputer Anda.</div>
+                        </div>
+                    `;
+                } else if (isIOS) {
+                    html = `
+                        <div class="pwa-step-item" style="margin-top: 8px;">
+                            <div class="pwa-step-number">1</div>
+                            <div class="pwa-step-text">Ketuk tombol <strong>Bagikan / Share</strong> <i class="fa-solid fa-arrow-up-from-bracket pwa-step-highlight"></i> di bagian bawah layar Safari Anda.</div>
+                        </div>
+                        <div class="pwa-step-item">
+                            <div class="pwa-step-number">2</div>
+                            <div class="pwa-step-text">Gulir ke bawah dan ketuk opsi <strong>"Tambahkan ke Layar Utama" (Add to Home Screen)</strong> <i class="fa-regular fa-square-plus pwa-step-highlight"></i>.</div>
+                        </div>
+                        <div class="pwa-step-item">
+                            <div class="pwa-step-number">3</div>
+                            <div class="pwa-step-text">Ketuk tombol <strong>"Tambah" (Add)</strong> di pojok kanan atas untuk memasang aplikasi Jemari Spa di layar HP Anda.</div>
+                        </div>
+                    `;
+                } else if (isAndroid) {
+                    html = `
+                        <div class="pwa-step-item" style="margin-top: 8px;">
+                            <div class="pwa-step-number">1</div>
+                            <div class="pwa-step-text">Ketuk tombol menu <strong>Tiga Titik</strong> <i class="fa-solid fa-ellipsis-vertical pwa-step-highlight"></i> di pojok kanan atas Google Chrome.</div>
+                        </div>
+                        <div class="pwa-step-item">
+                            <div class="pwa-step-number">2</div>
+                            <div class="pwa-step-text">Pilih opsi <strong>"Instal aplikasi" (Install app)</strong> atau <strong>"Tambahkan ke Layar Utama"</strong>.</div>
+                        </div>
+                        <div class="pwa-step-item">
+                            <div class="pwa-step-number">3</div>
+                            <div class="pwa-step-text">Konfirmasi dengan mengeklik tombol <strong>"Instal" (Install)</strong> pada dialog konfirmasi yang muncul.</div>
+                        </div>
+                    `;
+                } else {
+                    // Desktop Chrome / Edge / Safari / Firefox
+                    html = `
+                        <div class="pwa-step-item" style="margin-top: 8px;">
+                            <div class="pwa-step-number">1</div>
+                            <div class="pwa-step-text">Klik ikon <strong>Pasang / Install</strong> <i class="fa-solid fa-download pwa-step-highlight"></i> atau tombol tambah <i class="fa-solid fa-plus pwa-step-highlight"></i> yang berada di pojok kanan atas kolom alamat (URL bar) browser Anda.</div>
+                        </div>
+                        <div class="pwa-step-item">
+                            <div class="pwa-step-number">2</div>
+                            <div class="pwa-step-text">Klik ikon tersebut, lalu klik tombol konfirmasi <strong>"Instal"</strong>.</div>
+                        </div>
+                        <div class="pwa-step-item">
+                            <div class="pwa-step-number">3</div>
+                            <div class="pwa-step-text">Aplikasi Jemari Spa akan langsung terpasang di komputer Anda dan siap dibuka kapan saja.</div>
+                        </div>
+                    `;
+                }
+
+                instructionsStepsContent.innerHTML = html;
+                mainView.style.display = 'none';
+                instructionsView.style.display = 'block';
+            }
+
             // Action: Install App
             actionBtn.addEventListener('click', async () => {
                 if (deferredPrompt) {
@@ -275,10 +439,19 @@
                     console.log(`User installation choice: ${outcome}`);
                     deferredPrompt = null;
                 } else {
-                    // Fallback helper in case app is already installed or browser is waiting for installation handshake
-                    alert("Aplikasi Jemari Home Spa sudah siap terpasang! Jika dialog instalasi tidak muncul secara otomatis, Anda dapat menginstalnya dengan mudah melalui ikon pasang (instal) di pojok kanan atas kolom alamat browser Anda (URL bar).");
-                    hideToast(true);
+                    // Native prompt unavailable: Show beautiful, context-aware steps!
+                    showInstallInstructions();
                 }
+            });
+
+            // Interactive Navigation: Back & Got It
+            backBtn.addEventListener('click', () => {
+                instructionsView.style.display = 'none';
+                mainView.style.display = 'block';
+            });
+
+            gotitBtn.addEventListener('click', () => {
+                hideToast(true);
             });
 
             // Actions: Dismiss/Close
