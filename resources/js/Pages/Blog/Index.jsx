@@ -4,6 +4,7 @@ import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
 
+import 'quill-table-better/dist/quill-table-better.css';
 const translations = {
     'ID': {
         metaTitle: 'Blog & Tips Kesehatan - Jemari Spa Sanctuary',
@@ -195,8 +196,8 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                     key={i}
                                     href={link.url || '#'}
                                     className={`h-10 min-w-[40px] px-3 rounded-full flex items-center justify-center text-sm font-bold transition-all ${link.active
-                                            ? 'bg-zenith-orange text-white shadow-lg shadow-zenith-orange/20'
-                                            : 'border border-zenith-orange/10 text-zenith-charcoal/40 hover:bg-zenith-orange/5'
+                                        ? 'bg-zenith-orange text-white shadow-lg shadow-zenith-orange/20'
+                                        : 'border border-zenith-orange/10 text-zenith-charcoal/40 hover:bg-zenith-orange/5'
                                         } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                 />

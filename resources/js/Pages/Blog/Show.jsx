@@ -4,6 +4,10 @@ import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
 
+// Import Quill & Quill-table-better styles for correct frontend rendering
+import 'quill/dist/quill.snow.css';
+import 'quill-table-better/dist/quill-table-better.css';
+
 const translations = {
     'ID': {
         recommendedStories: 'Rekomendasi Cerita',
@@ -127,8 +131,8 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                                 <img src={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/services.jpg'} className="w-full h-full object-cover" alt={blog.title} />
                             </div>
 
-                            <div className="prose prose-zenith max-w-none text-zenith-charcoal/70 leading-relaxed font-sans text-lg">
-                                <div dangerouslySetInnerHTML={{ __html: blog.description }} />
+                            <div className="max-w-none text-zenith-charcoal/70 leading-relaxed font-sans text-lg">
+                                <div className="ql-editor" style={{ padding: 0 }} dangerouslySetInnerHTML={{ __html: blog.description }} />
                             </div>
 
                             {/* Share & Tags */}

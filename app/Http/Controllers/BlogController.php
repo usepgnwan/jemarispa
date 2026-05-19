@@ -124,6 +124,9 @@ class BlogController extends Controller
                 Storage::disk('public')->delete($blog->thumbnail);
             }
             $validated['thumbnail'] = $this->compressAndSaveImage($request->file('thumbnail'));
+        } else {
+            // Keep the existing thumbnail if no new file was uploaded
+            unset($validated['thumbnail']);
         }
 
         $blog->update($validated);

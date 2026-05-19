@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputError from '@/Components/InputError';
@@ -7,8 +7,7 @@ import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { PhotoIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import QuillEditorV2 from '@/Components/QuillEditorV2';
 
 export default function Create() {
     const [imagePreview, setImagePreview] = useState(null);
@@ -45,6 +44,8 @@ export default function Create() {
             forceFormData: true,
         });
     };
+
+
 
     return (
         <AuthenticatedLayout>
@@ -100,8 +101,7 @@ export default function Create() {
                                     <div>
                                         <InputLabel htmlFor="description" value="Isi Artikel" />
                                         <div className="mt-2">
-                                            <ReactQuill 
-                                                theme="snow" 
+                                            <QuillEditorV2 
                                                 value={data.description} 
                                                 onChange={(content) => setData('description', content)}
                                                 className="bg-white h-[500px] mb-12 rounded-lg"
