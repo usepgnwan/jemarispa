@@ -22,9 +22,9 @@ class BlogController extends Controller
         $blogs = Blog::query()
             ->with('user')
             ->when($search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%")
-                      ->orWhere('tag', 'like', "%{$search}%")
-                      ->orWhere('type_package', 'like', "%{$search}%");
+                $query->where('title', 'ilike', "%{$search}%")
+                      ->orWhere('tag', 'ilike', "%{$search}%")
+                      ->orWhere('type_package', 'ilike', "%{$search}%");
             })
             ->latest()
             ->paginate($limit)
@@ -43,9 +43,9 @@ class BlogController extends Controller
         $blogs = Blog::query()
             ->with('user')
             ->when($search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%")
-                      ->orWhere('tag', 'like', "%{$search}%")
-                      ->orWhere('type_package', 'like', "%{$search}%");
+                $query->where('title', 'ilike', "%{$search}%")
+                      ->orWhere('tag', 'ilike', "%{$search}%")
+                      ->orWhere('type_package', 'ilike', "%{$search}%");
             })
             ->latest()
             ->paginate(9)

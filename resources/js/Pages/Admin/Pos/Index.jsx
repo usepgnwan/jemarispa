@@ -339,7 +339,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         }
     };
 
-    const getInvoiceMessage = (transaction) => {
+    const getInvoiceMessageAsync = async (transaction) => {
         const rawTemplate = app_settings?.template_invoice || `Halo Kak [name], terlampir invoice [invoice_no]...`;
         const formatCurrency = (val) => `Rp ${parseFloat(val).toLocaleString('id-ID')}`;
 
@@ -358,6 +358,21 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         const safeOrderNumber = transaction.order_number.replace(/\//g, '-');
         const link = `${window.location.origin}/invoice/${safeOrderNumber}`;
 
+        let message = rawTemplate;
+        message = message.replace(/<\/p><p>/g, '\n').replace(/<p>/g, '').replace(/<\/p>/g, '\n').replace(/<br\s*\/?>/g, '\n').replace(/&nbsp;/g, ' ').replace(/<[^>]*>?/gm, '');
+
+        let linkReview = '';
+        if (message.includes('[link_review]')) {
+            try {
+                const response = await axios.post(route('admin.transaction.review_link', transaction.id));
+                if (response.data.success) {
+                    linkReview = response.data.link;
+                }
+            } catch (err) {
+                console.error('Failed to generate review link:', err);
+            }
+        }
+
         const waData = {
             name: transaction.customer_name,
             invoice_no: transaction.order_number,
@@ -365,23 +380,21 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
             transport: formatCurrency(transaction.transport_fee || 0),
             discount: transaction.discount_amount > 0 ? `-${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)` : '',
             total: formatCurrency(transaction.total_price),
-            link: link
+            link: link,
+            link_review: linkReview
         };
 
-        let message = rawTemplate;
-        message = message.replace(/<\/p><p>/g, '\n').replace(/<p>/g, '').replace(/<\/p>/g, '\n').replace(/<br\s*\/?>/g, '\n').replace(/&nbsp;/g, ' ').replace(/<[^>]*>?/gm, '');
-
         for (const key in waData) {
-            message = message.split(`[${key}]`).join(waData[key]);
+            message = message.split(`[${key}]`).join(waData[key] || '');
         }
 
         return message;
     };
 
-    const copyInvoiceText = (transaction) => {
+    const copyInvoiceText = async (transaction) => {
         const target = transaction || lastTransaction;
         if (!target) return;
-        const message = getInvoiceMessage(target);
+        const message = await getInvoiceMessageAsync(target);
 
         navigator.clipboard.writeText(message).then(() => {
             showToast('Teks invoice berhasil disalin!');
@@ -391,9 +404,9 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         });
     };
 
-    const sendInvoice = (transaction) => {
+    const sendInvoice = async (transaction) => {
         const phone = transaction.phone || app_settings?.phone || '';
-        const message = getInvoiceMessage(transaction);
+        const message = await getInvoiceMessageAsync(transaction);
         const encodedMessage = encodeURIComponent(message);
 
         if (!phone) {

@@ -24,8 +24,10 @@ import {
     CreditCardIcon,
     ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
+import ReactSelect from 'react-select';
 
 export default function Calendar({ auth, events, summary, employees, packages, app_settings }) {
+    console.log(packages)
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [newItems, setNewItems] = useState([]);
@@ -124,44 +126,72 @@ export default function Calendar({ auth, events, summary, employees, packages, a
         });
     };
 
-    const recalculateCommission = (guestIndex) => {
+    const recalculateCommission = (guestIndex, providedNewItems = null, providedSelectedItems = null) => {
         if (!packages || !selectedTransaction) return;
 
-        const guestItems = [...selectedTransaction.items, ...newItems].filter(item => item.guest_index == guestIndex);
-        let totalCommission = 0;
+        const currentNewItems = providedNewItems || newItems || [];
+        const currentSelectedItems = providedSelectedItems || selectedTransaction.items || [];
 
-        guestItems.forEach(item => {
-            const pkg = packages.find(p =>
-                item.package_name === p.title_id ||
-                (item.package_name && item.package_name.startsWith(p.title_id))
-            );
+        const updateItemCommission = (item) => {
+            let pkg = packages.find(p => item.package_name === p.title_id);
+            if (!pkg && item.package_name) {
+                pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
+            }
 
             if (pkg) {
-                let cleanDuration = item.package_duration || '';
-                if (typeof cleanDuration === 'number') cleanDuration = cleanDuration.toString();
-                cleanDuration = cleanDuration.replace(/ Menit Menit/g, ' Menit');
+                let duration = pkg.durations.find(d => d.duration === item.package_duration);
 
-                if (cleanDuration && !cleanDuration.includes(' Menit')) {
-                    const match = cleanDuration.match(/^\d+/);
-                    if (match) cleanDuration = match[0] + ' Menit';
+                if (!duration) {
+                    let cleanDuration = item.package_duration || '';
+                    if (typeof cleanDuration === 'number') cleanDuration = cleanDuration.toString();
+                    cleanDuration = cleanDuration.replace(/ Menit Menit/g, ' Menit');
+
+                    if (cleanDuration && !cleanDuration.includes(' Menit')) {
+                        const match = cleanDuration.match(/^\d+/);
+                        if (match) cleanDuration = match[0] + ' Menit';
+                    }
+
+                    duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
                 }
+                
+                console.log("UPDATE_ITEM_COMMISSION", { item_package: item.package_name, pkg: pkg.title_id, duration: duration?.duration, commission: duration?.commission });
 
-                const duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
                 if (duration) {
-                    totalCommission += parseFloat(duration.commission) || 0;
+                    const parsedCommission = parseFloat(duration.commission) || 0;
+                    console.log("UPDATE_ITEM_COMMISSION FOUND", { pkg: pkg.title_id, duration: duration.duration, commissionStr: duration.commission, parsedCommission });
+                    return { ...item, therapist_commission: parsedCommission };
+                } else {
+                    console.log("UPDATE_ITEM_COMMISSION DURATION NOT FOUND", { item_package_duration: item.package_duration });
                 }
+            } else {
+                console.log("UPDATE_ITEM_COMMISSION PKG NOT FOUND", { item_package: item.package_name });
             }
+            return item;
+        };
+
+        const updatedItems = currentSelectedItems.map(it => {
+            if (it.guest_index == guestIndex) {
+                const updated = updateItemCommission(it);
+                console.log("AFTER UPDATE ITEM", updated);
+                return updated;
+            }
+            return it;
+        });
+        const updatedNewItems = currentNewItems.map(ni => {
+            if (ni.guest_index == guestIndex) {
+                const updated = updateItemCommission(ni);
+                console.log("AFTER UPDATE NEW ITEM", updated);
+                return updated;
+            }
+            return ni;
         });
 
-        const updatedItems = (selectedTransaction.items || []).map(it =>
-            it.guest_index == guestIndex ? { ...it, therapist_commission: totalCommission } : it
-        );
-        const updatedNewItems = (newItems || []).map(ni =>
-            ni.guest_index == guestIndex ? { ...ni, therapist_commission: totalCommission } : ni
-        );
+        // Build full items list: since updatedItems maps over all items, it already contains the full list
+        const allSelectedItems = updatedItems;
+        const allNewItems = updatedNewItems;
 
-        setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
-        setNewItems(updatedNewItems);
+        setSelectedTransaction({ ...selectedTransaction, items: allSelectedItems });
+        setNewItems(allNewItems);
     };
 
     const copyInvoiceText = async (transaction) => {
@@ -209,7 +239,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
 
     const prepareInvoiceText = async (transaction) => {
         if (!transaction) return '';
-        
+
         let message = app_settings?.template_invoice || `Halo, Kak [name],\n\nTerlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :\n\n[details]\n\nBiaya Transport : [transport]\n\nTotal Pembayaran : [total]\n\nUntuk file invoice bisa di download di sini [link]\n\n-\n\nPembayaran bisa melalui terapis kami atau transfer melalui rekening berikut :\n\nBCA a.n Acep Dani : 7772554756\n(Kirimkan bukti transfer, dan nama pemilik rekening setelah melakukan pembayaran)\n\n-\n\nUntuk kritik dan saran, silahkan lampirkan di link berikut\n[link_review]\n\nTerima kasih telah menggunakan jasa Jemari Home Spa\n\njemarihomespa.com`;
 
         let linkReview = '';
@@ -355,7 +385,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
 
         dayEvents.forEach(event => {
             const items = event.extendedProps.items || [];
-            
+
             // 1. Calculate total duration PER GUEST for this event
             const totalDurationPerGuest = {};
             items.forEach(item => {
@@ -369,14 +399,14 @@ export default function Calendar({ auth, events, summary, employees, packages, a
             items.forEach(item => {
                 const therapistName = item.employee?.name || 'Belum terpilih terapis';
                 const gIdx = item.guest_index || 1;
-                
+
                 if (!therapistsInEvent[therapistName]) therapistsInEvent[therapistName] = new Set();
                 therapistsInEvent[therapistName].add(gIdx);
             });
 
             Object.entries(therapistsInEvent).forEach(([therapistName, guestIndices]) => {
                 if (!groups[therapistName]) groups[therapistName] = [];
-                
+
                 guestIndices.forEach(gIdx => {
                     const startTime = event.extendedProps.schedule_time || '00:00';
                     const duration = totalDurationPerGuest[gIdx] || 0;
@@ -599,7 +629,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                         const items = arg.event.extendedProps.items || [];
                                         const therapistNames = [...new Set(items.map(item => item.employee?.name).filter(Boolean))].join(', ');
                                         const displayTherapist = therapistNames || 'Belum dipilih';
-                                        
+
                                         // Calculate max duration for this booking
                                         const guestDurations = {};
                                         items.forEach(item => {
@@ -607,10 +637,10 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                             guestDurations[gIdx] = (guestDurations[gIdx] || 0) + parseInt(item.package_duration || 0);
                                         });
                                         const maxDuration = Math.max(...Object.values(guestDurations), 0);
-                                        
+
                                         const startTime = arg.event.extendedProps.schedule_time || '00:00';
                                         const endTime = calculateEndTime(startTime, maxDuration);
-                                        
+
                                         return (
                                             <div className="flex flex-col gap-0.5 min-w-0 overflow-hidden leading-tight py-0.5">
                                                 <span className="shrink-0 text-[8px] opacity-75">{startTime.substring(0, 5).replace('.', ':')} - {endTime}</span>
@@ -694,17 +724,22 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                         const currentData = isEditing ? selectedTransaction : selectedEvent;
                                         if (!currentData) return null;
 
-                                        // Group items by guest_index
-                                        const allItems = isEditing 
-                                            ? [...(selectedTransaction.items || []), ...newItems].filter(it => !deletedItems.includes(it.id))
-                                            : (selectedEvent.items || []);
+                                        const originalItems = [...(selectedTransaction.items || []), ...newItems];
+                                        const allGuestIndices = [...new Set(originalItems.map(it => it.guest_index || 1))];
 
-                                        const byGuest = allItems.reduce((acc, item) => {
-                                            const g = item.guest_index || 1;
-                                            if (!acc[g]) acc[g] = [];
-                                            acc[g].push(item);
+                                        const byGuest = allGuestIndices.reduce((acc, g) => {
+                                            acc[g] = [];
                                             return acc;
                                         }, {});
+
+                                        const activeItems = isEditing
+                                            ? originalItems.filter(it => !deletedItems.includes(it.id))
+                                            : (selectedEvent.items || []);
+
+                                        activeItems.forEach(item => {
+                                            const g = item.guest_index || 1;
+                                            if (byGuest[g]) byGuest[g].push(item);
+                                        });
 
                                         const startTime = (currentData.schedule_time || '00:00').substring(0, 5).replace('.', ':');
 
@@ -731,7 +766,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                         </div>
                                                         <div className="flex gap-2">
                                                             {!isEditing && (
-                                                                <button 
+                                                                <button
                                                                     onClick={() => setIsEditing(true)}
                                                                     className="flex items-center gap-2 px-4 py-2 bg-zenith-orange/10 text-zenith-orange rounded-xl text-xs font-bold hover:bg-zenith-orange/20 transition-all"
                                                                 >
@@ -754,17 +789,17 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jadwal</p>
                                                             {isEditing ? (
                                                                 <div className="flex items-center gap-2 mt-1">
-                                                                    <input 
+                                                                    <input
                                                                         type="date"
                                                                         className="bg-transparent border-none p-0 text-xs font-bold text-gray-900 focus:ring-0 cursor-pointer"
                                                                         value={selectedTransaction.schedule_date || ''}
-                                                                        onChange={(e) => setSelectedTransaction({...selectedTransaction, schedule_date: e.target.value})}
+                                                                        onChange={(e) => setSelectedTransaction({ ...selectedTransaction, schedule_date: e.target.value })}
                                                                     />
-                                                                    <input 
+                                                                    <input
                                                                         type="time"
                                                                         className="bg-transparent border-none p-0 text-xs font-bold text-gray-900 focus:ring-0 cursor-pointer"
                                                                         value={selectedTransaction.schedule_time || ''}
-                                                                        onChange={(e) => setSelectedTransaction({...selectedTransaction, schedule_time: e.target.value})}
+                                                                        onChange={(e) => setSelectedTransaction({ ...selectedTransaction, schedule_time: e.target.value })}
                                                                     />
                                                                 </div>
                                                             ) : (
@@ -857,24 +892,39 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                                         <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-gray-200 pt-3 sm:pt-0 sm:pl-4">
                                                                             <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Terapis:</span>
                                                                             {isEditing ? (
-                                                                                <select 
-                                                                                    className="appearance-none bg-white border border-gray-200 text-[10px] font-bold text-gray-600 px-3 py-1 rounded-xl pr-8 focus:ring-zenith-orange focus:border-zenith-orange cursor-pointer"
-                                                                                    value={items[0]?.employee_id || ''}
-                                                                                    onChange={(e) => {
-                                                                                        const newId = e.target.value;
-                                                                                        const updatedItems = selectedTransaction.items.map(it => 
+                                                                                <ReactSelect
+                                                                                    className="text-[10px] font-bold text-gray-600 min-w-[150px] flex-1"
+                                                                                    styles={{
+                                                                                        control: (base) => ({
+                                                                                            ...base,
+                                                                                            borderRadius: '0.75rem',
+                                                                                            borderColor: '#e5e7eb',
+                                                                                            minHeight: '34px',
+                                                                                            boxShadow: 'none',
+                                                                                            '&:hover': { borderColor: '#F97316' }
+                                                                                        }),
+                                                                                        option: (base) => ({ ...base, fontSize: '12px' }),
+                                                                                        menuPortal: (base) => ({ ...base, zIndex: 9999 })
+                                                                                    }}
+                                                                                    menuPortalTarget={document.body}
+                                                                                    menuPosition="fixed"
+                                                                                    placeholder="Pilih Terapis..."
+                                                                                    options={employees.map(emp => ({ value: emp.id, label: emp.name }))}
+                                                                                    value={employees.filter(emp => emp.id == (items[0]?.employee_id || '')).map(emp => ({ value: emp.id, label: emp.name }))[0] || null}
+                                                                                    onChange={(selectedOption) => {
+                                                                                        const newId = selectedOption ? selectedOption.value : '';
+                                                                                        const updatedItems = selectedTransaction.items.map(it =>
                                                                                             it.guest_index == guestIdx ? { ...it, employee_id: newId } : it
                                                                                         );
-                                                                                        const updatedNewItems = newItems.map(ni => 
+                                                                                        const updatedNewItems = newItems.map(ni =>
                                                                                             ni.guest_index == guestIdx ? { ...ni, employee_id: newId } : ni
                                                                                         );
-                                                                                        setSelectedTransaction({...selectedTransaction, items: updatedItems});
+                                                                                        setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
                                                                                         setNewItems(updatedNewItems);
                                                                                     }}
-                                                                                >
-                                                                                    <option value="">Pilih...</option>
-                                                                                    {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
-                                                                                </select>
+                                                                                    isClearable
+                                                                                    isSearchable
+                                                                                />
                                                                             ) : (
                                                                                 <span className={`text-[10px] font-bold px-3 py-1 rounded-xl border ${therapistName === 'Belum dipilih' ? 'text-red-500 bg-red-50 border-red-100' : 'text-gray-700 bg-white border-gray-200'}`}>
                                                                                     {therapistName}
@@ -885,11 +935,40 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                                     <div className="flex items-center gap-2">
                                                                         {isEditing && (
                                                                             <div className="relative">
-                                                                                <select
-                                                                                    className="appearance-none bg-zenith-orange/10 border-none text-[9px] font-bold text-zenith-orange uppercase px-3 py-1 rounded-full pr-7 focus:ring-0 cursor-pointer"
-                                                                                    onChange={(e) => {
-                                                                                        if (!e.target.value) return;
-                                                                                        const [pkgId, durIdx] = e.target.value.split('|');
+                                                                                <ReactSelect
+                                                                                    className="min-w-[200px]"
+                                                                                    styles={{
+                                                                                        control: (base) => ({
+                                                                                            ...base,
+                                                                                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                                                                                            border: 'none',
+                                                                                            borderRadius: '9999px',
+                                                                                            minHeight: '28px',
+                                                                                            fontSize: '9px',
+                                                                                            fontWeight: 'bold',
+                                                                                            textTransform: 'uppercase',
+                                                                                            color: '#F97316',
+                                                                                            boxShadow: 'none'
+                                                                                        }),
+                                                                                        placeholder: (base) => ({ ...base, color: '#F97316' }),
+                                                                                        singleValue: (base) => ({ ...base, color: '#F97316' }),
+                                                                                        option: (base) => ({ ...base, fontSize: '12px', textTransform: 'none' }),
+                                                                                        menuPortal: (base) => ({ ...base, zIndex: 9999 })
+                                                                                    }}
+                                                                                    menuPortalTarget={document.body}
+                                                                                    menuPosition="fixed"
+                                                                                    placeholder="+ Paket"
+                                                                                    options={(packages || []).filter(p => !p.is_signature).map(pkg => ({
+                                                                                        label: pkg.title_id,
+                                                                                        options: (pkg.durations || []).map((dur, dIdx) => ({
+                                                                                            value: `${pkg.id}|${dIdx}`,
+                                                                                            label: `${pkg.title_id} (${dur.duration})`
+                                                                                        }))
+                                                                                    }))}
+                                                                                    value={null}
+                                                                                    onChange={(selectedOption) => {
+                                                                                        if (!selectedOption) return;
+                                                                                        const [pkgId, durIdx] = selectedOption.value.split('|');
                                                                                         const pkg = packages.find(p => p.id == pkgId);
                                                                                         const duration = pkg.durations[durIdx];
                                                                                         const newItem = {
@@ -902,29 +981,12 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                                                             isNew: true,
                                                                                             tempId: Date.now() + Math.random()
                                                                                         };
-                                                                                        setNewItems([...newItems, newItem]);
-                                                                                        e.target.value = '';
+                                                                                        recalculateCommission(guestIdx, [...newItems, newItem], selectedTransaction.items);
                                                                                     }}
-                                                                                >
-                                                                                    <option value="">+ Paket</option>
-                                                                                    {(packages || []).map(pkg => (pkg.durations || []).map((dur, dIdx) => (
-                                                                                        <option key={`${pkg.id}-${dIdx}`} value={`${pkg.id}|${dIdx}`}>
-                                                                                            {pkg.title_id} ({dur.duration})
-                                                                                        </option>
-                                                                                    )))}
-                                                                                </select>
-                                                                                <PlusIcon className="w-3 h-3 text-zenith-orange absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                                                    isSearchable
+                                                                                />
                                                                             </div>
                                                                         )}
-                                                                        <div className="bg-gray-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-                                                                            <span className="text-[8px] text-gray-400 font-bold uppercase">Komisi</span>
-                                                                            <span className="text-[10px] font-black text-gray-700">{formatCurrency(guestCommission)}</span>
-                                                                            {isEditing && (
-                                                                                <button onClick={() => recalculateCommission(guestIdx)} className="ml-1 p-0.5 hover:text-zenith-orange transition-colors">
-                                                                                    <ArrowPathIcon className="w-3 h-3" />
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
                                                                     </div>
                                                                 </div>
 
@@ -935,20 +997,87 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                                             <tr key={idx} className={item.isNew ? 'bg-green-50/30' : ''}>
                                                                                 <td className="px-4 py-2.5">
                                                                                     <div className="flex items-center gap-2">
-                                                                                        {item.isNew && <span className="bg-green-100 text-green-600 px-1 py-0.5 rounded text-[7px] font-black uppercase">BARU</span>}
-                                                                                        <span className="font-semibold text-gray-800">{item.package_name}</span>
+                                                                                        {item.isNew && <span className="bg-green-100 text-green-600 px-1 py-0.5 rounded text-[7px] font-black uppercase shrink-0">BARU</span>}
+                                                                                        {!isEditing ? (
+                                                                                            <span className="font-semibold text-gray-800">{item.package_name}</span>
+                                                                                        ) : (
+                                                                                            <ReactSelect
+                                                                                                className="w-full min-w-[180px] sm:min-w-[220px]"
+                                                                                                styles={{
+                                                                                                    control: (base) => ({
+                                                                                                        ...base,
+                                                                                                        borderRadius: '0.5rem',
+                                                                                                        borderColor: '#f3f4f6',
+                                                                                                        backgroundColor: '#ffffff',
+                                                                                                        minHeight: '32px',
+                                                                                                        boxShadow: 'none',
+                                                                                                        '&:hover': { borderColor: '#d1d5db' }
+                                                                                                    }),
+                                                                                                    singleValue: (base) => ({
+                                                                                                        ...base,
+                                                                                                        fontSize: '13px',
+                                                                                                        fontWeight: 600,
+                                                                                                        color: '#374151'
+                                                                                                    }),
+                                                                                                    option: (base) => ({ ...base, fontSize: '12px' }),
+                                                                                                    menuPortal: (base) => ({ ...base, zIndex: 9999 })
+                                                                                                }}
+                                                                                                menuPortalTarget={document.body}
+                                                                                                menuPosition="fixed"
+                                                                                                options={(packages || []).filter(p => !p.is_signature).map(pkg => ({
+                                                                                                    label: pkg.title_id,
+                                                                                                    options: (pkg.durations || []).map((dur, dIdx) => ({
+                                                                                                        value: `${pkg.id}|${dIdx}`,
+                                                                                                        label: `${pkg.title_id} (${dur.duration})`
+                                                                                                    }))
+                                                                                                }))}
+                                                                                                value={{
+                                                                                                    value: `${packages.find(p => p.title_id === item.package_name || (item.package_name && item.package_name.startsWith(p.title_id)))?.id || ''}|${packages.find(p => p.title_id === item.package_name || (item.package_name && item.package_name.startsWith(p.title_id)))?.durations.findIndex(d => { let c = item.package_duration || ''; c = c.replace(/ Menit Menit/g, ' Menit'); if (c && !c.includes(' Menit')) { const m = c.match(/^\d+/); if (m) c = m[0] + ' Menit'; } return d.duration === c; }) ?? ''}`,
+                                                                                                    label: `${item.package_name} (${item.package_duration})`
+                                                                                                }}
+                                                                                                onChange={(selectedOption) => {
+                                                                                                    if (!selectedOption) return;
+                                                                                                    const [pkgId, durIdx] = selectedOption.value.split('|');
+                                                                                                    const pkg = packages.find(p => p.id == pkgId);
+                                                                                                    if (!pkg) return;
+                                                                                                    const duration = pkg.durations[durIdx];
+                                                                                                    console.log(pkg)
+                                                                                                    let nextNewItems = newItems;
+                                                                                                    let nextSelectedItems = selectedTransaction.items;
+
+                                                                                                    if (item.isNew) {
+                                                                                                        nextNewItems = newItems.map(ni =>
+                                                                                                            ni.tempId === item.tempId
+                                                                                                                ? { ...ni, package_name: pkg.title_id, package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
+                                                                                                                : ni
+                                                                                                        );
+                                                                                                    } else {
+                                                                                                        nextSelectedItems = selectedTransaction.items.map(it =>
+                                                                                                            it.id === item.id
+                                                                                                                ? { ...it, package_name: pkg.title_id, package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
+                                                                                                                : it
+                                                                                                        );
+                                                                                                    }
+                                                                                                    recalculateCommission(item.guest_index || guestIdx, nextNewItems, nextSelectedItems);
+                                                                                                }}
+                                                                                                isSearchable
+                                                                                            />
+                                                                                        )}
                                                                                     </div>
                                                                                 </td>
                                                                                 <td className="px-4 py-2.5 text-center text-gray-500">{item.package_duration} mnt</td>
                                                                                 <td className="px-4 py-2.5 text-right font-bold text-gray-700">{formatCurrency(item.price)}</td>
-                                                                                {isEditing && (
+                                                                                {isEditing && items.length > 1 && (
                                                                                     <td className="px-4 py-2.5 text-right">
-                                                                                        <button 
+                                                                                        <button
                                                                                             onClick={() => {
                                                                                                 if (item.isNew) {
-                                                                                                    setNewItems(newItems.filter(ni => ni.tempId !== item.tempId));
+                                                                                                    const nextNewItems = newItems.filter(ni => ni.tempId !== item.tempId);
+                                                                                                    recalculateCommission(guestIdx, nextNewItems, selectedTransaction.items);
                                                                                                 } else {
                                                                                                     setDeletedItems([...deletedItems, item.id]);
+                                                                                                    const nextSelectedItems = selectedTransaction.items.filter(it => it.id !== item.id);
+                                                                                                    recalculateCommission(guestIdx, newItems, nextSelectedItems);
                                                                                                 }
                                                                                             }}
                                                                                             className="p-1 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
@@ -973,11 +1102,25 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ringkasan Komisi</p>
                                                             {Object.entries(byGuest).map(([gIdx, items]) => {
                                                                 const therapist = employees.find(e => e.id == items[0]?.employee_id);
-                                                                const totalKomisi = items.reduce((s, it) => s + (parseFloat(it.therapist_commission) || 0), 0);
+                                                                const totalKomisi = items.reduce((s, it) => {
+                                                                    console.log("CALCULATING TOTAL KOMISI FOR", it.package_name, "val:", it.therapist_commission);
+                                                                    return s + (parseFloat(it.therapist_commission) || 0);
+                                                                }, 0);
                                                                 return (
                                                                     <div key={gIdx} className="flex items-center justify-between bg-white px-4 py-2 rounded-xl border border-gray-100">
                                                                         <div className="flex flex-col">
-                                                                            <span className="text-[8px] font-bold text-zenith-orange uppercase tracking-widest">Customer ke-{gIdx}</span>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-[8px] font-bold text-zenith-orange uppercase tracking-widest">Customer ke-{gIdx}</span>
+                                                                                {isEditing && (
+                                                                                    <button
+                                                                                        onClick={() => recalculateCommission(gIdx)}
+                                                                                        className="p-1 hover:bg-zenith-orange/10 text-gray-400 hover:text-zenith-orange rounded transition-colors"
+                                                                                        title="Hitung Ulang Komisi"
+                                                                                    >
+                                                                                        <ArrowPathIcon className="w-3 h-3" />
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
                                                                             <span className="text-[10px] font-bold text-gray-700 uppercase">{therapist?.name || 'Belum dipilih'}</span>
                                                                         </div>
                                                                         <span className="text-xs font-black text-gray-900">{formatCurrency(totalKomisi)}</span>
@@ -990,7 +1133,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                             <span className="text-sm font-bold text-gray-500 uppercase tracking-widest block mb-1">Grand Total</span>
                                                             <span className="text-2xl font-black text-zenith-orange">
                                                                 {(() => {
-                                                                    const subtotal = allItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
+                                                                    const subtotal = activeItems.reduce((sum, item) => sum + parseFloat(item.price), 0);
                                                                     const transport = parseFloat(currentData.transport_fee || 0);
                                                                     const discount = parseFloat(currentData.discount_amount || 0);
                                                                     const totalBeforePenalty = subtotal + transport - discount;
@@ -1004,7 +1147,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
                                                                 {currentData.discount_percent > 0 && <p className="text-[9px] text-red-400 font-bold uppercase">Diskon {parseFloat(currentData.discount_percent)}% (-{formatCurrency(currentData.discount_amount)})</p>}
                                                                 {penaltyPercent > 0 && <p className="text-[9px] text-orange-500 font-bold uppercase">Reschedule {penaltyPercent}%</p>}
                                                             </div>
-                                                            
+
                                                             {isEditing ? (
                                                                 <div className="mt-4 flex gap-2 justify-end">
                                                                     <SecondaryButton onClick={() => setIsEditing(false)}>Batal</SecondaryButton>

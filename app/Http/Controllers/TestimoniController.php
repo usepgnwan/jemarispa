@@ -16,9 +16,9 @@ class TestimoniController extends Controller
 
         $testimonis = Testimoni::query()
             ->when($search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('packages_description', 'like', "%{$search}%")
-                      ->orWhere('source', 'like', "%{$search}%");
+                $query->where('name', 'ilike', "%{$search}%")
+                      ->orWhere('packages_description', 'ilike', "%{$search}%")
+                      ->orWhere('source', 'ilike', "%{$search}%");
             })
             ->latest()
             ->paginate($limit)

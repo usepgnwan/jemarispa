@@ -33,6 +33,7 @@
         "quill-table-better": "^1.2.3",
         "react-is": "^19.2.6",
         "react-quill": "^2.0.0",
+        "react-select": "^5.10.2",
         "recharts": "^3.8.1"
     }
 }

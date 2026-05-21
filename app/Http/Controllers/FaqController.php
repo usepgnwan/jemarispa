@@ -15,10 +15,10 @@ class FaqController extends Controller
 
         $faqs = Faq::query()
             ->when($search, function ($query, $search) {
-                $query->where('title_id', 'like', "%{$search}%")
-                      ->orWhere('title_en', 'like', "%{$search}%")
-                      ->orWhere('description_id', 'like', "%{$search}%")
-                      ->orWhere('description_en', 'like', "%{$search}%");
+                $query->where('title_id', 'ilike', "%{$search}%")
+                      ->orWhere('title_en', 'ilike', "%{$search}%")
+                      ->orWhere('description_id', 'ilike', "%{$search}%")
+                      ->orWhere('description_en', 'ilike', "%{$search}%");
             })
             ->latest()
             ->paginate($limit)

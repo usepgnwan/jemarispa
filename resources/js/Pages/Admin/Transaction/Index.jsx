@@ -25,6 +25,7 @@ import {
     XMarkIcon
 } from '@heroicons/react/24/outline';
 import { Select } from '@headlessui/react';
+import ReactSelect from 'react-select';
 
 // Custom debounce function
 function debounce(func, wait) {
@@ -198,17 +199,20 @@ export default function Index({ transactions, filters, counts, employees, packag
         });
     };
 
-    const recalculateCommission = (guestIndex) => {
+    const recalculateCommission = (guestIndex, providedNewItems = null, providedSelectedItems = null) => {
         if (!packages || !selectedTransaction) return;
 
-        const guestItems = selectedTransaction.items.filter(item => item.guest_index == guestIndex);
+        const currentNewItems = providedNewItems || newItems;
+        const currentSelectedItems = providedSelectedItems || selectedTransaction.items;
+
+        const guestItems = [...currentSelectedItems, ...currentNewItems].filter(item => item.guest_index == guestIndex);
         let totalCommission = 0;
 
         guestItems.forEach(item => {
-            const pkg = packages.find(p =>
-                item.package_name === p.title_id ||
-                (item.package_name && item.package_name.startsWith(p.title_id))
-            );
+            let pkg = packages.find(p => item.package_name === p.title_id);
+            if (!pkg && item.package_name) {
+                pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
+            }
 
             if (pkg) {
                 let cleanDuration = item.package_duration || '';
@@ -219,19 +223,24 @@ export default function Index({ transactions, filters, counts, employees, packag
                     if (match) cleanDuration = match[0] + ' Menit';
                 }
 
-                const duration = pkg.durations.find(d => d.duration === cleanDuration);
+                const duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
                 if (duration) {
                     totalCommission += parseFloat(duration.commission) || 0;
                 }
             }
         });
 
-        const updatedItems = selectedTransaction.items.map(it =>
+        const updatedItems = currentSelectedItems.map(it =>
             it.guest_index == guestIndex ? { ...it, therapist_commission: totalCommission } : it
         );
-        setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+        const updatedNewItems = currentNewItems.map(ni =>
+            ni.guest_index == guestIndex ? { ...ni, therapist_commission: totalCommission } : ni
+        );
 
-        guestItems.forEach(item => updateTherapistData(item.id, { therapist_commission: totalCommission }));
+        setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+        setNewItems(updatedNewItems);
+
+        currentSelectedItems.filter(item => item.guest_index == guestIndex).forEach(item => updateTherapistData(item.id, { therapist_commission: totalCommission }));
     };
 
 
@@ -388,10 +397,10 @@ export default function Index({ transactions, filters, counts, employees, packag
         const enrichedItems = (transaction.items || []).map(item => {
             const currentCommission = parseFloat(item.therapist_commission) || 0;
             if (currentCommission === 0) {
-                const pkg = packages.find(p =>
-                    p.title_id === item.package_name ||
-                    (item.package_name && item.package_name.startsWith(p.title_id))
-                );
+                let pkg = packages.find(p => p.title_id === item.package_name);
+                if (!pkg && item.package_name) {
+                    pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
+                }
                 if (pkg) {
                     const duration = pkg.durations.find(d => d.duration === item.package_duration);
                     if (duration) {
@@ -1001,11 +1010,27 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                 {/* Therapist Selector Integrated */}
                                                 <div className="flex-col md:flex-row flex md:items-center gap-2 md:border-l md:border-gray-200 md:pl-4 pl-0 w-full">
                                                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Terapis:</span>
-                                                    <select
-                                                        className="appearance-none bg-white border border-gray-200 text-[10px] font-bold text-gray-600 px-3 py-1.5 rounded-xl pr-8 focus:ring-zenith-orange focus:border-zenith-orange cursor-pointer"
-                                                        value={items[0]?.employee_id || ''}
-                                                        onChange={(e) => {
-                                                            const newId = e.target.value;
+                                                    <ReactSelect
+                                                        className="text-[10px] font-bold text-gray-600 min-w-[150px] flex-1"
+                                                        styles={{
+                                                            control: (base) => ({
+                                                                ...base,
+                                                                borderRadius: '0.75rem',
+                                                                borderColor: '#e5e7eb',
+                                                                minHeight: '34px',
+                                                                boxShadow: 'none',
+                                                                '&:hover': { borderColor: '#F97316' }
+                                                            }),
+                                                            option: (base) => ({ ...base, fontSize: '12px' }),
+                                                            menuPortal: (base) => ({ ...base, zIndex: 9999 })
+                                                        }}
+                                                        menuPortalTarget={document.body}
+                                                        menuPosition="fixed"
+                                                        placeholder="Pilih Terapis..."
+                                                        options={employees.map(emp => ({ value: emp.id, label: emp.name }))}
+                                                        value={employees.filter(emp => emp.id == (items[0]?.employee_id || '')).map(emp => ({ value: emp.id, label: emp.name }))[0] || null}
+                                                        onChange={(selectedOption) => {
+                                                            const newId = selectedOption ? selectedOption.value : '';
                                                             const selectedEmp = employees.find(emp => emp.id == newId);
 
                                                             const updatedItems = selectedTransaction.items.map(it =>
@@ -1017,12 +1042,9 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                 ni.guest_index == guestIndex ? { ...ni, employee_id: newId } : ni
                                                             ));
                                                         }}
-                                                    >
-                                                        <option value="">Pilih Terapis...</option>
-                                                        {employees.map(emp => (
-                                                            <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                                        ))}
-                                                    </select>
+                                                        isClearable
+                                                        isSearchable
+                                                    />
 
                                                     {/* Auto-computed commission badge for this guest */}
                                                     <div className="bg-gray-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
@@ -1047,11 +1069,40 @@ export default function Index({ transactions, filters, counts, employees, packag
 
                                             <div className="gap-2">
                                                 <div className="relative">
-                                                    <Select
-                                                        className="appearance-none block w-full bg-zenith-orange/10 border-none text-[9px] font-bold text-zenith-orange uppercase px-3 py-1 rounded-full pr-7 focus:ring-0 cursor-pointer"
-                                                        onChange={(e) => {
-                                                            if (!e.target.value) return;
-                                                            const [pkgId, durIdx] = e.target.value.split('|');
+                                                    <ReactSelect
+                                                        className="min-w-[200px]"
+                                                        styles={{
+                                                            control: (base) => ({
+                                                                ...base,
+                                                                backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                                                                border: 'none',
+                                                                borderRadius: '9999px',
+                                                                minHeight: '28px',
+                                                                fontSize: '9px',
+                                                                fontWeight: 'bold',
+                                                                textTransform: 'uppercase',
+                                                                color: '#F97316',
+                                                                boxShadow: 'none'
+                                                            }),
+                                                            placeholder: (base) => ({ ...base, color: '#F97316' }),
+                                                            singleValue: (base) => ({ ...base, color: '#F97316' }),
+                                                            option: (base) => ({ ...base, fontSize: '12px', textTransform: 'none' }),
+                                                            menuPortal: (base) => ({ ...base, zIndex: 9999 })
+                                                        }}
+                                                        menuPortalTarget={document.body}
+                                                        menuPosition="fixed"
+                                                        placeholder="+ Tambah Paket"
+                                                        options={packages.filter(p => !p.is_signature).map(pkg => ({
+                                                            label: pkg.title_id,
+                                                            options: pkg.durations.map((dur, dIdx) => ({
+                                                                value: `${pkg.id}|${dIdx}`,
+                                                                label: `${pkg.title_id} (${dur.duration}) - ${formatCurrency(dur.price)}`
+                                                            }))
+                                                        }))}
+                                                        value={null}
+                                                        onChange={(selectedOption) => {
+                                                            if (!selectedOption) return;
+                                                            const [pkgId, durIdx] = selectedOption.value.split('|');
                                                             const pkg = packages.find(p => p.id == pkgId);
                                                             const duration = pkg.durations[durIdx];
 
@@ -1069,17 +1120,10 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                 tempId: Date.now() + Math.random()
                                                             };
 
-                                                            setNewItems([...newItems, newItem]);
-                                                            e.target.value = '';
+                                                            recalculateCommission(guestIndex, [...newItems, newItem], selectedTransaction.items);
                                                         }}
-                                                    >
-                                                        <option value="">+ Tambah Paket</option>
-                                                        {packages.filter(p => !p.is_signature).map(pkg => pkg.durations.map((dur, dIdx) => (
-                                                            <option key={`${pkg.id}-${dIdx}`} value={`${pkg.id}|${dIdx}`}>
-                                                                {pkg.title_id} ({dur.duration}) - {formatCurrency(dur.price)}
-                                                            </option>
-                                                        )))}
-                                                    </Select>
+                                                        isSearchable
+                                                    />
                                                     {/* <PlusIcon className="w-3 h-3 text-zenith-orange absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" /> */}
                                                 </div>
                                                 <span className="text-[10px] font-bold text-zenith-orange uppercase">Pelanggan Request : {items[0]?.guest_gender}</span>
@@ -1100,9 +1144,68 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                         <tr key={idx} className={item.isNew ? 'bg-green-50/30' : ''}>
                                                             <td className="px-4 py-3">
                                                                 <div className="flex items-center gap-2">
-                                                                    {item.isNew && <span className="bg-green-100 text-green-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">BARU</span>}
-                                                                    <span className="font-medium text-gray-800">{item.package_name}</span>
-                                                                    <span className="text-xs text-gray-400">({item.package_duration})</span>
+                                                                    {item.isNew && <span className="bg-green-100 text-green-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase shrink-0">BARU</span>}
+                                                                    <ReactSelect
+                                                                        className="w-full min-w-[180px] sm:min-w-[220px]"
+                                                                        styles={{
+                                                                            control: (base) => ({
+                                                                                ...base,
+                                                                                borderRadius: '0.5rem',
+                                                                                borderColor: '#f3f4f6', // subtle border
+                                                                                backgroundColor: '#ffffff',
+                                                                                minHeight: '32px',
+                                                                                boxShadow: 'none',
+                                                                                '&:hover': { borderColor: '#d1d5db' }
+                                                                            }),
+                                                                            singleValue: (base) => ({
+                                                                                ...base,
+                                                                                fontSize: '13px',
+                                                                                fontWeight: 600,
+                                                                                color: '#374151'
+                                                                            }),
+                                                                            option: (base) => ({ ...base, fontSize: '12px' }),
+                                                                            menuPortal: (base) => ({ ...base, zIndex: 9999 })
+                                                                        }}
+                                                                        menuPortalTarget={document.body}
+                                                                        menuPosition="fixed"
+                                                                        options={packages.filter(p => !p.is_signature).map(pkg => ({
+                                                                            label: pkg.title_id,
+                                                                            options: pkg.durations.map((dur, dIdx) => ({
+                                                                                value: `${pkg.id}|${dIdx}`,
+                                                                                label: `${pkg.title_id} (${dur.duration}) - ${formatCurrency(dur.price)}`
+                                                                            }))
+                                                                        }))}
+                                                                        value={{
+                                                                            value: `${(() => { let p = packages.find(p => p.title_id === item.package_name); if (!p && item.package_name) p = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id)); return p?.id || ''; })()}|${(() => { let p = packages.find(p => p.title_id === item.package_name); if (!p && item.package_name) p = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id)); return p?.durations.findIndex(d => { let c = item.package_duration || ''; c = c.replace(/ Menit Menit/g, ' Menit'); if (c && !c.includes(' Menit')) { const m = c.match(/^\d+/); if (m) c = m[0] + ' Menit'; } return d.duration === c; }) ?? ''; })()}`,
+                                                                            label: `${item.package_name} (${item.package_duration})`
+                                                                        }}
+                                                                        onChange={(selectedOption) => {
+                                                                            if (!selectedOption) return;
+                                                                            const [pkgId, durIdx] = selectedOption.value.split('|');
+                                                                            const pkg = packages.find(p => p.id == pkgId);
+                                                                            if (!pkg) return;
+                                                                            const duration = pkg.durations[durIdx];
+
+                                                                            let nextNewItems = newItems;
+                                                                            let nextSelectedItems = selectedTransaction.items;
+
+                                                                            if (item.isNew) {
+                                                                                nextNewItems = newItems.map(ni =>
+                                                                                    ni.tempId === item.tempId
+                                                                                        ? { ...ni, package_name: pkg.title_id, package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
+                                                                                        : ni
+                                                                                );
+                                                                            } else {
+                                                                                nextSelectedItems = selectedTransaction.items.map(it =>
+                                                                                    it.id === item.id
+                                                                                        ? { ...it, package_name: pkg.title_id, package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
+                                                                                        : it
+                                                                                );
+                                                                            }
+                                                                            recalculateCommission(item.guest_index || guestIndex, nextNewItems, nextSelectedItems);
+                                                                        }}
+                                                                        isSearchable
+                                                                    />
                                                                     {!item.isNew && (
                                                                         pendingDeleteItemId === item.id ? (
                                                                             <div className="flex items-center gap-1">
@@ -1110,7 +1213,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                                     onClick={() => {
                                                                                         setDeletedItems([...deletedItems, item.id]);
                                                                                         const updatedItems = selectedTransaction.items.filter(it => it.id !== item.id);
-                                                                                        setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
+                                                                                        recalculateCommission(item.guest_index || guestIndex, newItems, updatedItems);
                                                                                         setPendingDeleteItemId(null);
                                                                                     }}
                                                                                     className="text-[9px] font-black text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-full transition-colors"
@@ -1127,7 +1230,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                         ) : (
                                                                             <button
                                                                                 onClick={() => setPendingDeleteItemId(item.id)}
-                                                                                className="text-red-300 hover:text-red-500 transition-colors"
+                                                                                className="text-red-300 hover:text-red-500 transition-colors ml-1"
                                                                                 title="Hapus paket"
                                                                             >
                                                                                 <XMarkIcon className="w-3.5 h-3.5" />
@@ -1136,8 +1239,11 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                     )}
                                                                     {item.isNew && (
                                                                         <button
-                                                                            onClick={() => setNewItems(newItems.filter(ni => ni.tempId !== item.tempId))}
-                                                                            className="text-red-400 hover:text-red-600 transition-colors"
+                                                                            onClick={() => {
+                                                                                const nextNewItems = newItems.filter(ni => ni.tempId !== item.tempId);
+                                                                                recalculateCommission(item.guest_index || guestIndex, nextNewItems, selectedTransaction.items);
+                                                                            }}
+                                                                            className="text-red-400 hover:text-red-600 transition-colors ml-1"
                                                                         >
                                                                             <XMarkIcon className="w-3.5 h-3.5" />
                                                                         </button>

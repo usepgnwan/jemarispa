@@ -20,10 +20,10 @@ class PackageController extends Controller
             ->where('is_signature', false)
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('title_id', 'like', "%{$search}%")
-                      ->orWhere('title_en', 'like', "%{$search}%")
-                      ->orWhere('category_id', 'like', "%{$search}%")
-                      ->orWhere('category_en', 'like', "%{$search}%");
+                    $q->where('title_id', 'ilike', "%{$search}%")
+                      ->orWhere('title_en', 'ilike', "%{$search}%")
+                      ->orWhere('category_id', 'ilike', "%{$search}%")
+                      ->orWhere('category_en', 'ilike', "%{$search}%");
                 });
             })
             ->orderByRaw('priority ASC NULLS LAST')

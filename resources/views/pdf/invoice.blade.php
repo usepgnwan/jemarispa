@@ -287,7 +287,7 @@
                         <td class="meta-separator">:</td>
                         <td>{{ \Carbon\Carbon::parse($transaction->schedule_date)->format('d M Y') }}</td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                         <td class="meta-label">Waktu</td>
                         <td class="meta-separator">:</td>
                         <td>
@@ -310,7 +310,7 @@
                                 @endphp
                                 {{ $startTime }} - {{ $endTime }}
                         </td>
-                    </tr>
+                    </tr> -->
                     <tr>
                         <td class="meta-label">Terapis</td>
                         <td class="meta-separator">:</td>

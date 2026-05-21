@@ -14,9 +14,9 @@ class EmployeeController extends Controller
 
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('title', 'like', "%{$search}%")
-                  ->orWhere('nohp', 'like', "%{$search}%");
+            $query->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('title', 'ilike', "%{$search}%")
+                  ->orWhere('nohp', 'ilike', "%{$search}%");
         }
 
         $employees = $query->latest()->paginate(10)->withQueryString();
