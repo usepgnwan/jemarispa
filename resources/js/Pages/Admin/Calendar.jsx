@@ -1,6 +1,7 @@
 import { useState, Fragment, useMemo, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
+import axios from 'axios';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -164,16 +165,46 @@ export default function Calendar({ auth, events, summary, employees, packages, a
     };
 
     const copyInvoiceText = async (transaction) => {
+        if (!transaction) return;
         const text = await prepareInvoiceText(transaction);
-        navigator.clipboard.writeText(text);
-        alert('Text invoice berhasil disalin!');
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Text invoice berhasil disalin!');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            alert('Gagal menyalin teks.');
+        });
     };
 
     const sendInvoice = async (transaction) => {
+        if (!transaction) return;
+        const phone = transaction.phone || app_settings?.phone || '';
+        if (!phone) {
+            alert('Nomor WhatsApp tidak ditemukan.');
+            return;
+        }
+
         const text = await prepareInvoiceText(transaction);
-        const phone = transaction.phone.replace(/[^0-9]/g, '');
-        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-        window.open(whatsappUrl, '_blank');
+        const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
+        let waPhone = cleanPhone;
+        if (cleanPhone.startsWith('0')) {
+            waPhone = '62' + cleanPhone.substring(1);
+        } else if (cleanPhone.startsWith('8')) {
+            waPhone = '62' + cleanPhone;
+        }
+
+        if (!waPhone) {
+            alert('Nomor telepon tidak valid.');
+            return;
+        }
+
+        const encodedMessage = encodeURIComponent(text);
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const waBaseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send';
+        const finalUrl = isMobile
+            ? `${waBaseUrl}${waPhone}?text=${encodedMessage}`
+            : `${waBaseUrl}?phone=${waPhone}&text=${encodedMessage}`;
+
+        window.open(finalUrl, '_blank');
     };
 
     const prepareInvoiceText = async (transaction) => {
@@ -181,7 +212,23 @@ export default function Calendar({ auth, events, summary, employees, packages, a
         
         let message = app_settings?.template_invoice || `Halo, Kak [name],\n\nTerlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :\n\n[details]\n\nBiaya Transport : [transport]\n\nTotal Pembayaran : [total]\n\nUntuk file invoice bisa di download di sini [link]\n\n-\n\nPembayaran bisa melalui terapis kami atau transfer melalui rekening berikut :\n\nBCA a.n Acep Dani : 7772554756\n(Kirimkan bukti transfer, dan nama pemilik rekening setelah melakukan pembayaran)\n\n-\n\nUntuk kritik dan saran, silahkan lampirkan di link berikut\n[link_review]\n\nTerima kasih telah menggunakan jasa Jemari Home Spa\n\njemarihomespa.com`;
 
-        const grouped = [...(transaction.items || []), ...newItems].reduce((acc, item) => {
+        let linkReview = '';
+        if (message.includes('[link_review]')) {
+            try {
+                const response = await axios.post(route('admin.transaction.review_link', transaction.id));
+                if (response.data.success) {
+                    linkReview = response.data.link;
+                }
+            } catch (err) {
+                console.error('Failed to generate review link:', err);
+            }
+        }
+
+        const itemsToUse = isEditing
+            ? [...(transaction.items || []), ...newItems].filter(it => !deletedItems.includes(it.id))
+            : (transaction.items || []);
+
+        const grouped = itemsToUse.reduce((acc, item) => {
             if (!acc[item.guest_index]) acc[item.guest_index] = [];
             acc[item.guest_index].push(item);
             return acc;
@@ -195,13 +242,30 @@ export default function Calendar({ auth, events, summary, employees, packages, a
         const safeOrderNumber = transaction.order_number?.replace(/\//g, '-') || 'POS';
         const link = `${window.location.origin}/invoice/${safeOrderNumber}`;
 
-        message = message.replace(/\[name\]/g, transaction.customer_name)
-            .replace(/\[invoice_no\]/g, transaction.order_number || 'POS')
-            .replace(/\[details\]/g, detailsText)
-            .replace(/\[transport\]/g, formatCurrency(transaction.transport_fee || 0))
-            .replace(/\[total\]/g, formatCurrency(transaction.total_price))
-            .replace(/\[link\]/g, link)
-            .replace(/\[link_review\]/g, '');
+        message = message.replace(/<\/p><p>/g, '\n')
+            .replace(/<p>/g, '')
+            .replace(/<\/p>/g, '\n')
+            .replace(/<strong>/g, '*')
+            .replace(/<\/strong>/g, '*')
+            .replace(/<br\s*\/?>/g, '\n')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/<[^>]*>?/gm, '');
+
+        const data = {
+            name: transaction.customer_name,
+            invoice_no: transaction.order_number || 'POS',
+            details: detailsText,
+            transport: formatCurrency(transaction.transport_fee || 0),
+            discount: transaction.discount_amount > 0 ? `-${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)` : '',
+            total: formatCurrency(transaction.total_price),
+            link: link,
+            link_review: linkReview
+        };
+
+        Object.keys(data).forEach(key => {
+            const placeholder = `[${key}]`;
+            message = message.split(placeholder).join(data[key] || '');
+        });
 
         return message;
     };

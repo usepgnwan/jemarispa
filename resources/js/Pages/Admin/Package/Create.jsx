@@ -20,6 +20,7 @@ export default function Create({ signaturePackages = [] }) {
         description_en: '',
         parent_id: '',
         is_signature: false,
+        priority: '',
         durations: [{ duration: '', price: '', commission: '' }]
     });
 
@@ -65,36 +66,55 @@ export default function Create({ signaturePackages = [] }) {
                     </div>
 
                     <form onSubmit={submit} className="space-y-8">
-                        {/* Parent Selection */}
+                        {/* Service Settings */}
                         <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
                             <div className="bg-zenith-gold/10 px-8 py-4 border-b border-gray-100 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-zenith-gold">spa</span>
-                                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-widest">Layanan Utama (Treatments)</h3>
+                                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-widest">Pengaturan Layanan</h3>
                             </div>
-                            <div className="p-8">
-                                <InputLabel htmlFor="parent_id" value="Pilih Main Service (Opsional)" />
-                                <div className="mt-1 relative">
-                                    <select
-                                        id="parent_id"
-                                        value={data.parent_id}
-                                        className="mt-1 block w-full rounded-xl border-gray-300 focus:border-[#0057B8] focus:ring-[#0057B8] shadow-sm appearance-none pr-10"
-                                        onChange={(e) => setData('parent_id', e.target.value)}
-                                    >
-                                        <option value="">-- Tanpa Layanan Utama --</option>
-                                        {signaturePackages.map((s) => (
-                                            <option key={s.id} value={s.id}>
-                                                {s.title_id} {s.title_en ? `(${s.title_en})` : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                                        <span className="material-symbols-outlined text-gray-400">expand_more</span>
+                            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <InputLabel htmlFor="parent_id" value="Pilih Main Service (Opsional)" />
+                                    <div className="mt-1 relative">
+                                        <select
+                                            id="parent_id"
+                                            value={data.parent_id}
+                                            className="mt-1 block w-full rounded-xl border-gray-300 focus:border-[#0057B8] focus:ring-[#0057B8] shadow-sm appearance-none pr-10"
+                                            onChange={(e) => setData('parent_id', e.target.value)}
+                                        >
+                                            <option value="">-- Tanpa Layanan Utama --</option>
+                                            {signaturePackages.map((s) => (
+                                                <option key={s.id} value={s.id}>
+                                                    {s.title_id} {s.title_en ? `(${s.title_en})` : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                                            <span className="material-symbols-outlined text-gray-400">expand_more</span>
+                                        </div>
                                     </div>
+                                    <p className="mt-2 text-xs text-gray-500">
+                                        Pilih layanan utama jika paket ini merupakan bagian dari kategori ritual tertentu.
+                                    </p>
+                                    <InputError message={errors.parent_id} className="mt-2" />
                                 </div>
-                                <p className="mt-2 text-xs text-gray-500">
-                                    Pilih layanan utama jika paket ini merupakan bagian dari kategori ritual tertentu.
-                                </p>
-                                <InputError message={errors.parent_id} className="mt-2" />
+
+                                <div>
+                                    <InputLabel htmlFor="priority" value="Prioritas Tampilan (Opsional)" />
+                                    <TextInput
+                                        id="priority"
+                                        type="number"
+                                        value={data.priority}
+                                        className="mt-1 block w-full"
+                                        onChange={(e) => setData('priority', e.target.value)}
+                                        placeholder="Contoh: 1 (Urutan teratas)"
+                                        min="0"
+                                    />
+                                    <p className="mt-2 text-xs text-gray-500">
+                                        Semakin kecil angkanya, semakin tinggi prioritas tampilannya di halaman beranda.
+                                    </p>
+                                    <InputError message={errors.priority} className="mt-2" />
+                                </div>
                             </div>
                         </div>
 

@@ -79,7 +79,7 @@ class TransactionController extends Controller
             'failed' => Transaction::where('status', 'failed')->count(),
         ];
 
-        $packages = \App\Models\Package::with('durations')->where('is_signature', false)->get();
+        $packages = \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get();
 
         return Inertia::render('Admin/Transaction/Index', [
             'transactions' => $transactions,
@@ -96,7 +96,7 @@ class TransactionController extends Controller
 
     public function pos()
     {
-        $packages = \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get();
+        $packages = \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get();
         $employees = \App\Models\Employee::all();
         $todayTransactions = Transaction::with('items')
             ->whereDate('created_at', now()->toDateString())
@@ -139,12 +139,12 @@ class TransactionController extends Controller
                     'order_number' => 'INV/' . now()->format('Ymd') . '/' . strtoupper(substr(uniqid(), -5)),
                     'customer_name' => $validated['customer_name'],
                     'phone' => $validated['phone'] ?? null,
-                    'address' => $validated['address'],
+                    'address' => $validated['address'] ?? null,
                     'schedule_date' => $validated['schedule_date'],
                     'schedule_time' => $validated['schedule_time'],
                     'payment_method' => $validated['payment_method'],
                     'source' => $validated['source'],
-                    'notes' => $validated['notes'],
+                    'notes' => $validated['notes'] ?? null,
                     'total_price' => $validated['total_price'],
                     'transport_fee' => $validated['transport_fee'] ?? 0,
                     'discount_percent' => $validated['discount_percent'] ?? 0,
@@ -231,16 +231,16 @@ class TransactionController extends Controller
             $transaction = Transaction::create([
                 'order_number' => $orderNumber,
                 'customer_name' => $validated['customer_name'],
-                'phone' => $validated['phone'],
+                'phone' => $validated['phone'] ?? null,
                 'address' => $validated['address'],
                 'schedule_date' => $validated['schedule_date'],
                 'schedule_time' => $validated['schedule_time'],
                 'payment_method' => $validated['payment_method'],
-                'source' => $validated['source'],
-                'notes' => $validated['notes'],
+                'source' => $validated['source'] ?? null,
+                'notes' => $validated['notes'] ?? null,
                 'total_price' => $validated['total_price'],
                 'voucher_id' => $validated['voucher_id'] ?? null,
-                'discount_amount' => $validated['voucher_id'] ? (\App\Models\Voucher::find($validated['voucher_id'])->discount_amount ?? 0) : 0,
+                'discount_amount' => ($validated['voucher_id'] ?? null) ? (\App\Models\Voucher::find($validated['voucher_id'])->discount_amount ?? 0) : 0,
                 'status' => 'pending',
             ]);
 

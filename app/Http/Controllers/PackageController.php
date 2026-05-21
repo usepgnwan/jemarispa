@@ -26,7 +26,8 @@ class PackageController extends Controller
                       ->orWhere('category_en', 'like', "%{$search}%");
                 });
             })
-            ->latest()
+            ->orderByRaw('priority ASC NULLS LAST')
+            ->orderBy('id', 'desc')
             ->paginate($limit)
             ->withQueryString();
 
@@ -54,6 +55,7 @@ class PackageController extends Controller
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
             'parent_id' => 'nullable|exists:packages,id',
+            'priority' => 'nullable|integer|min:0',
             'durations' => 'required|array|min:1',
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
@@ -69,6 +71,7 @@ class PackageController extends Controller
                 'description_id' => $validated['description_id'],
                 'description_en' => $validated['description_en'],
                 'parent_id' => $validated['parent_id'],
+                'priority' => $validated['priority'] ?? null,
                 'is_signature' => false,
             ]);
 
@@ -109,6 +112,7 @@ class PackageController extends Controller
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
             'parent_id' => 'nullable|exists:packages,id',
+            'priority' => 'nullable|integer|min:0',
             'durations' => 'required|array|min:1',
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
@@ -124,6 +128,7 @@ class PackageController extends Controller
                 'description_id' => $validated['description_id'],
                 'description_en' => $validated['description_en'],
                 'parent_id' => $validated['parent_id'],
+                'priority' => $validated['priority'] ?? null,
                 'is_signature' => false,
             ]);
 

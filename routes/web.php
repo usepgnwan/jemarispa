@@ -11,8 +11,8 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
-        'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get(),
-        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get(),
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
         'testimonials' => \App\Models\Testimoni::where('is_published', true)->inRandomOrder()->take(6)->get(),
         'platforms' => \App\Models\Platform::latest()->get()
     ]);
@@ -283,15 +283,15 @@ Route::get('/blog/{slug}', [BlogController::class, 'publicShow'])->name('blog.sh
 
 Route::get('/pricing', function () {
     return Inertia::render('Pricing/Index', [
-        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get(),
-        'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get()
+        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
     ]);
 })->name('pricing.index');
 
 Route::get('/cart', function () {
     return Inertia::render('Cart/Index', [
-        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->latest()->get(),
-        'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get()
+        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
     ]);
 })->name('cart.index');
 

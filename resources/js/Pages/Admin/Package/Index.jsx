@@ -177,6 +177,11 @@ export default function Index({ packages, filters }) {
                                                  EN: {pkg.category_en}
                                              </span>
                                          )}
+                                         {pkg.priority !== null && pkg.priority !== undefined && (
+                                             <span className="px-3 py-1 rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+                                                 Prioritas: {pkg.priority}
+                                             </span>
+                                         )}
                                      </div>
                                      <h3 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
                                          {pkg.title_id}

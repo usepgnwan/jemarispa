@@ -18,6 +18,7 @@ class Package extends Model
         'is_signature',
         'image',
         'parent_id',
+        'priority',
     ];
 
     public function durations()

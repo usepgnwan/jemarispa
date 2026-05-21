@@ -54,7 +54,7 @@ class BlogController extends Controller
         return Inertia::render('Blog/Index', [
             'blogs' => $blogs,
             'filters' => $request->only(['search', 'tag']),
-            'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get()
+            'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
         ]);
     }
 
@@ -70,7 +70,7 @@ class BlogController extends Controller
         return Inertia::render('Blog/Show', [
             'blog' => $blog,
             'suggestions' => $suggestions,
-            'signaturePackages' => \App\Models\Package::where('is_signature', true)->latest()->get()
+            'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
         ]);
     }
 
