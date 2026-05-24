@@ -62,7 +62,8 @@ class TransactionController extends Controller
             $query->whereDate('created_at', '<=', $dateTo);
         }
 
-        $transactions = $query->latest()
+        $transactions = $query->orderBy('schedule_date', 'desc')
+            ->orderBy('schedule_time', 'desc')
             ->paginate($limit)
             ->withQueryString();
 

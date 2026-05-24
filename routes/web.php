@@ -225,7 +225,6 @@ Route::middleware(['auth'])->group(function () {
     // ── DIGITAL MARKETING & ADMIN ──────────────────────────────────────────
     Route::middleware(['role:admin,marketing'])->group(function() {
         Route::get('admin/analytics', [AnalyticController::class, 'index'])->name('admin.analytics.index');
-        Route::get('admin/calendar', [\App\Http\Controllers\CalendarController::class, 'index'])->name('admin.calendar.index');
         Route::resource('testimoni', TestimoniController::class)->except(['show']);
         Route::patch('testimoni/{testimoni}/publish', [TestimoniController::class, 'togglePublish'])->name('testimoni.publish');
         Route::resource('admin/blog', BlogController::class)->names('admin.blog')->except(['show']);
@@ -233,6 +232,9 @@ Route::middleware(['auth'])->group(function () {
 
     // ── CS & ADMIN ─────────────────────────────────────────────────────────
     Route::middleware(['role:admin,cs'])->group(function() {
+        // Calendar
+        Route::get('admin/calendar', [\App\Http\Controllers\CalendarController::class, 'index'])->name('admin.calendar.index');
+
         // Transaction management
         Route::get('admin/transaction', [TransactionController::class, 'index'])->name('admin.transaction.index');
         Route::patch('admin/transaction/{transaction}', [TransactionController::class, 'update'])->name('admin.transaction.update');

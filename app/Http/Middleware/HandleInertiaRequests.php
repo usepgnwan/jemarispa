@@ -31,6 +31,22 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $notifications = [];
+        if ($request->user() && in_array($request->user()->role, ['admin', 'cs'])) {
+            $notifications = \App\Models\Transaction::whereDate('created_at', \Carbon\Carbon::today())
+                                ->orderBy('created_at', 'desc')
+                                ->get()
+                                ->map(function($t) {
+                                    return [
+                                        'id' => $t->id,
+                                        'order_number' => $t->order_number,
+                                        'customer_name' => $t->customer_name,
+                                        'status' => $t->status,
+                                        'time' => $t->created_at->format('H:i'),
+                                    ];
+                                });
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -43,6 +59,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'app_settings' => Setting::first(),
             'service_areas' => ServiceArea::all(),
+            'notifications' => $notifications,
         ];
     }
 }

@@ -14,7 +14,7 @@ class TestimoniController extends Controller
         $limit = $request->input('limit', 10);
         $search = $request->input('search');
 
-        $testimonis = Testimoni::query()
+        $testimonis = Testimoni::with('transaction.items.employee')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'ilike', "%{$search}%")
                       ->orWhere('packages_description', 'ilike', "%{$search}%")

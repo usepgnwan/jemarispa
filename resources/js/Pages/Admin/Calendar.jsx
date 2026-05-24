@@ -265,8 +265,8 @@ export default function Calendar({ auth, events, summary, employees, packages, a
         }, {}) || {};
 
         const detailsText = Object.entries(grouped).map(([index, items]) => {
-            const personDetails = items.map(item => `  - ${item.package_name} (${item.package_duration})`).join('\n');
-            return `*Customer ke-${index}*:\n${personDetails}`;
+            const personDetails = items.map(item => `  - ${item.package_name}`).join('\n');
+            return `*Person ${index}*:\n${personDetails}`;
         }).join('\n\n');
 
         const safeOrderNumber = transaction.order_number?.replace(/\//g, '-') || 'POS';

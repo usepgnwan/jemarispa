@@ -352,7 +352,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         }, {});
 
         const detailsText = Object.entries(grouped).map(([index, items]) => {
-            const personDetails = items.map(item => `  - ${item.package_name} (${item.package_duration})`).join('\n');
+            const personDetails = items.map(item => `  - ${item.package_name}`).join('\n');
             return `*Person ${index}*:\n${personDetails}`;
         }).join('\n\n');
 

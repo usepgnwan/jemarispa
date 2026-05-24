@@ -229,6 +229,9 @@ export default function Index({ testimonis, filters }) {
                                             Deskripsi
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
+                                            Detail Pesanan
+                                        </th>
+                                        <th scope="col" className="px-6 py-4 text-left text-[13px] font-bold text-gray-700 capitalize tracking-wide">
                                             Status
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-right text-[13px] font-bold text-gray-700 capitalize tracking-wide rounded-r-xl">
@@ -272,6 +275,35 @@ export default function Index({ testimonis, filters }) {
                                                     dangerouslySetInnerHTML={{ __html: testimoni.description }}
                                                 />
                                             </td>
+                                            <td className="px-6 py-5 text-sm">
+                                                {testimoni.transaction ? (() => {
+                                                    const tx = testimoni.transaction;
+                                                    const therapists = [...new Set(tx.items?.filter(i => i.employee).map(i => i.employee.name))].join(', ') || 'Belum dipilih';
+                                                    const isComplaint = testimoni.star <= 3;
+                                                    return (
+                                                        <div className="flex flex-col gap-1">
+                                                            {isComplaint && (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 self-start mb-1">
+                                                                    ⚠️ COMPLAINT
+                                                                </span>
+                                                            )}
+                                                            <div className="font-mono text-xs text-gray-900">{tx.order_number}</div>
+                                                            <div className="text-[10px] text-gray-500">{tx.schedule_date} {tx.schedule_time?.substring(0, 5)}</div>
+                                                            <div className="text-[10px] text-[#0057B8] font-semibold mt-1 truncate max-w-[150px]" title={therapists}>
+                                                                Terapis: {therapists}
+                                                            </div>
+                                                            <Link
+                                                                href={route('admin.transaction.index', { search: tx.order_number })}
+                                                                className="inline-flex items-center gap-1 text-[10px] font-bold text-zenith-orange hover:text-zenith-orange/80 transition-colors mt-1"
+                                                            >
+                                                                Lihat Detail <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                                            </Link>
+                                                        </div>
+                                                    );
+                                                })() : (
+                                                    <span className="text-gray-400 text-xs italic">- Manual -</span>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-5 whitespace-nowrap">
                                                 <button
                                                     onClick={() => router.patch(route('testimoni.publish', testimoni.id))}
@@ -311,7 +343,7 @@ export default function Index({ testimonis, filters }) {
                                     ))}
                                     {testimonis.data.length === 0 && (
                                         <tr>
-                                            <td colSpan="8" className="px-6 py-16 text-center">
+                                            <td colSpan="9" className="px-6 py-16 text-center">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <svg className="w-16 h-16 text-gray-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />

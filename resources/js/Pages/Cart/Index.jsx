@@ -415,13 +415,20 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                     return `Pelanggan ${i + 1}:\n  - ${pkgs}`;
                 }).join('\n');
 
+                const formattedDate = formData.date ? new Date(formData.date).toLocaleDateString('id-ID', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }) : '';
+
                 const waData = {
                     name: formData.name,
                     phone: formData.phone,
                     address: formData.address,
-                    date: formData.date,
+                    date: formattedDate,
                     time: formData.time,
-                    schedule: `${formData.date}, ${formData.time}`,
+                    schedule: `${formattedDate}, ${formData.time}`,
                     payment: payload.payment_method,
                     pax: pax,
                     details: guestDetails, // Keeping this for backward compatibility
@@ -821,6 +828,18 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                         >
                                             {t.checkout}
                                         </button>
+
+                                        <p className="text-[10px] text-zenith-charcoal/40 text-center leading-relaxed px-2 mt-4">
+                                            {lang === 'ID' ? (
+                                                <>
+                                                    Setelah Klik tombol <strong className="text-zenith-orange">"send to whatsapp"</strong> di atas, anda akan otomatis di alihkan ke aplikasi whatsapp, lalu klik <strong className="text-zenith-orange">"kirim chat"</strong> pada whatsapp Anda untuk mengirimkan form yang sudah dibuat ke customer service kami.
+                                                </>
+                                            ) : (
+                                                <>
+                                                    After clicking the <strong className="text-zenith-orange">"send to whatsapp"</strong> button above, you will be automatically redirected to the WhatsApp application, then click <strong className="text-zenith-orange">"send chat"</strong> on your WhatsApp to send the created form to our customer service.
+                                                </>
+                                            )}
+                                        </p>
                                     </div>
                                 </form>
                             </div>
