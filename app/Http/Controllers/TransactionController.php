@@ -178,7 +178,7 @@ class TransactionController extends Controller
                     }
 
                     // If frontend didn't send commission, or it's 0, use calculated
-                    $finalCommission = ($guest['therapist_commission'] > 0) ? $guest['therapist_commission'] : $guestCommission;
+                    $finalCommission = (!empty($guest['therapist_commission']) && $guest['therapist_commission'] > 0) ? $guest['therapist_commission'] : $guestCommission;
 
                     foreach ($guest['packages'] as $package) {
                         TransactionItem::create([
@@ -240,7 +240,7 @@ class TransactionController extends Controller
                 'notes' => $validated['notes'] ?? null,
                 'total_price' => $validated['total_price'],
                 'voucher_id' => $validated['voucher_id'] ?? null,
-                'discount_amount' => ($validated['voucher_id'] ?? null) ? (\App\Models\Voucher::find($validated['voucher_id'])->discount_amount ?? 0) : 0,
+                'discount_amount' => !empty($validated['voucher_id']) ? (\App\Models\Voucher::find($validated['voucher_id'])->discount_amount ?? 0) : 0,
                 'status' => 'pending',
             ]);
 
@@ -271,8 +271,8 @@ class TransactionController extends Controller
                     TransactionItem::create([
                         'transaction_id' => $transaction->id,
                         'guest_index' => $i + 1,
-                        'guest_gender' => $guest['guestGender'],
-                        'therapist_gender_preference' => $guest['therapistGender'],
+                        'guest_gender' => $guest['guestGender'] ?? 'wanita',
+                        'therapist_gender_preference' => $guest['therapistGender'] ?? 'wanita',
                         'package_name' => $package['name'],
                         'package_duration' => (str_contains($package['duration'], ' Menit') ? $package['duration'] : $package['duration'] . ' Menit'),
                         'price' => $package['price'],

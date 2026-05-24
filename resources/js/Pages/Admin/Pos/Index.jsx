@@ -26,6 +26,7 @@ import {
     TicketIcon
 } from '@heroicons/react/24/outline';
 import Modal from '@/Components/Modal';
+import Select from 'react-select';
 
 export default function Index({ auth, packages = [], employees = [], todayTransactions = [], platforms = [], app_settings }) {
     const [showAddModal, setShowAddModal] = useState(false);
@@ -595,16 +596,54 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                             <IdentificationIcon className="w-3.5 h-3.5" />
                                                             Terapis
                                                         </label>
-                                                        <select
-                                                            className="w-full bg-white border-gray-100 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-700 focus:ring-zenith-orange shadow-sm"
-                                                            value={guest.employee_id}
-                                                            onChange={(e) => updateGuest(gIndex, 'employee_id', e.target.value)}
-                                                        >
-                                                            <option value="">Pilih Terapis</option>
-                                                            {employees.map(emp => (
-                                                                <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                                            ))}
-                                                        </select>
+                                                        <Select
+                                                            options={employees.map(emp => ({ value: emp.id, label: emp.name }))}
+                                                            value={employees.filter(emp => emp.id === guest.employee_id).map(emp => ({ value: emp.id, label: emp.name }))[0] || null}
+                                                            onChange={(selectedOption) => updateGuest(gIndex, 'employee_id', selectedOption ? selectedOption.value : '')}
+                                                            placeholder="Pilih Terapis"
+                                                            isClearable
+                                                            menuPortalTarget={document.body}
+                                                            styles={{
+                                                                menuPortal: base => ({ ...base, zIndex: 9999 }),
+                                                                control: (base, state) => ({
+                                                                    ...base,
+                                                                    minHeight: '44px',
+                                                                    backgroundColor: 'white',
+                                                                    border: state.isFocused ? '1px solid #f97316' : '1px solid #f3f4f6',
+                                                                    borderRadius: '0.75rem',
+                                                                    boxShadow: state.isFocused ? '0 0 0 1px #f97316' : '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                                                                    '&:hover': {
+                                                                        border: state.isFocused ? '1px solid #f97316' : '1px solid #e5e7eb'
+                                                                    }
+                                                                }),
+                                                                option: (base, state) => ({
+                                                                    ...base,
+                                                                    backgroundColor: state.isSelected ? '#f97316' : state.isFocused ? '#fff7ed' : 'white',
+                                                                    color: state.isSelected ? 'white' : '#374151',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: '700',
+                                                                    cursor: 'pointer'
+                                                                }),
+                                                                singleValue: (base) => ({
+                                                                    ...base,
+                                                                    color: '#374151',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: '700'
+                                                                }),
+                                                                placeholder: (base) => ({
+                                                                    ...base,
+                                                                    color: '#9ca3af',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: '700'
+                                                                }),
+                                                                menu: (base) => ({
+                                                                    ...base,
+                                                                    borderRadius: '0.75rem',
+                                                                    overflow: 'hidden',
+                                                                    zIndex: 50
+                                                                })
+                                                            }}
+                                                        />
                                                     </div>
                                                 </div>
 
@@ -911,7 +950,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                         <div className="text-right sm:w-32">
                                             <p className="text-xs sm:text-sm font-bold text-zenith-orange whitespace-nowrap">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                         </div>
-                                        {activeGuestIndex !== null && guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`) !== -1 ? (
+                                        {activeGuestIndex !== null && guests[activeGuestIndex] && guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`) !== -1 ? (
                                             <div className="flex items-center gap-2 shrink-0">
                                                 {/* Checklist Status */}
                                                 <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
@@ -920,6 +959,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
                                                 {/* Unchecklist Action */}
                                                 <button
                                                     onClick={() => {
+                                                        if (!guests[activeGuestIndex]) return;
                                                         const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`);
                                                         if (pkgIdx !== -1) removePackageFromGuest(activeGuestIndex, pkgIdx);
                                                     }}
