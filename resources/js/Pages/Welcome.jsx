@@ -164,7 +164,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
 
             <main>
                 <Hero activeService={activeService} lang={lang} />
-                <Highlights />
+                <Highlights lang={lang} />
                 <SignatureRituals rituals={signaturePackages} lang={lang} setActiveService={setActiveService} />
                 <Pricing packages={packages} lang={lang} activeService={activeService} signaturePackages={signaturePackages} />
                 <Testimonials testimonials={testimonials} lang={lang} />
