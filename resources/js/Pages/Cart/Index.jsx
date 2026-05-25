@@ -157,6 +157,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
     const [voucherCode, setVoucherCode] = useState('');
     const [appliedVoucher, setAppliedVoucher] = useState(null);
     const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const isFirstRender = useRef(true);
     const t = translations[lang];
@@ -364,11 +365,15 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
     const handleCheckout = async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
+
         const hasPackages = guests.some(g => g.packages.length > 0);
         if (!hasPackages) {
             showToast(lang === 'ID' ? 'Pilih minimal satu paket!' : 'Select at least one package!');
             return;
         }
+
+        setIsSubmitting(true);
 
         const totalPrice = calculateGrandTotal();
         const guestDetails = guests.map((g, i) => {
@@ -486,10 +491,13 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                 localStorage.removeItem('jemari_checkout_guests');
 
                 router.visit('/');
+            } else {
+                setIsSubmitting(false);
             }
         } catch (error) {
             console.error(error);
             showToast(lang === 'ID' ? 'Terjadi kesalahan saat memproses pesanan.' : 'An error occurred while processing your order.');
+            setIsSubmitting(false);
         }
     };
 
@@ -824,9 +832,13 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
                                         <button
                                             type="submit"
-                                            className="w-full py-5 bg-zenith-orange text-white rounded-full text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-orange/40 hover:bg-zenith-charcoal transition-all transform active:scale-95"
+                                            disabled={isSubmitting}
+                                            className="w-full py-5 bg-zenith-orange text-white rounded-full text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-orange/40 hover:bg-zenith-charcoal transition-all transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-zenith-orange disabled:active:scale-100 flex items-center justify-center gap-3"
                                         >
-                                            {t.checkout}
+                                            {isSubmitting && (
+                                                <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
+                                            )}
+                                            <span>{isSubmitting ? (lang === 'ID' ? 'Memproses...' : 'Processing...') : t.checkout}</span>
                                         </button>
 
                                         <p className="text-[10px] text-zenith-charcoal/40 text-center leading-relaxed px-2 mt-4">

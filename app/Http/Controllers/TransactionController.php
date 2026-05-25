@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewOrderMail;
+use App\Models\MailLog;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Throwable;
 
 class TransactionController extends Controller
 {
@@ -226,7 +230,7 @@ class TransactionController extends Controller
             'guests' => 'required|array|min:1',
         ]);
 
-        return DB::transaction(function () use ($validated) {
+        $transaction = DB::transaction(function () use ($validated) {
             $orderNumber = 'INV/' . date('y/m/') . sprintf('%04d', Transaction::count() + 1);
 
             $transaction = Transaction::create([
@@ -282,12 +286,91 @@ class TransactionController extends Controller
                 }
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaction created successfully',
-                'transaction' => $transaction,
-            ]);
+            return $transaction->load('items');
         });
+
+        $this->sendNewOrderEmail($transaction);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transaction created successfully',
+            'transaction' => $transaction,
+        ]);
+    }
+
+    private function sendNewOrderEmail(Transaction $transaction): void
+    {
+        $receiver = config('mail.receiver');
+        $sender = config('mail.from.address');
+        $subject = 'Pesanan Baru ' . $transaction->order_number;
+        $payload = $this->buildMailLogPayload($transaction);
+
+        if (empty($receiver)) {
+            MailLog::create([
+                'transaction_id' => $transaction->id,
+                'order_number' => $transaction->order_number,
+                'mail_sender' => $sender,
+                'mail_receiver' => null,
+                'subject' => $subject,
+                'status' => 'failed',
+                'error_message' => 'MAIL_RECEIVER belum diisi.',
+                'payload' => $payload,
+            ]);
+
+            return;
+        }
+
+        try {
+            Mail::to($receiver)->send(new NewOrderMail($transaction->loadMissing(['items.employee', 'voucher'])));
+
+            MailLog::create([
+                'transaction_id' => $transaction->id,
+                'order_number' => $transaction->order_number,
+                'mail_sender' => $sender,
+                'mail_receiver' => $receiver,
+                'subject' => $subject,
+                'status' => 'success',
+                'payload' => $payload,
+                'sent_at' => now(),
+            ]);
+        } catch (Throwable $e) {
+            MailLog::create([
+                'transaction_id' => $transaction->id,
+                'order_number' => $transaction->order_number,
+                'mail_sender' => $sender,
+                'mail_receiver' => $receiver,
+                'subject' => $subject,
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'payload' => $payload,
+            ]);
+        }
+    }
+
+    private function buildMailLogPayload(Transaction $transaction): array
+    {
+        $transaction->loadMissing('items');
+
+        return [
+            'customer_name' => $transaction->customer_name,
+            'phone' => $transaction->phone,
+            'address' => $transaction->address,
+            'schedule_date' => $transaction->schedule_date,
+            'schedule_time' => $transaction->schedule_time,
+            'payment_method' => $transaction->payment_method,
+            'source' => $transaction->source,
+            'notes' => $transaction->notes,
+            'total_price' => $transaction->total_price,
+            'discount_amount' => $transaction->discount_amount,
+            'items' => $transaction->items->map(fn ($item) => [
+                'guest_index' => $item->guest_index,
+                'guest_gender' => $item->guest_gender,
+                'therapist_gender_preference' => $item->therapist_gender_preference,
+                'package_name' => $item->package_name,
+                'package_duration' => $item->package_duration,
+                'price' => $item->price,
+            ])->values()->all(),
+        ];
     }
 
     public function update(Request $request, Transaction $transaction)
@@ -478,4 +561,3 @@ class TransactionController extends Controller
         ]);
     }
 }
-
