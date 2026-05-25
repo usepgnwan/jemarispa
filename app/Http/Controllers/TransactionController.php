@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\QueryException;
+use RuntimeException;
 use Throwable;
 
 class TransactionController extends Controller
@@ -230,64 +232,7 @@ class TransactionController extends Controller
             'guests' => 'required|array|min:1',
         ]);
 
-        $transaction = DB::transaction(function () use ($validated) {
-            $orderNumber = 'INV/' . date('y/m/') . sprintf('%04d', Transaction::count() + 1);
-
-            $transaction = Transaction::create([
-                'order_number' => $orderNumber,
-                'customer_name' => $validated['customer_name'],
-                'phone' => $validated['phone'] ?? null,
-                'address' => $validated['address'],
-                'schedule_date' => $validated['schedule_date'],
-                'schedule_time' => $validated['schedule_time'],
-                'payment_method' => $validated['payment_method'],
-                'source' => $validated['source'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'total_price' => $validated['total_price'],
-                'voucher_id' => $validated['voucher_id'] ?? null,
-                'discount_amount' => !empty($validated['voucher_id']) ? (\App\Models\Voucher::find($validated['voucher_id'])->discount_amount ?? 0) : 0,
-                'status' => 'pending',
-            ]);
-
-            if (!empty($validated['voucher_id'])) {
-                \App\Models\Voucher::where('id', $validated['voucher_id'])->increment('used_count');
-            }
-
-            foreach ($validated['guests'] as $i => $guest) {
-                $guestCommission = 0;
-                foreach ($guest['packages'] as $package) {
-                    $pName = $package['groupName'] ?? $package['name'];
-                    $pDuration = $package['duration'];
-                    // Strip extra "Menit" if it's already there before appending or normalizing
-                    if (str_contains($pDuration, ' Menit')) {
-                        $pDuration = str_replace(' Menit', '', $pDuration);
-                    }
-                    $pDuration .= ' Menit';
-
-                    $commission = DB::table('package_durations')
-                        ->join('packages', 'packages.id', '=', 'package_durations.package_id')
-                        ->where('packages.title_id', $pName)
-                        ->where('package_durations.duration', $pDuration)
-                        ->value('commission') ?? 0;
-                    $guestCommission += $commission;
-                }
-
-                foreach ($guest['packages'] as $package) {
-                    TransactionItem::create([
-                        'transaction_id' => $transaction->id,
-                        'guest_index' => $i + 1,
-                        'guest_gender' => $guest['guestGender'] ?? 'wanita',
-                        'therapist_gender_preference' => $guest['therapistGender'] ?? 'wanita',
-                        'package_name' => $package['name'],
-                        'package_duration' => (str_contains($package['duration'], ' Menit') ? $package['duration'] : $package['duration'] . ' Menit'),
-                        'price' => $package['price'],
-                        'therapist_commission' => $guestCommission,
-                    ]);
-                }
-            }
-
-            return $transaction->load('items');
-        });
+        $transaction = $this->createStoreTransaction($validated);
 
         $this->sendNewOrderEmail($transaction);
 
@@ -296,6 +241,105 @@ class TransactionController extends Controller
             'message' => 'Transaction created successfully',
             'transaction' => $transaction,
         ]);
+    }
+
+    private function createStoreTransaction(array $validated): Transaction
+    {
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            try {
+                return DB::transaction(function () use ($validated) {
+                    $orderNumber = $this->nextOrderNumber();
+
+                    $transaction = Transaction::create([
+                        'order_number' => $orderNumber,
+                        'customer_name' => $validated['customer_name'],
+                        'phone' => $validated['phone'] ?? null,
+                        'address' => $validated['address'],
+                        'schedule_date' => $validated['schedule_date'],
+                        'schedule_time' => $validated['schedule_time'],
+                        'payment_method' => $validated['payment_method'],
+                        'source' => $validated['source'] ?? null,
+                        'notes' => $validated['notes'] ?? null,
+                        'total_price' => $validated['total_price'],
+                        'voucher_id' => $validated['voucher_id'] ?? null,
+                        'discount_amount' => !empty($validated['voucher_id']) ? (\App\Models\Voucher::find($validated['voucher_id'])->discount_amount ?? 0) : 0,
+                        'status' => 'pending',
+                    ]);
+
+                    if (!empty($validated['voucher_id'])) {
+                        \App\Models\Voucher::where('id', $validated['voucher_id'])->increment('used_count');
+                    }
+
+                    foreach ($validated['guests'] as $i => $guest) {
+                        $guestCommission = 0;
+                        foreach ($guest['packages'] as $package) {
+                            $pName = $package['groupName'] ?? $package['name'];
+                            $pDuration = $package['duration'];
+                            // Strip extra "Menit" if it's already there before appending or normalizing
+                            if (str_contains($pDuration, ' Menit')) {
+                                $pDuration = str_replace(' Menit', '', $pDuration);
+                            }
+                            $pDuration .= ' Menit';
+
+                            $commission = DB::table('package_durations')
+                                ->join('packages', 'packages.id', '=', 'package_durations.package_id')
+                                ->where('packages.title_id', $pName)
+                                ->where('package_durations.duration', $pDuration)
+                                ->value('commission') ?? 0;
+                            $guestCommission += $commission;
+                        }
+
+                        foreach ($guest['packages'] as $package) {
+                            TransactionItem::create([
+                                'transaction_id' => $transaction->id,
+                                'guest_index' => $i + 1,
+                                'guest_gender' => $guest['guestGender'] ?? 'wanita',
+                                'therapist_gender_preference' => $guest['therapistGender'] ?? 'wanita',
+                                'package_name' => $package['name'],
+                                'package_duration' => (str_contains($package['duration'], ' Menit') ? $package['duration'] : $package['duration'] . ' Menit'),
+                                'price' => $package['price'],
+                                'therapist_commission' => $guestCommission,
+                            ]);
+                        }
+                    }
+
+                    return $transaction->load('items');
+                });
+            } catch (QueryException $e) {
+                if ($attempt === 3 || ! $this->isUniqueConstraintViolation($e)) {
+                    throw $e;
+                }
+            }
+        }
+
+        throw new RuntimeException('Unable to create transaction after retrying order number generation.');
+    }
+
+    private function nextOrderNumber(): string
+    {
+        $prefix = 'INV/' . now()->format('y/m') . '/';
+
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('select pg_advisory_xact_lock(hashtext(?))', ['transactions_order_number_' . $prefix]);
+        }
+
+        $lastSequence = Transaction::where('order_number', 'like', $prefix . '%')
+            ->pluck('order_number')
+            ->map(function ($orderNumber) use ($prefix) {
+                if (preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $orderNumber, $matches)) {
+                    return (int) $matches[1];
+                }
+
+                return 0;
+            })
+            ->max() ?? 0;
+
+        return $prefix . sprintf('%04d', $lastSequence + 1);
+    }
+
+    private function isUniqueConstraintViolation(QueryException $e): bool
+    {
+        return in_array($e->getCode(), ['23000', '23505'], true);
     }
 
     private function sendNewOrderEmail(Transaction $transaction): void
