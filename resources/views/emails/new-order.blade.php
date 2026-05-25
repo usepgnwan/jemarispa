@@ -16,6 +16,9 @@
         $serviceDate = $transaction->schedule_date ? \Carbon\Carbon::parse($transaction->schedule_date)->format('d M Y') : '-';
         $createdDate = $transaction->created_at ? \Carbon\Carbon::parse($transaction->created_at)->format('d M Y') : '-';
         $therapists = $items->pluck('employee.name')->filter()->unique()->join(', ') ?: '-';
+        $cleanPackageName = function ($name) {
+            return trim(preg_replace('/\s+\d+\s*(menit|minutes|mins|min)\b/i', '', (string) $name));
+        };
     @endphp
 
     <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f4f5f7; padding:24px 0;">
@@ -123,7 +126,7 @@
                                         @foreach ($guestItems as $item)
                                             <tr>
                                                 <td style="padding:13px 6px 13px 14px; border-bottom:1px solid #f5f5f5; font-size:12px; color:#222;">
-                                                    <div style="font-weight:bold;">{{ $item->package_name }}</div>
+                                                    <div style="font-weight:bold;">{{ $cleanPackageName($item->package_name) }}</div>
                                                     <div style="font-size:10px; color:#888; margin-top:3px;">{{ $item->package_duration }} | {{ ucfirst($item->guest_gender ?: '-') }} | Terapis {{ ucfirst($item->therapist_gender_preference ?: '-') }}</div>
                                                 </td>
                                                 <td align="center" style="padding:13px 6px; border-bottom:1px solid #f5f5f5; font-size:12px;">1 Pax</td>

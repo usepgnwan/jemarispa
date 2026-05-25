@@ -232,6 +232,9 @@
             $logoData = base64_encode(file_get_contents($logoPath));
             $logoSrc = 'data:image/jpeg;base64,' . $logoData;
         }
+        $cleanPackageName = function ($name) {
+            return trim(preg_replace('/\s+\d+\s*(menit|minutes|mins|min)\b/i', '', (string) $name));
+        };
     @endphp
     <div class="header">
         <div class="logo-container">
@@ -353,7 +356,7 @@
                 @foreach($items as $item)
                 <tr>
                     <td style="padding-left: 15px;">
-                        <span class="item-name">{{ $item->package_name }}</span>
+                        <span class="item-name">{{ $cleanPackageName($item->package_name) }}</span>
                         <div style="font-size: 9px; color: #888; margin-top: 2px;">{{ $item->package_duration }} | {{ ucfirst($item->guest_gender) }}</div>
                     </td>
                     <td class="text-center">1 Pax</td>
