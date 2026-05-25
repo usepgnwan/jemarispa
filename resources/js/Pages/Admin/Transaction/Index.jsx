@@ -110,7 +110,7 @@ jemarihomespa.com`;
 const cleanPackageName = (name) => String(name || '').replace(/\s+\d+\s*(menit|minutes|mins|min)\b/gi, '').trim();
 const formatDurationLabel = (duration) => {
     const minutes = String(duration || '').match(/\d+/)?.[0];
-    return minutes || '';
+    return minutes ? `${minutes} menit` : '';
 };
 const formatPackagePrice = (price) => `Rp. ${Math.round(parseFloat(price || 0)).toLocaleString('id-ID').replace(/\./g, ' ')}`;
 
