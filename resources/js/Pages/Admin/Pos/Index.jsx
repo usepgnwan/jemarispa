@@ -63,6 +63,39 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         packages: []
     }]);
 
+    const defaultInvoiceTemplate = `Halo, Kak [name],
+Terlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :
+
+[details]
+Biaya Transport : [transport]
+-
+*Total Pembayaran : [total]*
+
+
+Untuk file invoice bisa di download di sini [link]
+-
+
+
+Pembayaran bisa melalui terapis kami atau transfer melalui rekening berikut :
+BCA a.n Acep Dani : 7772554756
+(Kirimkan bukti transfer, dan nama pemilik rekening setelah melakukan pembayaran)
+
+
+-
+Silahkan lampirkan kritik dan saran untuk pelayanan kami melalui link berikut
+[link_review]
+
+
+Terima kasih telah menggunakan jasa Jemari Home Spa
+jemarihomespa.com`;
+
+    const cleanPackageName = (name) => String(name || '').replace(/\s+\d+\s*(menit|minutes|mins|min)\b/gi, '').trim();
+    const formatDurationLabel = (duration) => {
+        const minutes = String(duration || '').match(/\d+/)?.[0];
+        return minutes || '';
+    };
+    const formatPackagePrice = (price) => `Rp. ${Math.round(parseFloat(price || 0)).toLocaleString('id-ID').replace(/\./g, ' ')}`;
+
     const handlePaxChange = (newPax) => {
         const count = parseInt(newPax);
         setPax(count);
@@ -341,7 +374,7 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
     };
 
     const getInvoiceMessageAsync = async (transaction) => {
-        const rawTemplate = app_settings?.template_invoice || `Halo Kak [name], terlampir invoice [invoice_no]...`;
+        const rawTemplate = app_settings?.template_invoice || defaultInvoiceTemplate;
         const formatCurrency = (val) => `Rp ${parseFloat(val).toLocaleString('id-ID')}`;
 
         const grouped = (transaction.items || []).reduce((acc, item) => {
@@ -352,8 +385,11 @@ export default function Index({ auth, packages = [], employees = [], todayTransa
         }, {});
 
         const detailsText = Object.entries(grouped).map(([index, items]) => {
-            const personDetails = items.map(item => `  - ${item.package_name}`).join('\n');
-            return `*Person ${index}*:\n${personDetails}`;
+            const personDetails = items.map(item => {
+                const duration = formatDurationLabel(item.package_duration);
+                return `  - ${cleanPackageName(item.package_name)}${duration ? ` ${duration}` : ''} : ${formatPackagePrice(item.price)}`;
+            }).join('\n');
+            return `Person ${index}:\n${personDetails}`;
         }).join('\n\n');
 
         const safeOrderNumber = transaction.order_number.replace(/\//g, '-');

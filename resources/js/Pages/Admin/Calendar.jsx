@@ -41,6 +41,39 @@ export default function Calendar({ auth, events, summary, employees, packages, a
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [visibleRange, setVisibleRange] = useState({ start: null, end: null });
 
+    const defaultInvoiceTemplate = `Halo, Kak [name],
+Terlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :
+
+[details]
+Biaya Transport : [transport]
+-
+*Total Pembayaran : [total]*
+
+
+Untuk file invoice bisa di download di sini [link]
+-
+
+
+Pembayaran bisa melalui terapis kami atau transfer melalui rekening berikut :
+BCA a.n Acep Dani : 7772554756
+(Kirimkan bukti transfer, dan nama pemilik rekening setelah melakukan pembayaran)
+
+
+-
+Silahkan lampirkan kritik dan saran untuk pelayanan kami melalui link berikut
+[link_review]
+
+
+Terima kasih telah menggunakan jasa Jemari Home Spa
+jemarihomespa.com`;
+
+    const cleanPackageName = (name) => String(name || '').replace(/\s+\d+\s*(menit|minutes|mins|min)\b/gi, '').trim();
+    const formatDurationLabel = (duration) => {
+        const minutes = String(duration || '').match(/\d+/)?.[0];
+        return minutes || '';
+    };
+    const formatPackagePrice = (price) => `Rp. ${Math.round(parseFloat(price || 0)).toLocaleString('id-ID').replace(/\./g, ' ')}`;
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -153,7 +186,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
 
                     duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
                 }
-                
+
                 console.log("UPDATE_ITEM_COMMISSION", { item_package: item.package_name, pkg: pkg.title_id, duration: duration?.duration, commission: duration?.commission });
 
                 if (duration) {
@@ -240,7 +273,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
     const prepareInvoiceText = async (transaction) => {
         if (!transaction) return '';
 
-        let message = app_settings?.template_invoice || `Halo, Kak [name],\n\nTerlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :\n\n[details]\n\nBiaya Transport : [transport]\n\nTotal Pembayaran : [total]\n\nUntuk file invoice bisa di download di sini [link]\n\n-\n\nPembayaran bisa melalui terapis kami atau transfer melalui rekening berikut :\n\nBCA a.n Acep Dani : 7772554756\n(Kirimkan bukti transfer, dan nama pemilik rekening setelah melakukan pembayaran)\n\n-\n\nUntuk kritik dan saran, silahkan lampirkan di link berikut\n[link_review]\n\nTerima kasih telah menggunakan jasa Jemari Home Spa\n\njemarihomespa.com`;
+        let message = app_settings?.template_invoice || defaultInvoiceTemplate;
 
         let linkReview = '';
         if (message.includes('[link_review]')) {
@@ -265,8 +298,11 @@ export default function Calendar({ auth, events, summary, employees, packages, a
         }, {}) || {};
 
         const detailsText = Object.entries(grouped).map(([index, items]) => {
-            const personDetails = items.map(item => `  - ${item.package_name}`).join('\n');
-            return `*Person ${index}*:\n${personDetails}`;
+            const personDetails = items.map(item => {
+                const duration = formatDurationLabel(item.package_duration);
+                return `  - ${cleanPackageName(item.package_name)}${duration ? ` ${duration}` : ''} : ${formatPackagePrice(item.price)}`;
+            }).join('\n');
+            return `Person ${index}:\n${personDetails}`;
         }).join('\n\n');
 
         const safeOrderNumber = transaction.order_number?.replace(/\//g, '-') || 'POS';
