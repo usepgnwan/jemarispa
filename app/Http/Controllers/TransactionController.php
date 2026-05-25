@@ -60,10 +60,10 @@ class TransactionController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo   = $request->input('date_to');
         if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
+            $query->whereDate('schedule_date', '>=', $dateFrom);
         }
         if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
+            $query->whereDate('schedule_date', '<=', $dateTo);
         }
 
         $transactions = $query->orderBy('schedule_date', 'desc')
