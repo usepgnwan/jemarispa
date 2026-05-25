@@ -41,7 +41,7 @@ class TransactionController extends Controller
 
         // Tab Filtering
         if ($tab === 'recent') {
-            $query->where('created_at', '>=', now()->subDays(3));
+            $query->where('schedule_date', '>=', now()->subDays(3));
         } else if ($tab === 'all') {
             // No extra filtering
         } else if (in_array($tab, ['pending', 'send_terapis', 'invoice', 'success', 'failed'])) {
@@ -76,7 +76,7 @@ class TransactionController extends Controller
         // Get counts for tabs
         $counts = [
             'all' => Transaction::count(),
-            'recent' => Transaction::where('created_at', '>=', now()->subDays(3))->count(),
+            'recent' => Transaction::where('schedule_date', '>=', now()->subDays(3))->count(),
             'pending' => Transaction::where('status', 'pending')->count(),
             'send_terapis' => Transaction::where('status', 'send_terapis')->count(),
             'invoice' => Transaction::where('status', 'invoice')->count(),
