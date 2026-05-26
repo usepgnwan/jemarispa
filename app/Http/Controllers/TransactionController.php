@@ -454,6 +454,10 @@ class TransactionController extends Controller
                                 'employee_id' => $itemData['employee_id'] ?? null,
                                 'therapist_commission' => $itemData['therapist_commission'] ?? 0,
                                 'guest_gender' => $itemData['guest_gender'] ?? 'wanita',
+                                'therapist_gender_preference' => $itemData['therapist_gender_preference'] ?? 'wanita',
+                                'package_name' => $itemData['package_name'] ?? null,
+                                'package_duration' => $itemData['package_duration'] ?? null,
+                                'price' => $itemData['price'] ?? 0,
                             ]);
                     }
                 }

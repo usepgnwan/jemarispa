@@ -998,7 +998,7 @@ jemarihomespa.com`;
                                                                                         label: pkg.title_id,
                                                                                         options: (pkg.durations || []).map((dur, dIdx) => ({
                                                                                             value: `${pkg.id}|${dIdx}`,
-                                                                                            label: `${pkg.title_id}`
+                                                                                            label: `${pkg.title_id} - ${dur.duration} (${formatCurrency(dur.price)})`
                                                                                         }))
                                                                                     }))}
                                                                                     value={null}
@@ -1064,7 +1064,7 @@ jemarihomespa.com`;
                                                                                                     label: pkg.title_id,
                                                                                                     options: (pkg.durations || []).map((dur, dIdx) => ({
                                                                                                         value: `${pkg.id}|${dIdx}`,
-                                                                                                        label: `${pkg.title_id}`
+                                                                                                        label: `${pkg.title_id} - ${dur.duration} (${formatCurrency(dur.price)})`
                                                                                                     }))
                                                                                                 }))}
                                                                                                 value={{

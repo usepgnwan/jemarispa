@@ -1132,7 +1132,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                             label: pkg.title_id,
                                                             options: pkg.durations.map((dur, dIdx) => ({
                                                                 value: `${pkg.id}|${dIdx}`,
-                                                                label: `${pkg.title_id}  - ${formatCurrency(dur.price)}`
+                                                                label: `${pkg.title_id} - ${dur.duration} (${formatCurrency(dur.price)})`
                                                             }))
                                                         }))}
                                                         value={null}
@@ -1208,7 +1208,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                             label: pkg.title_id,
                                                                             options: pkg.durations.map((dur, dIdx) => ({
                                                                                 value: `${pkg.id}|${dIdx}`,
-                                                                                label: `${pkg.title_id}  - ${formatCurrency(dur.price)}`
+                                                                                label: `${pkg.title_id} - ${dur.duration} (${formatCurrency(dur.price)})`
                                                                             }))
                                                                         }))}
                                                                         value={{

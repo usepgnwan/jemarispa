@@ -70,7 +70,7 @@ class CalendarController extends Controller
             'events' => $transactions,
             'summary' => $summary,
             'employees' => $employees,
-            'packages' => Package::with('durations')->get(),
+            'packages' => Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
             'app_settings' => \App\Models\Setting::first()
         ]);
     }
