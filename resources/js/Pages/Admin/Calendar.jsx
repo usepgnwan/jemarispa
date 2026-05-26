@@ -638,7 +638,7 @@ jemarihomespa.com`;
 
                     <div className="flex flex-col lg:flex-row gap-8">
                         {/* Calendar Section */}
-                        <div className="flex-1 bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="flex-1 bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-gray-100">
                             <div className="full-calendar-custom">
                                 <FullCalendar
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
