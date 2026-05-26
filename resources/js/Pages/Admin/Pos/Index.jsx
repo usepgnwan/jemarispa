@@ -843,6 +843,11 @@ jemarihomespa.com`;
                                                     onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                                                 >
                                                     <option value="Website">Website</option>
+                                                    <option value="Instagram">Instagram</option>
+                                                    <option value="Facebook">Facebook</option>
+                                                    <option value="WhatsApp">WhatsApp</option>
+                                                    <option value="Teman/Keluarga">Teman/Keluarga</option>
+                                                    <option value="Lainnya">Lainnya</option>
                                                     {platforms.map(p => (
                                                         <option key={p.id} value={p.title}>{p.title}</option>
                                                     ))}
