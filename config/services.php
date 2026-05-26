@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'gtm' => [
+        'code' => env('GTM_CODE'),
+    ],
+
 ];

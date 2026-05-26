@@ -35,9 +35,9 @@ class TransactionController extends Controller
         // Search
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                $q->where('order_number', 'ilike', "%{$search}%")
+                  ->orWhere('customer_name', 'ilike', "%{$search}%")
+                  ->orWhere('phone', 'ilike', "%{$search}%");
             });
         }
 
@@ -323,7 +323,7 @@ class TransactionController extends Controller
             DB::statement('select pg_advisory_xact_lock(hashtext(?))', ['transactions_order_number_' . $prefix]);
         }
 
-        $lastSequence = Transaction::where('order_number', 'like', $prefix . '%')
+        $lastSequence = Transaction::where('order_number', 'ilike', $prefix . '%')
             ->pluck('order_number')
             ->map(function ($orderNumber) use ($prefix) {
                 if (preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', $orderNumber, $matches)) {
