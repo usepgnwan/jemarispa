@@ -8,32 +8,46 @@ use Inertia\Inertia;
 
 class AnalyticController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $analyticQuery = Analytic::query();
+        $transactionQuery = \App\Models\Transaction::query();
+
+        if ($startDate && $endDate) {
+            $analyticQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            $transactionQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        }
+
         // History table
-        $analytics = Analytic::orderBy('created_at', 'desc')->paginate(20);
+        $analytics = (clone $analyticQuery)->orderBy('created_at', 'desc')->paginate(20)->appends($request->query());
 
         // Summary Stats
-        $totalClicks = Analytic::count();
+        $totalClicks = (clone $analyticQuery)->count();
+        // Today and This Month logic (always relative to now unless you want them relative to filter, keeping relative to now for "Today" label logic)
         $clicksToday = Analytic::whereDate('created_at', now()->today())->count();
         $clicksThisMonth = Analytic::where('created_at', '>=', now()->startOfMonth())->count();
 
         // Get Top 5 titles for the multi-line trend chart
-        $top5Titles = Analytic::select('title')
+        $top5Titles = (clone $analyticQuery)->select('title')
             ->groupBy('title')
             ->orderByRaw('count(*) desc')
             ->limit(5)
             ->pluck('title')
             ->toArray();
 
-        // Data for Daily Trend per Title (last 14 days)
-        $rawTrend = Analytic::select(
+        // Data for Daily Trend per Title (last 14 days or filtered)
+        $rawTrend = (clone $analyticQuery)->select(
                 \DB::raw("TO_CHAR(created_at, 'DD Mon') as date_label"),
                 'title',
                 \DB::raw('count(*) as total')
             )
             ->whereIn('title', $top5Titles)
-            ->where('created_at', '>=', now()->subDays(14))
+            ->when(!$startDate, function($q) {
+                $q->where('created_at', '>=', now()->subDays(14));
+            })
             ->groupBy('date_label', 'title')
             ->orderBy(\DB::raw('min(created_at)'), 'asc')
             ->get();
@@ -47,18 +61,15 @@ class AnalyticController extends Controller
             return $row;
         })->values();
 
-        // Get unique categories for chart lines (optional, kept for flexibility)
-        $categories = Analytic::whereNotNull('category')->distinct()->pluck('category')->toArray();
-
         // Data for Item Distribution (Pie Chart)
-        $byItem = Analytic::select('title as name', \DB::raw('count(*) as value'))
+        $byItem = (clone $analyticQuery)->select('title as name', \DB::raw('count(*) as value'))
             ->groupBy('title')
             ->orderBy('value', 'desc')
             ->limit(10)
             ->get();
 
         // Device Detection Stats
-        $analyticsAll = Analytic::all();
+        $analyticsAll = (clone $analyticQuery)->get();
         $deviceStats = [
             'Mobile' => 0,
             'Desktop' => 0
@@ -80,13 +91,38 @@ class AnalyticController extends Controller
         ];
 
         // Top Actions (keep for list)
-        $topActions = Analytic::select('title', 'category', \DB::raw('count(*) as total'))
+        $topActions = (clone $analyticQuery)->select('title', 'category', \DB::raw('count(*) as total'))
             ->groupBy('title', 'category')
             ->orderBy('total', 'desc')
             ->limit(5)
             ->get();
 
+        // Booking Sources (Transactions)
+        $sourceCounts = $transactionQuery->select('source', \DB::raw('count(*) as count'))
+            ->groupBy('source')
+            ->pluck('count', 'source');
+        
+        $platforms = \App\Models\Platform::all()->pluck('title')->toArray();
+        $allSources = array_unique(array_merge(['Website', 'Whatsapp', 'Instagram'], $platforms, $sourceCounts->keys()->toArray()));
+        
+        $bookingSources = [];
+        foreach ($allSources as $src) {
+            $bookingSources[] = [
+                'name' => $src,
+                'value' => $sourceCounts[$src] ?? 0,
+            ];
+        }
+        
+        // Sort descending by value
+        usort($bookingSources, function($a, $b) {
+            return $b['value'] <=> $a['value'];
+        });
+
         return Inertia::render('Admin/Analytic/Index', [
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
             'analytics' => $analytics,
             'stats' => [
                 'total' => $totalClicks,
@@ -96,7 +132,8 @@ class AnalyticController extends Controller
                 'trend' => $trend,
                 'top_titles' => $top5Titles,
                 'top_actions' => $topActions,
-                'device_distribution' => $deviceDistribution
+                'device_distribution' => $deviceDistribution,
+                'booking_sources' => $bookingSources
             ]
         ]);
     }

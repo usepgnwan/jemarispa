@@ -18,7 +18,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
+Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+    $month = $request->query('month');
+
     // ── Monthly Revenue (status = success, last 12 months) — PostgreSQL ──────
     $monthlyRevenue = \App\Models\Transaction::where('status', 'success')
         ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
@@ -31,8 +33,13 @@ Route::get('/dashboard', function () {
             'total' => (float) $r->total,
         ]);
 
-    // ── Status Counts (all time) ─────────────────────────────────────────────
-    $statusCounts = \App\Models\Transaction::selectRaw('status, COUNT(*) as count')
+    $baseQuery = \App\Models\Transaction::query();
+    if ($month) {
+        $baseQuery->whereRaw("TO_CHAR(created_at, 'YYYY-MM') = ?", [$month]);
+    }
+
+    // ── Status Counts ─────────────────────────────────────────────
+    $statusCounts = (clone $baseQuery)->selectRaw('status, COUNT(*) as count')
         ->groupBy('status')
         ->pluck('count', 'status');
 
@@ -48,11 +55,8 @@ Route::get('/dashboard', function () {
         'color' => $s['color'],
     ]);
 
-    // ── Revenue + Commission per Therapist (deduplicated per guest) ───────────
-    // Komisi disimpan per item, bukan per tamu. Seorang tamu bisa punya banyak
-    // paket (items) yang masing-masing menyimpan nilai komisi yang sama.
-    // Solusi: GROUP BY (employee_id, transaction_id, guest_index) dulu untuk
-    // mengambil MAX(commission) per tamu, lalu baru SUM.
+    $monthFilterSql = $month ? "AND TO_CHAR(t.created_at, 'YYYY-MM') = '" . addslashes($month) . "'" : "";
+
     $therapistRows = \Illuminate\Support\Facades\DB::select("
         WITH revenue AS (
             SELECT
@@ -63,6 +67,7 @@ Route::get('/dashboard', function () {
             JOIN transactions t ON t.id = ti.transaction_id
             WHERE ti.employee_id IS NOT NULL
               AND t.status = 'success'
+              {$monthFilterSql}
             GROUP BY ti.employee_id
         ),
         deduped_commission AS (
@@ -75,6 +80,7 @@ Route::get('/dashboard', function () {
             JOIN transactions t ON t.id = ti.transaction_id
             WHERE ti.employee_id IS NOT NULL
               AND t.status = 'success'
+              {$monthFilterSql}
             GROUP BY ti.employee_id, ti.transaction_id, ti.guest_index
         ),
         commission_per_employee AS (
@@ -102,7 +108,7 @@ Route::get('/dashboard', function () {
     ]);
 
     // ── Summary Stats ────────────────────────────────────────────────────────
-    $totalRevenue  = (float) \App\Models\Transaction::where('status', 'success')
+    $totalRevenue  = (float) (clone $baseQuery)->where('status', 'success')
         ->selectRaw('SUM(total_price + COALESCE(transport_fee, 0)) as total')
         ->value('total');
 
@@ -112,7 +118,6 @@ Route::get('/dashboard', function () {
         ->selectRaw('SUM(total_price + COALESCE(transport_fee, 0)) as total')
         ->value('total');
 
-    // Total komisi — deduplicated: satu nilai per (employee, transaction, guest)
     $totalCommission = (float) \Illuminate\Support\Facades\DB::selectOne("
         SELECT COALESCE(SUM(commission), 0) AS total FROM (
             SELECT MAX(COALESCE(therapist_commission, 0)) AS commission
@@ -120,14 +125,16 @@ Route::get('/dashboard', function () {
             JOIN transactions t ON t.id = ti.transaction_id
             WHERE ti.employee_id IS NOT NULL
               AND t.status = 'success'
+              {$monthFilterSql}
             GROUP BY ti.employee_id, ti.transaction_id, ti.guest_index
         ) deduped
     ")->total ?? 0;
 
-    $totalOrders   = \App\Models\Transaction::count();
-    $successOrders = \App\Models\Transaction::where('status', 'success')->count();
+    $totalOrders   = (clone $baseQuery)->count();
+    $successOrders = (clone $baseQuery)->where('status', 'success')->count();
 
     return Inertia::render('Dashboard', [
+        'filters'          => ['month' => $month],
         'monthlyRevenue'   => $monthlyRevenue,
         'statusBreakdown'  => $statusBreakdown,
         'therapistRevenue' => $therapistRevenue,

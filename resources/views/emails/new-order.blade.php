@@ -67,7 +67,7 @@
 
         $summaryLines[] = 'Total: ' . $formatCurrency($total);
 
-        $defaultTemplate = '<p><strong>Form Reservasi Jemari Home Spa</strong></p><p>Nama : [name]</p><p>Jumlah order (pax) : [pax]</p><p>Gender : [gender]</p><p>Alamat Lengkap : [address]</p><p><strong>Pilihan Treatment :</strong>[package]</p><p>Jadwal Treatment : [schedule]</p><p>Metode Pembayaran : [payment]</p><p>Jumlah terapis (pax) : [therapist_pax]</p><p>Pilihan Terapis : [therapist_gender]</p><p>Dari mana Kakak mendapatkan informasi tentang Jemari Home Spa : [source]</p><p><strong>Detail Pesanan:</strong></p><p>[details]</p><p>---</p><p><strong>Total Bayar: [total]</strong></p><p>Catatan: [notes]</p>';
+        $defaultTemplate = '<p><strong>Form Reservasi Jemari Home Spa</strong></p><p>Nama : [name]</p><p>Nomor Telepon : [phone]</p><p>Jumlah order (pax) : [pax]</p><p>Gender : [gender]</p><p>Alamat Lengkap : [address]</p><p><strong>Pilihan Treatment :</strong>[package]</p><p>Jadwal Treatment : [schedule]</p><p>Metode Pembayaran : [payment]</p><p>Jumlah terapis (pax) : [therapist_pax]</p><p>Pilihan Terapis : [therapist_gender]</p><p>Dari mana Kakak mendapatkan informasi tentang Jemari Home Spa : [source]</p><p><strong>Detail Pesanan:</strong></p><p>[details]</p><p>---</p><p><strong>Total Bayar: [total]</strong></p><p>Catatan: [notes]</p>';
         $template = optional($settings)->template_order ?: $defaultTemplate;
         $templateHasHtml = $template !== strip_tags($template);
 

@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { useState } from 'react';
 import Pagination from '@/Components/Pagination';
 import { 
     ChartBarIcon, 
@@ -11,7 +12,8 @@ import {
     ArrowTrendingUpIcon,
     UsersIcon,
     HandRaisedIcon,
-    TableCellsIcon
+    TableCellsIcon,
+    ShoppingCartIcon
 } from '@heroicons/react/24/outline';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -20,7 +22,20 @@ import {
 
 const COLORS = ['#F26440', '#D9A05B', '#407BFF', '#10B981', '#8B5CF6', '#F59E0B'];
 
-export default function Index({ analytics, stats }) {
+export default function Index({ analytics, stats, filters }) {
+    const [startDate, setStartDate] = useState(filters?.start_date || '');
+    const [endDate, setEndDate] = useState(filters?.end_date || '');
+
+    const applyFilter = () => {
+        router.get(route('admin.analytics.index'), { start_date: startDate, end_date: endDate }, { preserveState: true });
+    };
+
+    const clearFilter = () => {
+        setStartDate('');
+        setEndDate('');
+        router.get(route('admin.analytics.index'), {}, { preserveState: true });
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Marketing Analytics" />
@@ -39,7 +54,37 @@ export default function Index({ analytics, stats }) {
                         </h2>
                         <p className="text-sm text-gray-500 mt-2">Lacak performa konversi dan interaksi pelanggan secara real-time.</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border border-gray-200 shadow-sm">
+                            <CalendarIcon className="w-4 h-4 text-gray-400" />
+                            <input 
+                                type="date" 
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                                className="text-xs font-bold text-gray-700 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
+                            />
+                            <span className="text-gray-300 text-xs">-</span>
+                            <input 
+                                type="date" 
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                                className="text-xs font-bold text-gray-700 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
+                            />
+                        </div>
+                        <button 
+                            onClick={applyFilter}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-zenith-orange text-white rounded-2xl text-xs font-bold hover:bg-zenith-orange/90 transition-all shadow-sm shadow-zenith-orange/20"
+                        >
+                            Filter
+                        </button>
+                        {(filters?.start_date || filters?.end_date) && (
+                            <button 
+                                onClick={clearFilter}
+                                className="px-3 py-2.5 bg-gray-100 text-gray-500 rounded-2xl text-xs font-bold hover:bg-gray-200 transition-all"
+                            >
+                                Reset
+                            </button>
+                        )}
                         <button 
                             onClick={() => window.location.reload()}
                             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all shadow-sm"
@@ -233,6 +278,38 @@ export default function Index({ analytics, stats }) {
                                         </span>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Booking Sources */}
+                        <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
+                            <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Sumber Booking</h3>
+                            <div className="space-y-3">
+                                {stats.booking_sources.map((source, i) => {
+                                    const maxVal = Math.max(...stats.booking_sources.map(s => s.value), 1);
+                                    const pct = Math.round((source.value / maxVal) * 100);
+                                    return (
+                                        <div key={i} className="flex flex-col gap-2 p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:border-zenith-orange/30 transition-all">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-zenith-orange border border-gray-100 shadow-sm shrink-0">
+                                                        <ShoppingCartIcon className="w-4 h-4" />
+                                                    </div>
+                                                    <p className="text-xs font-bold text-gray-900 truncate">{source.name}</p>
+                                                </div>
+                                                <span className="text-xs font-black text-zenith-orange bg-zenith-orange/5 px-3 py-1 rounded-full shrink-0">
+                                                    {source.value} Order
+                                                </span>
+                                            </div>
+                                            <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
+                                                <div 
+                                                    className="h-full bg-zenith-orange transition-all duration-1000"
+                                                    style={{ width: `${pct}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

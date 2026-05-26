@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import {
     BanknotesIcon,
@@ -49,14 +49,18 @@ const StatusTooltip = ({ active, payload }) => {
     return null;
 };
 
-export default function Dashboard({ monthlyRevenue, statusBreakdown, therapistRevenue, stats }) {
+export default function Dashboard({ filters, monthlyRevenue, statusBreakdown, therapistRevenue, stats }) {
     const totalTransactions = statusBreakdown.reduce((s, d) => s + d.value, 0);
 
-    // ── Therapist month filter state ─────────────────────────────────────────
-    const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
-    const [therapistMonth, setTherapistMonth] = useState(currentMonth);
+    const [therapistMonth, setTherapistMonth] = useState(filters?.month || '');
     const [therapistData, setTherapistData] = useState(therapistRevenue);
     const [therapistLoading, setTherapistLoading] = useState(false);
+
+    // Filter global dashboard
+    const handleGlobalMonthFilter = (e) => {
+        const val = e.target.value;
+        router.get(route('dashboard'), { month: val }, { preserveState: true, preserveScroll: true });
+    };
 
     useEffect(() => {
         setTherapistLoading(true);
@@ -130,9 +134,31 @@ export default function Dashboard({ monthlyRevenue, statusBreakdown, therapistRe
 
             <div className="py-6 space-y-8">
                 {/* Page Header */}
-                <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin Panel</p>
-                    <h2 className="text-2xl font-extrabold text-gray-900 mt-1">Dashboard</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin Panel</p>
+                        <h2 className="text-2xl font-extrabold text-gray-900 mt-1">Dashboard</h2>
+                    </div>
+                    {/* Global Month Picker */}
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2 shadow-sm">
+                            <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
+                            <input
+                                type="month"
+                                value={filters?.month || ''}
+                                onChange={handleGlobalMonthFilter}
+                                className="text-sm font-bold text-gray-700 bg-transparent border-none outline-none cursor-pointer p-0 focus:ring-0"
+                            />
+                        </div>
+                        {filters?.month && (
+                            <button
+                                onClick={() => router.get(route('dashboard'))}
+                                className="text-xs font-bold text-gray-400 hover:text-gray-700 px-3 py-2 bg-white border border-gray-200 rounded-2xl transition-colors shadow-sm"
+                            >
+                                Reset
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Summary Cards */}
@@ -306,7 +332,7 @@ export default function Dashboard({ monthlyRevenue, statusBreakdown, therapistRe
                         </span>
                         {!therapistLoading && (
                             <span className="text-xs text-gray-400 font-medium">
-                                {therapistData.length} terapis aktif
+                                {therapistData.length} terapis
                             </span>
                         )}
                     </div>
