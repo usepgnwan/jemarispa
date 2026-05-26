@@ -998,7 +998,7 @@ jemarihomespa.com`;
                                                                                         label: pkg.title_id,
                                                                                         options: (pkg.durations || []).map((dur, dIdx) => ({
                                                                                             value: `${pkg.id}|${dIdx}`,
-                                                                                            label: `${pkg.title_id} (${dur.duration})`
+                                                                                            label: `${pkg.title_id}`
                                                                                         }))
                                                                                     }))}
                                                                                     value={null}
@@ -1064,12 +1064,12 @@ jemarihomespa.com`;
                                                                                                     label: pkg.title_id,
                                                                                                     options: (pkg.durations || []).map((dur, dIdx) => ({
                                                                                                         value: `${pkg.id}|${dIdx}`,
-                                                                                                        label: `${pkg.title_id} (${dur.duration})`
+                                                                                                        label: `${pkg.title_id}`
                                                                                                     }))
                                                                                                 }))}
                                                                                                 value={{
                                                                                                     value: `${packages.find(p => p.title_id === item.package_name || (item.package_name && item.package_name.startsWith(p.title_id)))?.id || ''}|${packages.find(p => p.title_id === item.package_name || (item.package_name && item.package_name.startsWith(p.title_id)))?.durations.findIndex(d => { let c = item.package_duration || ''; c = c.replace(/ Menit Menit/g, ' Menit'); if (c && !c.includes(' Menit')) { const m = c.match(/^\d+/); if (m) c = m[0] + ' Menit'; } return d.duration === c; }) ?? ''}`,
-                                                                                                    label: `${item.package_name} (${item.package_duration})`
+                                                                                                    label: `${item.package_name}`
                                                                                                 }}
                                                                                                 onChange={(selectedOption) => {
                                                                                                     if (!selectedOption) return;
