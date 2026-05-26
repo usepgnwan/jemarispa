@@ -233,7 +233,8 @@
             $logoSrc = 'data:image/jpeg;base64,' . $logoData;
         }
         $cleanPackageName = function ($name) {
-            return trim(preg_replace('/\s+\d+\s*(menit|minutes|mins|min)\b/i', '', (string) $name));
+            $name = preg_replace('/\s+\d+\s*(menit|minutes|mins|min)\b/i', '', (string) $name);
+            return trim(preg_replace('/\s+\d+$/', '', $name));
         };
     @endphp
     <div class="header">
