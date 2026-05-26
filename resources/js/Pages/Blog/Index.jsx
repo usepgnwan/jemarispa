@@ -172,10 +172,9 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                         <h3 className="text-xl font-bold text-zenith-charcoal mb-4 leading-tight group-hover:text-zenith-orange transition-colors">
                                             {blog.title}
                                         </h3>
-                                        <div
-                                            className="text-zenith-charcoal/50 text-sm leading-relaxed mb-6 flex-1 line-clamp-3 prose prose-sm max-w-none"
-                                            dangerouslySetInnerHTML={{ __html: blog.description }}
-                                        />
+                                        <p className="text-zenith-charcoal/50 text-sm leading-relaxed mb-6 flex-1 line-clamp-3">
+                                            {blog.description ? blog.description.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ') : ''}
+                                        </p>
                                         <div className="flex items-center gap-x-2 text-zenith-orange font-bold text-[10px] uppercase tracking-widest pt-4 border-t border-zenith-orange/5">
                                             {t.readMore}
                                             <span className="material-symbols-outlined text-[14px]">arrow_forward</span>

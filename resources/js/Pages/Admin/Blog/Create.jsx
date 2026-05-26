@@ -6,8 +6,10 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
-import { PhotoIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, TrashIcon, ArrowLeftIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import QuillEditorV2 from '@/Components/QuillEditorV2';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 export default function Create() {
     const [imagePreview, setImagePreview] = useState(null);
@@ -45,6 +47,25 @@ export default function Create() {
         });
     };
 
+    const startTutorial = () => {
+        const driverObj = driver({
+            showProgress: true,
+            animate: true,
+            nextBtnText: 'Lanjut',
+            prevBtnText: 'Kembali',
+            doneBtnText: 'Selesai',
+            steps: [
+                { element: '#title', popover: { title: 'Judul Artikel', description: 'Masukkan judul utama untuk artikel blog Anda di sini.' } },
+                { element: '#slug', popover: { title: 'Slug', description: 'Otomatis terisi berdasarkan judul, digunakan sebagai link URL artikel Anda.' } },
+                { element: '#editor-container', popover: { title: 'Isi Artikel', description: 'Ketik atau paste isi konten artikel blog di dalam editor ini.' } },
+                { element: '#thumbnail-container', popover: { title: 'Thumbnail', description: 'Upload gambar banner yang akan tampil di halaman daftar blog.' } },
+                { element: '#type_package', popover: { title: 'Tipe Paket', description: 'Opsional: Anda bisa menghubungkan artikel ini dengan paket tertentu.' } },
+                { element: '#tag', popover: { title: 'Tags', description: 'Masukkan kata kunci atau tag untuk artikel ini (pisahkan dengan koma).' } },
+                { element: '#submit-btn', popover: { title: 'Terbitkan', description: 'Jika sudah selesai, klik tombol ini untuk mempublikasikan artikel Anda.' } },
+            ]
+        });
+        driverObj.drive();
+    };
 
 
     return (
@@ -61,7 +82,13 @@ export default function Create() {
                             <ArrowLeftIcon className="w-4 h-4" />
                             Kembali ke Daftar Blog
                         </Link>
-                        <h2 className="font-bold text-2xl text-gray-900">Tambah Artikel Baru</h2>
+                        <div className="flex justify-between items-center">
+                            <h2 className="font-bold text-2xl text-gray-900">Tambah Artikel Baru</h2>
+                            <button type="button" onClick={startTutorial} className="flex items-center gap-2 text-sm text-[#0057B8] font-semibold bg-[#0057B8]/10 px-4 py-2 rounded-full hover:bg-[#0057B8]/20 transition-colors">
+                                <QuestionMarkCircleIcon className="w-5 h-5" />
+                                Panduan Form
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
@@ -100,7 +127,7 @@ export default function Create() {
 
                                     <div>
                                         <InputLabel htmlFor="description" value="Isi Artikel" />
-                                        <div className="mt-2">
+                                        <div className="mt-2" id="editor-container">
                                             <QuillEditorV2 
                                                 value={data.description} 
                                                 onChange={(content) => setData('description', content)}
@@ -114,7 +141,7 @@ export default function Create() {
                                 {/* Right column - Meta/Media */}
                                 <div className="space-y-8">
                                     {/* Thumbnail Upload */}
-                                    <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                                    <div id="thumbnail-container" className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
                                         <InputLabel value="Thumbnail Image (Opsional)" />
                                         <div className="mt-3 flex justify-center rounded-xl border-2 border-dashed border-gray-300 px-6 py-10 bg-white hover:border-[#0057B8] transition-colors">
                                             <div className="text-center w-full">
@@ -203,7 +230,7 @@ export default function Create() {
                                         Batal
                                     </SecondaryButton>
                                 </Link>
-                                <PrimaryButton disabled={processing} className="bg-[#0057B8] hover:bg-[#004494] px-8">
+                                <PrimaryButton id="submit-btn" disabled={processing} className="bg-[#0057B8] hover:bg-[#004494] px-8">
                                     Terbitkan Artikel
                                 </PrimaryButton>
                             </div>

@@ -191,10 +191,9 @@ export default function Index({ blogs, filters }) {
                                     </h3>
                                     <div className="text-xs text-gray-400 mb-4 font-mono truncate">/{blog.slug}</div>
                                     
-                                    <div 
-                                        className="text-sm text-gray-500 line-clamp-3 mb-4 flex-1 prose prose-sm"
-                                        dangerouslySetInnerHTML={{ __html: blog.description }}
-                                    />
+                                    <p className="text-sm text-gray-500 line-clamp-3 mb-4 flex-1">
+                                        {blog.description ? blog.description.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ') : ''}
+                                    </p>
 
                                     {blog.type_package && (
                                         <div className="pt-4 border-t border-gray-100 mt-auto">

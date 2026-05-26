@@ -6,8 +6,10 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
-import { PhotoIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, TrashIcon, ArrowLeftIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import QuillEditorV2 from '@/Components/QuillEditorV2';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 export default function Edit({ blog }) {
     const [imagePreview, setImagePreview] = useState(blog.thumbnail ? `/storage/${blog.thumbnail}` : null);
@@ -46,7 +48,25 @@ export default function Edit({ blog }) {
         });
     };
 
-
+    const startTutorial = () => {
+        const driverObj = driver({
+            showProgress: true,
+            animate: true,
+            nextBtnText: 'Lanjut',
+            prevBtnText: 'Kembali',
+            doneBtnText: 'Selesai',
+            steps: [
+                { element: '#title', popover: { title: 'Judul Artikel', description: 'Ubah judul artikel blog Anda di sini.' } },
+                { element: '#slug', popover: { title: 'Slug', description: 'disesuaikan dengan title untuk URL.' } },
+                { element: '#editor-container', popover: { title: 'Isi Artikel', description: 'Ubah konten artikel blog di dalam editor ini.' } },
+                { element: '#thumbnail-container', popover: { title: 'Thumbnail', description: 'Ganti gambar banner/thumbnail dengan yang baru atau biarkan kosong.' } },
+                { element: '#type_package', popover: { title: 'Tipe Paket', description: 'Bisa disesuaikan tipe paketnya. gunakan pemisah koma' } },
+                { element: '#tag', popover: { title: 'Tags', description: 'Perbarui kata kunci artikel. gunakan pemisah koma' } },
+                { element: '#submit-btn', popover: { title: 'Simpan', description: 'Klik tombol ini untuk menyimpan perubahan artikel Anda.' } },
+            ]
+        });
+        driverObj.drive();
+    };
 
 
     return (
@@ -56,14 +76,20 @@ export default function Edit({ blog }) {
             <div className="py-8">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="mb-6 px-2 sm:px-0">
-                        <Link 
+                        <Link
                             href={route('admin.blog.index')}
                             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#0057B8] font-medium transition-colors mb-4"
                         >
                             <ArrowLeftIcon className="w-4 h-4" />
                             Kembali ke Daftar Blog
                         </Link>
-                        <h2 className="font-bold text-2xl text-gray-900">Edit Artikel: {blog.title}</h2>
+                        <div className="flex justify-between items-center">
+                            <h2 className="font-bold text-2xl text-gray-900">Edit Artikel: {blog.title}</h2>
+                            <button type="button" onClick={startTutorial} className="flex items-center gap-2 text-sm text-[#0057B8] font-semibold bg-[#0057B8]/10 px-4 py-2 rounded-full hover:bg-[#0057B8]/20 transition-colors">
+                                <QuestionMarkCircleIcon className="w-5 h-5" />
+                                Panduan Form
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
@@ -102,9 +128,9 @@ export default function Edit({ blog }) {
 
                                     <div>
                                         <InputLabel htmlFor="description" value="Isi Artikel" />
-                                        <div className="mt-2">
-                                            <QuillEditorV2 
-                                                value={data.description} 
+                                        <div className="mt-2" id="editor-container">
+                                            <QuillEditorV2
+                                                value={data.description}
                                                 onChange={(content) => setData('description', content)}
                                                 className="bg-white h-[500px] mb-12 rounded-lg"
                                             />
@@ -116,7 +142,7 @@ export default function Edit({ blog }) {
                                 {/* Right column - Meta/Media */}
                                 <div className="space-y-8">
                                     {/* Thumbnail Upload */}
-                                    <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                                    <div id="thumbnail-container" className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
                                         <InputLabel value="Thumbnail Image (Opsional)" />
                                         <div className="mt-3 flex justify-center rounded-xl border-2 border-dashed border-gray-300 px-6 py-10 bg-white hover:border-[#0057B8] transition-colors">
                                             <div className="text-center w-full">
@@ -144,11 +170,11 @@ export default function Edit({ blog }) {
                                                         className="relative cursor-pointer rounded-md bg-white font-semibold text-[#0057B8] focus-within:outline-none hover:text-[#004494]"
                                                     >
                                                         <span>Ganti file gambar</span>
-                                                        <input 
-                                                            id="thumbnail" 
-                                                            name="thumbnail" 
-                                                            type="file" 
-                                                            className="sr-only" 
+                                                        <input
+                                                            id="thumbnail"
+                                                            name="thumbnail"
+                                                            type="file"
+                                                            className="sr-only"
                                                             accept="image/*"
                                                             onChange={handleThumbnailChange}
                                                             ref={fileInputRef}
@@ -204,7 +230,7 @@ export default function Edit({ blog }) {
                                         Batal
                                     </SecondaryButton>
                                 </Link>
-                                <PrimaryButton disabled={processing} className="bg-[#0057B8] hover:bg-[#004494] px-8">
+                                <PrimaryButton id="submit-btn" disabled={processing} className="bg-[#0057B8] hover:bg-[#004494] px-8">
                                     Simpan Perubahan
                                 </PrimaryButton>
                             </div>
