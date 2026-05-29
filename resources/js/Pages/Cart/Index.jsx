@@ -307,7 +307,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
         if (!voucherCode) return;
         setIsValidatingVoucher(true);
         try {
-            const response = await axios.post(route('admin.voucher.validate'), { code: voucherCode });
+            const response = await axios.post(route('api.voucher.validate'), { code: voucherCode });
             if (response.data.success) {
                 setAppliedVoucher(response.data.voucher);
                 showToast(t.voucherSuccess.replace('{code}', response.data.voucher.code));

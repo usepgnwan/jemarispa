@@ -308,6 +308,8 @@ Route::get('/api/faqs', function () {
     return response()->json(\App\Models\Faq::latest()->take(6)->get());
 });
 
+Route::post('/api/voucher/validate', [VoucherController::class, 'validateCode'])->name('api.voucher.validate');
+
 Route::post('/api/transactions', [TransactionController::class, 'store'])->name('transactions.store');
 
 require __DIR__.'/auth.php';
