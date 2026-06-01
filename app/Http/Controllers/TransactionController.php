@@ -250,6 +250,19 @@ class TransactionController extends Controller
                 return DB::transaction(function () use ($validated) {
                     $orderNumber = $this->nextOrderNumber();
 
+                    $discountAmount = 0;
+                    if (!empty($validated['voucher_id'])) {
+                        $voucher = \App\Models\Voucher::find($validated['voucher_id']);
+                        if ($voucher) {
+                            if ($voucher->discount_type === 'percent') {
+                                $subtotal = collect($validated['guests'])->flatMap(fn($g) => $g['packages'])->sum('price');
+                                $discountAmount = ($subtotal * $voucher->discount_amount) / 100;
+                            } else {
+                                $discountAmount = $voucher->discount_amount;
+                            }
+                        }
+                    }
+
                     $transaction = Transaction::create([
                         'order_number' => $orderNumber,
                         'customer_name' => $validated['customer_name'],
@@ -262,7 +275,7 @@ class TransactionController extends Controller
                         'notes' => $validated['notes'] ?? null,
                         'total_price' => $validated['total_price'],
                         'voucher_id' => $validated['voucher_id'] ?? null,
-                        'discount_amount' => !empty($validated['voucher_id']) ? (\App\Models\Voucher::find($validated['voucher_id'])->discount_amount ?? 0) : 0,
+                        'discount_amount' => $discountAmount,
                         'status' => 'pending',
                     ]);
 
@@ -554,58 +567,84 @@ class TransactionController extends Controller
                 SELECT
                     ti.employee_id,
                     SUM(ti.price)  AS total_revenue,
-                    COUNT(*)       AS job_count
+                    SUM(COALESCE(ti.therapist_commission, 0)) AS total_commission,
+                    COUNT(DISTINCT CONCAT(ti.transaction_id, '-', COALESCE(ti.guest_index, 1))) AS job_count
                 FROM transaction_items ti
                 JOIN transactions t ON t.id = ti.transaction_id
                 WHERE ti.employee_id IS NOT NULL
                   AND t.status = 'success'
                   {$dateFilter}
                 GROUP BY ti.employee_id
-            ),
-            deduped_commission AS (
-                SELECT
-                    ti.employee_id,
-                    ti.transaction_id,
-                    ti.guest_index,
-                    MAX(COALESCE(ti.therapist_commission, 0)) AS commission
-                FROM transaction_items ti
-                JOIN transactions t ON t.id = ti.transaction_id
-                WHERE ti.employee_id IS NOT NULL
-                  AND t.status = 'success'
-                  {$dateFilter}
-                GROUP BY ti.employee_id, ti.transaction_id, ti.guest_index
-            ),
-            commission_per_employee AS (
-                SELECT employee_id, SUM(commission) AS total_commission
-                FROM deduped_commission
-                GROUP BY employee_id
             )
             SELECT
                 e.id AS employee_id,
                 e.name,
                 COALESCE(r.total_revenue, 0) AS total_revenue,
-                COALESCE(c.total_commission, 0) AS total_commission,
+                COALESCE(r.total_commission, 0) AS total_commission,
                 COALESCE(r.job_count, 0) AS job_count
             FROM employees e
             LEFT JOIN revenue r ON r.employee_id = e.id
-            LEFT JOIN commission_per_employee c ON c.employee_id = e.id
             ORDER BY total_revenue DESC, e.name ASC
         ");
 
-        $therapistRevenue = collect($rows)->map(fn($row) => [
-            'name'       => $row->name,
-            'revenue'    => (float) $row->total_revenue,
-            'commission' => (float) $row->total_commission,
-            'net'        => (float) max(0, $row->total_revenue - $row->total_commission),
-            'jobs'       => (int) $row->job_count,
-        ]);
+        $formatted = collect($rows)->filter(function ($row) {
+            return $row->total_revenue > 0 || $row->total_commission > 0;
+        })->map(function($row) {
+            return [
+                'id'         => $row->employee_id,
+                'name'       => $row->name,
+                'revenue'    => (float) $row->total_revenue,
+                'commission' => (float) $row->total_commission,
+                'net'        => (float) max(0, $row->total_revenue - $row->total_commission),
+                'jobs'       => (int) $row->job_count,
+            ];
+        })->values();
 
-        return Inertia::render('Admin/Therapist/Report', [
-            'therapistRevenue' => $therapistRevenue,
+        return inertia('Admin/Therapist/Report', [
+            'therapistRevenue' => $formatted,
             'filters' => [
                 'start_date' => $startDate,
-                'end_date' => $endDate
+                'end_date' => $endDate,
             ]
+        ]);
+    }
+
+    public function therapistDetail(Request $request)
+    {
+        $employeeId = $request->query('employee_id');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        if (!$startDate || !$endDate) {
+            $startDate = now()->startOfMonth()->format('Y-m-d');
+            $endDate = now()->endOfMonth()->format('Y-m-d');
+        }
+
+        $items = \App\Models\TransactionItem::with('transaction')
+            ->where('employee_id', $employeeId)
+            ->whereHas('transaction', function ($query) use ($startDate, $endDate) {
+                $query->where('status', 'success')
+                      ->where('schedule_date', '>=', $startDate)
+                      ->where('schedule_date', '<=', $endDate);
+            })
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'invoice_no' => $item->transaction->order_number ?? '-',
+                    'schedule_date' => \Carbon\Carbon::parse($item->transaction->schedule_date)->format('d/m/Y'),
+                    'package_name' => $item->package_name,
+                    'package_duration' => $item->package_duration,
+                    'price' => (float) $item->price,
+                    'commission' => (float) $item->therapist_commission,
+                ];
+            })
+            ->sortBy('schedule_date')
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $items
         ]);
     }
 }

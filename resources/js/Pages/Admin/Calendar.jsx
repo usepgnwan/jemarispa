@@ -46,7 +46,7 @@ Terlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :
 
 [details]
 Biaya Transport : [transport]
--
+[discount]-
 *Total Pembayaran : [total]*
 
 
@@ -82,6 +82,15 @@ jemarihomespa.com`;
         }).format(amount);
     };
 
+    const getVoucherNominalDiscount = (transaction) => {
+        if (!transaction || !transaction.voucher) return 0;
+        if (transaction.voucher.discount_type === 'percent') {
+            const subtotal = transaction.items?.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0) || 0;
+            return (subtotal * parseFloat(transaction.voucher.discount_amount)) / 100;
+        }
+        return parseFloat(transaction.voucher.discount_amount);
+    };
+
     const calculateEndTime = (startTime, durationMinutes) => {
         if (!startTime) return '';
         const [hours, minutes] = startTime.split(/[:.]/).map(Number);
@@ -110,9 +119,31 @@ jemarihomespa.com`;
         // Normalize schedule_time to HH:MM (MySQL returns HH:MM:SS)
         const rawTime = data.schedule_time || '';
         const scheduleTime = rawTime.substring(0, 5);
+        // Recalculate commissions to fix any corrupted DB data
+        const enrichedItems = (data.items || []).map(item => {
+            let pkg = packages.find(p => p.title_id === item.package_name);
+            if (!pkg && item.package_name) {
+                pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
+            }
+            if (pkg) {
+                let cleanDuration = item.package_duration || '';
+                cleanDuration = cleanDuration.replace(/ Menit Menit/g, ' Menit');
+                if (cleanDuration && !cleanDuration.includes(' Menit')) {
+                    const match = cleanDuration.match(/^\d+/);
+                    if (match) cleanDuration = match[0] + ' Menit';
+                }
+                const duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
+                if (duration) {
+                    return { ...item, therapist_commission: parseFloat(duration.commission) || 0 };
+                }
+            }
+            return item;
+        });
+
         const transaction = {
             id: info.event.id,
             ...data,
+            items: enrichedItems,
             schedule_time: scheduleTime,
         };
         setSelectedEvent(transaction);
@@ -322,7 +353,7 @@ jemarihomespa.com`;
             invoice_no: transaction.order_number || 'POS',
             details: detailsText,
             transport: formatCurrency(transaction.transport_fee || 0),
-            discount: transaction.discount_amount > 0 ? `-${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)` : '',
+            discount: transaction.voucher ? `Voucher ${transaction.voucher.code} : -${formatCurrency(getVoucherNominalDiscount(transaction))}\n` : (transaction.discount_amount > 0 ? `Diskon : -${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)\n` : ''),
             total: formatCurrency(transaction.total_price),
             link: link,
             link_review: linkReview
@@ -1179,7 +1210,7 @@ jemarihomespa.com`;
                                                             </span>
                                                             <div className="flex flex-col items-end gap-1 mt-1">
                                                                 {currentData.transport_fee > 0 && <p className="text-[9px] text-gray-400 font-medium">Transport {formatCurrency(currentData.transport_fee)}</p>}
-                                                                {currentData.voucher && <p className="text-[9px] text-blue-500 font-bold uppercase">Voucher: {currentData.voucher.code} (-{formatCurrency(currentData.voucher.discount_amount)})</p>}
+                                                                {currentData.voucher && <p className="text-[9px] text-blue-500 font-bold uppercase">Voucher: {currentData.voucher.code} (-{formatCurrency(getVoucherNominalDiscount(currentData))})</p>}
                                                                 {currentData.discount_percent > 0 && <p className="text-[9px] text-red-400 font-bold uppercase">Diskon {parseFloat(currentData.discount_percent)}% (-{formatCurrency(currentData.discount_amount)})</p>}
                                                                 {penaltyPercent > 0 && <p className="text-[9px] text-orange-500 font-bold uppercase">Reschedule {penaltyPercent}%</p>}
                                                             </div>

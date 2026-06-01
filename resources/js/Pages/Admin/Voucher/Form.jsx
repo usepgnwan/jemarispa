@@ -16,6 +16,7 @@ export default function Form({ auth, voucher = null, packages = [] }) {
         category: voucher?.category || 'standard',
         bundle_packages: voucher?.bundle_packages || [],
         type: voucher?.type || 'free',
+        discount_type: voucher?.discount_type || 'fixed',
         discount_amount: voucher?.discount_amount || '',
         price: voucher?.price || '',
         customer_name: voucher?.customer_name || '',
@@ -271,7 +272,21 @@ export default function Form({ auth, voucher = null, packages = [] }) {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <InputLabel htmlFor="discount_amount" value={data.category === 'bundle' ? 'Nominal Voucher' : 'Potongan Diskon (Rp)'} />
+                                    <div className="flex justify-between items-center">
+                                        <InputLabel htmlFor="discount_amount" value={data.category === 'bundle' ? 'Nominal Voucher' : 'Potongan Diskon'} />
+                                        {data.category === 'standard' && (
+                                            <div className="flex gap-3 text-xs bg-gray-50 p-1 rounded-lg border border-gray-100">
+                                                <label className="flex items-center gap-1.5 cursor-pointer px-2 py-1">
+                                                    <input type="radio" className="text-zenith-orange focus:ring-zenith-orange border-gray-300" checked={data.discount_type === 'fixed'} onChange={() => setData('discount_type', 'fixed')} /> 
+                                                    <span className="font-bold text-gray-600">Nominal (Rp)</span>
+                                                </label>
+                                                <label className="flex items-center gap-1.5 cursor-pointer px-2 py-1">
+                                                    <input type="radio" className="text-zenith-orange focus:ring-zenith-orange border-gray-300" checked={data.discount_type === 'percent'} onChange={() => setData('discount_type', 'percent')} /> 
+                                                    <span className="font-bold text-gray-600">Persen (%)</span>
+                                                </label>
+                                            </div>
+                                        )}
+                                    </div>
                                     <TextInput
                                         id="discount_amount"
                                         type="number"
@@ -280,8 +295,10 @@ export default function Form({ auth, voucher = null, packages = [] }) {
                                         onChange={(e) => setData('discount_amount', e.target.value)}
                                         required
                                         readOnly={data.category === 'bundle'}
+                                        placeholder={data.discount_type === 'percent' ? "Contoh: 10 untuk 10%" : "Contoh: 50000"}
                                     />
                                     <InputError message={errors.discount_amount} className="mt-2" />
+                                    <InputError message={errors.discount_type} className="mt-2" />
                                 </div>
                             </div>
 

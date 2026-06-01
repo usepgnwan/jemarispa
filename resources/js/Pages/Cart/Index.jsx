@@ -342,9 +342,17 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
         }, 0);
     };
 
+    const getVoucherNominalDiscount = (subtotal, voucher) => {
+        if (!voucher) return 0;
+        if (voucher.discount_type === 'percent') {
+            return (subtotal * parseFloat(voucher.discount_amount)) / 100;
+        }
+        return parseFloat(voucher.discount_amount);
+    };
+
     const calculateGrandTotal = () => {
         const subtotal = calculateSubtotal();
-        const voucherDiscount = appliedVoucher ? parseFloat(appliedVoucher.discount_amount) : 0;
+        const voucherDiscount = appliedVoucher ? getVoucherNominalDiscount(subtotal, appliedVoucher) : 0;
         return Math.max(0, subtotal - voucherDiscount);
     };
 
@@ -441,7 +449,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                     package: `\n${groupedPackages}`,
                     therapist_pax: pax,
                     therapist_gender: allTherapistGenders,
-                    total: `Rp ${totalPrice.toLocaleString('id-ID')}${appliedVoucher ? ` (Sudah potong Voucher ${appliedVoucher.code} -Rp ${parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID')})` : ''}`,
+                    total: `Rp ${totalPrice.toLocaleString('id-ID')}${appliedVoucher ? ` (Sudah potong Voucher ${appliedVoucher.code} -Rp ${getVoucherNominalDiscount(calculateSubtotal(), appliedVoucher).toLocaleString('id-ID')})` : ''}`,
                     source: formData.source,
                     notes: formData.notes || '-',
                     order_number: transaction.order_number
@@ -682,7 +690,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                         <div className="text-right">
                                             {appliedVoucher && (
                                                 <p className="text-[10px] text-zenith-orange font-bold uppercase mb-1">
-                                                    Voucher: {appliedVoucher.code} (-Rp {parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID')})
+                                                    Voucher: {appliedVoucher.code} (-Rp {getVoucherNominalDiscount(calculateSubtotal(), appliedVoucher).toLocaleString('id-ID')})
                                                 </p>
                                             )}
                                             <span className="text-3xl md:text-4xl font-bold text-zenith-orange">Rp {calculateGrandTotal().toLocaleString('id-ID')}</span>
@@ -825,7 +833,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                             {appliedVoucher && (
                                                 <div className="mt-3 flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase">
                                                     <span className="material-symbols-outlined text-[14px]">verified</span>
-                                                    <span>{t.voucherApplied.replace('{amount}', parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID'))}</span>
+                                                    <span>{t.voucherApplied.replace('{amount}', getVoucherNominalDiscount(calculateSubtotal(), appliedVoucher).toLocaleString('id-ID'))}</span>
                                                 </div>
                                             )}
                                         </div>

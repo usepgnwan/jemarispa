@@ -13,6 +13,7 @@ class Voucher extends Model
         'category',
         'bundle_packages',
         'type',
+        'discount_type',
         'discount_amount',
         'price',
         'customer_name',

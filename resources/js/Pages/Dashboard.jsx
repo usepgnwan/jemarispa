@@ -8,7 +8,12 @@ import {
     CheckCircleIcon,
     UserGroupIcon,
     ArrowTrendingUpIcon,
+    EyeIcon,
+    XMarkIcon,
+    ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+import axios from 'axios';
+import Modal from '@/Components/Modal';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend,
@@ -55,11 +60,45 @@ export default function Dashboard({ filters, monthlyRevenue, statusBreakdown, th
     const [therapistMonth, setTherapistMonth] = useState(filters?.month || '');
     const [therapistData, setTherapistData] = useState(therapistRevenue);
     const [therapistLoading, setTherapistLoading] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedTherapist, setSelectedTherapist] = useState(null);
+    const [therapistDetails, setTherapistDetails] = useState([]);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
     // Filter global dashboard
     const handleGlobalMonthFilter = (e) => {
         const val = e.target.value;
         router.get(route('dashboard'), { month: val }, { preserveState: true, preserveScroll: true });
+    };
+
+    const handleOpenDetail = async (therapist) => {
+        setSelectedTherapist(therapist);
+        setIsModalOpen(true);
+        setIsLoadingDetails(true);
+        try {
+            // For Dashboard we need to figure out start_date and end_date from month
+            let start_date = '';
+            let end_date = '';
+            if (therapistMonth) {
+                const date = new Date(therapistMonth + '-01');
+                start_date = date.toISOString().slice(0, 10);
+                const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                end_date = lastDay.toISOString().slice(0, 10);
+            }
+
+            const response = await axios.get(route('admin.therapist.report.detail', {
+                employee_id: therapist.id,
+                start_date: start_date,
+                end_date: end_date
+            }));
+            if (response.data.success) {
+                setTherapistDetails(response.data.data);
+            }
+        } catch (error) {
+            console.error('Failed to load details:', error);
+        } finally {
+            setIsLoadingDetails(false);
+        }
     };
 
     useEffect(() => {
@@ -357,6 +396,7 @@ export default function Dashboard({ filters, monthlyRevenue, statusBreakdown, th
                                         <th className="py-3 px-4 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Revenue</th>
                                         <th className="py-3 px-4 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Komisi</th>
                                         <th className="py-3 px-4 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bersih</th>
+                                        <th className="py-3 px-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -401,6 +441,15 @@ export default function Dashboard({ filters, monthlyRevenue, statusBreakdown, th
                                                         {fmt(net)}
                                                     </span>
                                                 </td>
+                                                <td className="py-4 px-4 text-center">
+                                                    <button
+                                                        onClick={() => handleOpenDetail(t)}
+                                                        className="p-2 text-purple-600 hover:bg-purple-50 rounded-xl transition-colors"
+                                                        title="Lihat Detail"
+                                                    >
+                                                        <EyeIcon className="w-5 h-5" />
+                                                    </button>
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -418,6 +467,7 @@ export default function Dashboard({ filters, monthlyRevenue, statusBreakdown, th
                                             <td className="py-3 px-4 text-right text-sm font-extrabold text-emerald-600">
                                                 {fmt(therapistData.reduce((s, t) => s + (t.net ?? Math.max(0, t.revenue - t.commission)), 0))}
                                             </td>
+                                            <td className="py-3 px-4"></td>
                                         </tr>
                                     </tfoot>
                                 )}
@@ -427,6 +477,65 @@ export default function Dashboard({ filters, monthlyRevenue, statusBreakdown, th
                 </div>
 
             </div>
+
+            <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="3xl">
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-lg font-black text-gray-900">Detail Komisi: {selectedTherapist?.name}</h3>
+                            <p className="text-sm text-gray-500 mt-1">{monthLabel}</p>
+                        </div>
+                        <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors">
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {isLoadingDetails ? (
+                        <div className="py-12 flex justify-center">
+                            <ArrowPathIcon className="w-8 h-8 text-purple-500 animate-spin" />
+                        </div>
+                    ) : therapistDetails.length === 0 ? (
+                        <div className="py-12 text-center text-gray-500 font-bold">
+                            Tidak ada rincian data ditemukan.
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50 text-gray-500">
+                                        <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">Tanggal</th>
+                                        <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">No Invoice</th>
+                                        <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">Layanan</th>
+                                        <th className="py-3 px-4 text-right font-bold uppercase tracking-wider text-[10px]">Harga</th>
+                                        <th className="py-3 px-4 text-right font-bold uppercase tracking-wider text-[10px]">Komisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {therapistDetails.map((detail) => (
+                                        <tr key={detail.id} className="hover:bg-gray-50/50">
+                                            <td className="py-3 px-4 text-gray-900 font-medium whitespace-nowrap">{detail.schedule_date}</td>
+                                            <td className="py-3 px-4 text-purple-600 font-bold whitespace-nowrap">{detail.invoice_no}</td>
+                                            <td className="py-3 px-4">
+                                                <div className="text-gray-900 font-bold">{detail.package_name}</div>
+                                                <div className="text-xs text-gray-500">{detail.package_duration}</div>
+                                            </td>
+                                            <td className="py-3 px-4 text-right text-gray-900 font-bold whitespace-nowrap">{fmt(detail.price)}</td>
+                                            <td className="py-3 px-4 text-right text-red-500 font-bold whitespace-nowrap">{fmt(detail.commission)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="bg-gray-900 text-white font-bold">
+                                        <td colSpan={3} className="py-3 px-4 text-right uppercase text-[10px] tracking-wider">Total</td>
+                                        <td className="py-3 px-4 text-right whitespace-nowrap">{fmt(therapistDetails.reduce((a, b) => a + b.price, 0))}</td>
+                                        <td className="py-3 px-4 text-right whitespace-nowrap text-red-400">{fmt(therapistDetails.reduce((a, b) => a + b.commission, 0))}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </Modal>
         </AuthenticatedLayout>
     );
 }

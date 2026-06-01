@@ -109,6 +109,11 @@ export default function Index({ vouchers = { data: [] } }) {
                                                                 {voucher.code}
                                                             </span>
                                                             <span className="text-xs text-gray-500 mt-1 line-clamp-1">{voucher.description || 'Tidak ada deskripsi'}</span>
+                                                            {voucher.category === 'standard' && voucher.discount_amount > 0 && (
+                                                                <div className="text-[10px] text-zenith-orange font-bold mt-1">
+                                                                    Diskon: {voucher.discount_type === 'percent' ? `${parseFloat(voucher.discount_amount)}%` : formatRupiah(voucher.discount_amount)}
+                                                                </div>
+                                                            )}
                                                             {voucher.type === 'paid' && (
                                                                 <div className="text-[10px] text-gray-500 mt-1 flex items-center gap-1.5 flex-wrap">
                                                                     <div className="w-1 h-1 bg-gray-300 rounded-full"></div>

@@ -190,12 +190,16 @@ jemarihomespa.com`;
         return (itemsTotal * percent) / 100;
     };
 
+    const getAppliedVoucherDiscountAmount = () => {
+        if (!appliedVoucher || appliedVoucher.category === 'bundle') return 0;
+        return appliedVoucher.discount_type === 'percent'
+            ? (calculateItemsTotal() * parseFloat(appliedVoucher.discount_amount)) / 100
+            : parseFloat(appliedVoucher.discount_amount);
+    };
+
     const calculateDiscountAmount = () => {
         const percentDiscount = calculateManualDiscountAmount();
-        // Voucher bundle nilainya tidak dihitung sebagai diskon nominal yang mengurangi total (karena totalnya sudah kita handle di calculateGrandTotal)
-        const voucherDiscount = (appliedVoucher && appliedVoucher.category !== 'bundle')
-            ? parseFloat(appliedVoucher.discount_amount)
-            : 0;
+        const voucherDiscount = getAppliedVoucherDiscountAmount();
         return percentDiscount + voucherDiscount;
     };
 
@@ -326,7 +330,7 @@ jemarihomespa.com`;
             total_price: calculateGrandTotal(),
             transport_fee: formData.transport_fee,
             discount_percent: formData.discount_percent,
-            discount_amount: calculateManualDiscountAmount(),
+            discount_amount: calculateDiscountAmount(),
             voucher_id: appliedVoucher?.id,
             guests: guests,
         };
@@ -415,7 +419,7 @@ jemarihomespa.com`;
             invoice_no: transaction.order_number,
             details: detailsText,
             transport: formatCurrency(transaction.transport_fee || 0),
-            discount: transaction.discount_amount > 0 ? `-${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)` : '',
+            discount: transaction.discount_amount > 0 ? `-${formatCurrency(transaction.discount_amount)}${parseFloat(transaction.discount_percent) > 0 ? ` (${parseFloat(transaction.discount_percent)}%)` : ''}` : '',
             total: formatCurrency(transaction.total_price),
             link: link,
             link_review: linkReview
@@ -750,7 +754,7 @@ jemarihomespa.com`;
                                                     Voucher
                                                 </span>
                                                 <span>
-                                                    (-Rp {parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID')})
+                                                    (-Rp {getAppliedVoucherDiscountAmount().toLocaleString('id-ID')})
                                                 </span>
                                             </div>
                                         )}
@@ -919,7 +923,7 @@ jemarihomespa.com`;
                                             </div>
                                             {appliedVoucher && (
                                                 <p className="text-[9px] text-green-600 font-bold px-1">
-                                                    Terpasang: {appliedVoucher.description || appliedVoucher.code} (-Rp {parseFloat(appliedVoucher.discount_amount).toLocaleString('id-ID')})
+                                                    Terpasang: {appliedVoucher.description || appliedVoucher.code} (-Rp {getAppliedVoucherDiscountAmount().toLocaleString('id-ID')})
                                                 </p>
                                             )}
                                         </div>

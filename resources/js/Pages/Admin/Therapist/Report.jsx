@@ -6,8 +6,13 @@ import {
     CalendarDaysIcon,
     BanknotesIcon,
     ArrowTrendingUpIcon,
-    UserIcon
+    UserIcon,
+    EyeIcon,
+    XMarkIcon,
+    ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import axios from 'axios';
+import Modal from '@/Components/Modal';
 
 const fmt = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
@@ -15,12 +20,36 @@ const fmt = (n) =>
 export default function Report({ therapistRevenue, filters }) {
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedTherapist, setSelectedTherapist] = useState(null);
+    const [therapistDetails, setTherapistDetails] = useState([]);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     
     const handleFilter = () => {
         router.get(route('admin.therapist.report'), { start_date: startDate, end_date: endDate }, {
             preserveState: true,
             replace: true
         });
+    };
+
+    const handleOpenDetail = async (therapist) => {
+        setSelectedTherapist(therapist);
+        setIsModalOpen(true);
+        setIsLoadingDetails(true);
+        try {
+            const response = await axios.get(route('admin.therapist.report.detail', {
+                employee_id: therapist.id,
+                start_date: startDate,
+                end_date: endDate
+            }));
+            if (response.data.success) {
+                setTherapistDetails(response.data.data);
+            }
+        } catch (error) {
+            console.error('Failed to load details:', error);
+        } finally {
+            setIsLoadingDetails(false);
+        }
     };
 
     const handleReset = () => {
@@ -168,6 +197,7 @@ export default function Report({ therapistRevenue, filters }) {
                                         <th className="py-4 px-6 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Gross Revenue</th>
                                         <th className="py-4 px-6 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Komisi Terapis</th>
                                         <th className="py-4 px-6 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Net Profit</th>
+                                        <th className="py-4 px-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -211,6 +241,15 @@ export default function Report({ therapistRevenue, filters }) {
                                                         {fmt(t.net)}
                                                     </span>
                                                 </td>
+                                                <td className="py-5 px-6 text-center">
+                                                    <button
+                                                        onClick={() => handleOpenDetail(t)}
+                                                        className="p-2 text-purple-600 hover:bg-purple-50 rounded-xl transition-colors"
+                                                        title="Lihat Detail"
+                                                    >
+                                                        <EyeIcon className="w-5 h-5" />
+                                                    </button>
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -222,6 +261,7 @@ export default function Report({ therapistRevenue, filters }) {
                                         <td className="py-5 px-6 text-right text-sm font-black">{fmt(totalRevenue)}</td>
                                         <td className="py-5 px-6 text-right text-sm font-black text-red-400">− {fmt(totalCommission)}</td>
                                         <td className="py-5 px-6 text-right text-sm font-black text-emerald-400">{fmt(totalNet)}</td>
+                                        <td className="py-5 px-6"></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -229,6 +269,65 @@ export default function Report({ therapistRevenue, filters }) {
                     )}
                 </div>
             </div>
+
+            <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="3xl">
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-lg font-black text-gray-900">Detail Komisi: {selectedTherapist?.name}</h3>
+                            <p className="text-sm text-gray-500 mt-1">{dateLabel}</p>
+                        </div>
+                        <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors">
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {isLoadingDetails ? (
+                        <div className="py-12 flex justify-center">
+                            <ArrowPathIcon className="w-8 h-8 text-purple-500 animate-spin" />
+                        </div>
+                    ) : therapistDetails.length === 0 ? (
+                        <div className="py-12 text-center text-gray-500 font-bold">
+                            Tidak ada rincian data ditemukan.
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50 text-gray-500">
+                                        <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">Tanggal</th>
+                                        <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">No Invoice</th>
+                                        <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">Layanan</th>
+                                        <th className="py-3 px-4 text-right font-bold uppercase tracking-wider text-[10px]">Harga</th>
+                                        <th className="py-3 px-4 text-right font-bold uppercase tracking-wider text-[10px]">Komisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {therapistDetails.map((detail) => (
+                                        <tr key={detail.id} className="hover:bg-gray-50/50">
+                                            <td className="py-3 px-4 text-gray-900 font-medium whitespace-nowrap">{detail.schedule_date}</td>
+                                            <td className="py-3 px-4 text-purple-600 font-bold whitespace-nowrap">{detail.invoice_no}</td>
+                                            <td className="py-3 px-4">
+                                                <div className="text-gray-900 font-bold">{detail.package_name}</div>
+                                                <div className="text-xs text-gray-500">{detail.package_duration}</div>
+                                            </td>
+                                            <td className="py-3 px-4 text-right text-gray-900 font-bold whitespace-nowrap">{fmt(detail.price)}</td>
+                                            <td className="py-3 px-4 text-right text-red-500 font-bold whitespace-nowrap">{fmt(detail.commission)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="bg-gray-900 text-white font-bold">
+                                        <td colSpan={3} className="py-3 px-4 text-right uppercase text-[10px] tracking-wider">Total</td>
+                                        <td className="py-3 px-4 text-right whitespace-nowrap">{fmt(therapistDetails.reduce((a, b) => a + b.price, 0))}</td>
+                                        <td className="py-3 px-4 text-right whitespace-nowrap text-red-400">{fmt(therapistDetails.reduce((a, b) => a + b.commission, 0))}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </Modal>
         </AuthenticatedLayout>
     );
 }

@@ -62,45 +62,28 @@ Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
             SELECT
                 ti.employee_id,
                 SUM(ti.price)  AS total_revenue,
-                COUNT(*)       AS job_count
+                SUM(COALESCE(ti.therapist_commission, 0)) AS total_commission,
+                COUNT(DISTINCT CONCAT(ti.transaction_id, '-', COALESCE(ti.guest_index, 1))) AS job_count
             FROM transaction_items ti
             JOIN transactions t ON t.id = ti.transaction_id
             WHERE ti.employee_id IS NOT NULL
               AND t.status = 'success'
               {$monthFilterSql}
             GROUP BY ti.employee_id
-        ),
-        deduped_commission AS (
-            SELECT
-                ti.employee_id,
-                ti.transaction_id,
-                ti.guest_index,
-                MAX(COALESCE(ti.therapist_commission, 0)) AS commission
-            FROM transaction_items ti
-            JOIN transactions t ON t.id = ti.transaction_id
-            WHERE ti.employee_id IS NOT NULL
-              AND t.status = 'success'
-              {$monthFilterSql}
-            GROUP BY ti.employee_id, ti.transaction_id, ti.guest_index
-        ),
-        commission_per_employee AS (
-            SELECT employee_id, SUM(commission) AS total_commission
-            FROM deduped_commission
-            GROUP BY employee_id
         )
         SELECT
             r.employee_id,
             e.name,
             r.total_revenue,
-            COALESCE(c.total_commission, 0) AS total_commission,
+            COALESCE(r.total_commission, 0) AS total_commission,
             r.job_count
         FROM revenue r
         JOIN employees e ON e.id = r.employee_id
-        LEFT JOIN commission_per_employee c ON c.employee_id = r.employee_id
         ORDER BY r.total_revenue DESC
     ");
 
     $therapistRevenue = collect($therapistRows)->map(fn($row) => [
+        'id'         => $row->employee_id,
         'name'       => $row->name,
         'revenue'    => (float) $row->total_revenue,
         'commission' => (float) $row->total_commission,
@@ -119,15 +102,12 @@ Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         ->value('total');
 
     $totalCommission = (float) \Illuminate\Support\Facades\DB::selectOne("
-        SELECT COALESCE(SUM(commission), 0) AS total FROM (
-            SELECT MAX(COALESCE(therapist_commission, 0)) AS commission
-            FROM transaction_items ti
-            JOIN transactions t ON t.id = ti.transaction_id
-            WHERE ti.employee_id IS NOT NULL
-              AND t.status = 'success'
-              {$monthFilterSql}
-            GROUP BY ti.employee_id, ti.transaction_id, ti.guest_index
-        ) deduped
+        SELECT COALESCE(SUM(therapist_commission), 0) AS total
+        FROM transaction_items ti
+        JOIN transactions t ON t.id = ti.transaction_id
+        WHERE ti.employee_id IS NOT NULL
+          AND t.status = 'success'
+          {$monthFilterSql}
     ")->total ?? 0;
 
     $totalOrders   = (clone $baseQuery)->count();
@@ -163,45 +143,28 @@ Route::get('/api/dashboard/therapist-revenue', function (Illuminate\Http\Request
             SELECT
                 ti.employee_id,
                 SUM(ti.price)  AS total_revenue,
-                COUNT(*)       AS job_count
+                SUM(COALESCE(ti.therapist_commission, 0)) AS total_commission,
+                COUNT(DISTINCT CONCAT(ti.transaction_id, '-', COALESCE(ti.guest_index, 1))) AS job_count
             FROM transaction_items ti
             JOIN transactions t ON t.id = ti.transaction_id
             WHERE ti.employee_id IS NOT NULL
               AND t.status = 'success'
               {$monthFilter}
             GROUP BY ti.employee_id
-        ),
-        deduped_commission AS (
-            SELECT
-                ti.employee_id,
-                ti.transaction_id,
-                ti.guest_index,
-                MAX(COALESCE(ti.therapist_commission, 0)) AS commission
-            FROM transaction_items ti
-            JOIN transactions t ON t.id = ti.transaction_id
-            WHERE ti.employee_id IS NOT NULL
-              AND t.status = 'success'
-              {$monthFilter}
-            GROUP BY ti.employee_id, ti.transaction_id, ti.guest_index
-        ),
-        commission_per_employee AS (
-            SELECT employee_id, SUM(commission) AS total_commission
-            FROM deduped_commission
-            GROUP BY employee_id
         )
         SELECT
             r.employee_id,
             e.name,
             r.total_revenue,
-            COALESCE(c.total_commission, 0) AS total_commission,
+            COALESCE(r.total_commission, 0) AS total_commission,
             r.job_count
         FROM revenue r
         JOIN employees e ON e.id = r.employee_id
-        LEFT JOIN commission_per_employee c ON c.employee_id = r.employee_id
         ORDER BY r.total_revenue DESC
     ");
 
     return response()->json(collect($rows)->map(fn($row) => [
+        'id'         => $row->employee_id,
         'name'       => $row->name,
         'revenue'    => (float) $row->total_revenue,
         'commission' => (float) $row->total_commission,
@@ -249,6 +212,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('admin/transaction/{transaction}/pdf', [TransactionController::class, 'downloadPdf'])->name('admin.transaction.pdf');
         Route::delete('admin/transaction/{transaction}', [TransactionController::class, 'destroy'])->name('admin.transaction.destroy');
         Route::get('admin/therapist/report', [TransactionController::class, 'therapistReport'])->name('admin.therapist.report');
+        Route::get('admin/therapist/report/detail', [TransactionController::class, 'therapistDetail'])->name('admin.therapist.report.detail');
 
         // POS routes
         Route::get('admin/pos', [TransactionController::class, 'pos'])->name('admin.pos.index');

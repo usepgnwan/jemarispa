@@ -86,7 +86,7 @@ Terlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :
 
 [details]
 Biaya Transport : [transport]
--
+[discount]-
 *Total Pembayaran : [total]*
 
 
@@ -238,10 +238,7 @@ export default function Index({ transactions, filters, counts, employees, packag
         const currentNewItems = providedNewItems || newItems;
         const currentSelectedItems = providedSelectedItems || selectedTransaction.items;
 
-        const guestItems = [...currentSelectedItems, ...currentNewItems].filter(item => item.guest_index == guestIndex);
-        let totalCommission = 0;
-
-        guestItems.forEach(item => {
+        const getCommissionForItem = (item) => {
             let pkg = packages.find(p => item.package_name === p.title_id);
             if (!pkg && item.package_name) {
                 pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
@@ -258,22 +255,25 @@ export default function Index({ transactions, filters, counts, employees, packag
 
                 const duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
                 if (duration) {
-                    totalCommission += parseFloat(duration.commission) || 0;
+                    return parseFloat(duration.commission) || 0;
                 }
             }
-        });
+            return parseFloat(item.therapist_commission) || 0;
+        };
 
         const updatedItems = currentSelectedItems.map(it =>
-            it.guest_index == guestIndex ? { ...it, therapist_commission: totalCommission } : it
+            it.guest_index == guestIndex ? { ...it, therapist_commission: getCommissionForItem(it) } : it
         );
         const updatedNewItems = currentNewItems.map(ni =>
-            ni.guest_index == guestIndex ? { ...ni, therapist_commission: totalCommission } : ni
+            ni.guest_index == guestIndex ? { ...ni, therapist_commission: getCommissionForItem(ni) } : ni
         );
 
         setSelectedTransaction({ ...selectedTransaction, items: updatedItems });
         setNewItems(updatedNewItems);
 
-        currentSelectedItems.filter(item => item.guest_index == guestIndex).forEach(item => updateTherapistData(item.id, { therapist_commission: totalCommission }));
+        currentSelectedItems.filter(item => item.guest_index == guestIndex).forEach(item => {
+            updateTherapistData(item.id, { therapist_commission: getCommissionForItem(item) });
+        });
     };
 
 
@@ -291,6 +291,15 @@ export default function Index({ transactions, filters, counts, employees, packag
             currency: 'IDR',
             minimumFractionDigits: 0
         }).format(amount);
+    };
+
+    const getVoucherNominalDiscount = (transaction) => {
+        if (!transaction || !transaction.voucher) return 0;
+        if (transaction.voucher.discount_type === 'percent') {
+            const subtotal = transaction.items?.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0) || 0;
+            return (subtotal * parseFloat(transaction.voucher.discount_amount)) / 100;
+        }
+        return parseFloat(transaction.voucher.discount_amount);
     };
 
     const prepareInvoiceMessage = async (transaction) => {
@@ -341,7 +350,7 @@ export default function Index({ transactions, filters, counts, employees, packag
             invoice_no: transaction.order_number,
             details: detailsText,
             transport: formatCurrency(transaction.transport_fee || 0),
-            discount: transaction.discount_amount > 0 ? `-${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)` : '',
+            discount: transaction.voucher ? `Voucher ${transaction.voucher.code} : -${formatCurrency(getVoucherNominalDiscount(transaction))}\n` : (transaction.discount_amount > 0 ? `Diskon : -${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)\n` : ''),
             total: formatCurrency(transaction.total_price),
             link: link,
             link_review: linkReview
@@ -429,19 +438,22 @@ export default function Index({ transactions, filters, counts, employees, packag
     };
 
     const openDetails = (transaction) => {
-        // Automatically fill missing/zero commissions for existing items from package defaults
+        // Recalculate commissions for all items to fix any previously corrupted data
         const enrichedItems = (transaction.items || []).map(item => {
-            const currentCommission = parseFloat(item.therapist_commission) || 0;
-            if (currentCommission === 0) {
-                let pkg = packages.find(p => p.title_id === item.package_name);
-                if (!pkg && item.package_name) {
-                    pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
+            let pkg = packages.find(p => p.title_id === item.package_name);
+            if (!pkg && item.package_name) {
+                pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
+            }
+            if (pkg) {
+                let cleanDuration = item.package_duration || '';
+                cleanDuration = cleanDuration.replace(/ Menit Menit/g, ' Menit');
+                if (cleanDuration && !cleanDuration.includes(' Menit')) {
+                    const match = cleanDuration.match(/^\d+/);
+                    if (match) cleanDuration = match[0] + ' Menit';
                 }
-                if (pkg) {
-                    const duration = pkg.durations.find(d => d.duration === item.package_duration);
-                    if (duration) {
-                        return { ...item, therapist_commission: duration.commission };
-                    }
+                const duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
+                if (duration) {
+                    return { ...item, therapist_commission: parseFloat(duration.commission) || 0 };
                 }
             }
             return item;
@@ -674,7 +686,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                         {transaction.voucher ? (
                                                             <>
                                                                 <span className="text-xs font-bold text-blue-600 block">{transaction.voucher.code}</span>
-                                                                <span className="text-[9px] font-medium text-gray-400 uppercase">-{formatCurrency(transaction.voucher.discount_amount)}</span>
+                                                                <span className="text-[9px] font-medium text-gray-400 uppercase">-{formatCurrency(getVoucherNominalDiscount(transaction))}</span>
                                                             </>
                                                         ) : (
                                                             <span className="text-gray-300">—</span>
@@ -808,7 +820,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                         {transaction.voucher && (
                                                                             <div className="bg-blue-50 px-4 py-2 rounded-xl border border-blue-100">
                                                                                 <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Voucher</p>
-                                                                                <p className="text-xs font-bold text-blue-600">{transaction.voucher.code} (-{formatCurrency(transaction.voucher.discount_amount)})</p>
+                                                                                <p className="text-xs font-bold text-blue-600">{transaction.voucher.code} (-{formatCurrency(getVoucherNominalDiscount(transaction))})</p>
                                                                             </div>
                                                                         )}
                                                                         {transaction.discount_percent > 0 && (
@@ -1368,7 +1380,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                 )}
                                                 {selectedTransaction?.voucher && (
                                                     <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">
-                                                        Voucher: {selectedTransaction.voucher.code} (-{formatCurrency(selectedTransaction.voucher.discount_amount)})
+                                                        Voucher: {selectedTransaction.voucher.code} (-{formatCurrency(getVoucherNominalDiscount(selectedTransaction))})
                                                     </p>
                                                 )}
                                                 {selectedTransaction?.discount_percent > 0 && (
