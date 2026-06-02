@@ -2,8 +2,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import Pagination from '@/Components/Pagination';
-import { 
-    ChartBarIcon, 
+import {
+    ChartBarIcon,
     ArrowPathIcon,
     CursorArrowRaysIcon,
     CalendarIcon,
@@ -15,7 +15,7 @@ import {
     TableCellsIcon,
     ShoppingCartIcon
 } from '@heroicons/react/24/outline';
-import { 
+import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend, BarChart, Bar
 } from 'recharts';
@@ -57,35 +57,35 @@ export default function Index({ analytics, stats, filters }) {
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border border-gray-200 shadow-sm">
                             <CalendarIcon className="w-4 h-4 text-gray-400" />
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 value={startDate}
                                 onChange={e => setStartDate(e.target.value)}
                                 className="text-xs font-bold text-gray-700 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
                             />
                             <span className="text-gray-300 text-xs">-</span>
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 value={endDate}
                                 onChange={e => setEndDate(e.target.value)}
                                 className="text-xs font-bold text-gray-700 bg-transparent border-none p-0 focus:ring-0 cursor-pointer"
                             />
                         </div>
-                        <button 
+                        <button
                             onClick={applyFilter}
                             className="flex items-center gap-2 px-4 py-2.5 bg-zenith-orange text-white rounded-2xl text-xs font-bold hover:bg-zenith-orange/90 transition-all shadow-sm shadow-zenith-orange/20"
                         >
                             Filter
                         </button>
                         {(filters?.start_date || filters?.end_date) && (
-                            <button 
+                            <button
                                 onClick={clearFilter}
                                 className="px-3 py-2.5 bg-gray-100 text-gray-500 rounded-2xl text-xs font-bold hover:bg-gray-200 transition-all"
                             >
                                 Reset
                             </button>
                         )}
-                        <button 
+                        <button
                             onClick={() => window.location.reload()}
                             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all shadow-sm"
                         >
@@ -157,68 +157,103 @@ export default function Index({ analytics, stats, filters }) {
 
                 {/* Charts Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Main Trend Chart */}
-                    <div className="lg:col-span-8 bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100 flex flex-col">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
-                            <div>
-                                <h3 className="text-xl font-black text-gray-900 tracking-tight">Tren Interaksi Menu</h3>
-                                <p className="text-sm text-gray-400 mt-1">Perbandingan performa 5 menu terpopuler (14 hari terakhir)</p>
+                    {/* Left Column */}
+                    <div className="lg:col-span-8 flex flex-col gap-8">
+                        {/* Main Trend Chart */}
+                        <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100 flex flex-col w-full">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+                                <div>
+                                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Tren Interaksi Menu</h3>
+                                    <p className="text-sm text-gray-400 mt-1">Perbandingan performa 5 menu terpopuler (14 hari terakhir)</p>
+                                </div>
+                                <div className="flex flex-wrap gap-4">
+                                    {stats.top_titles.map((title, idx) => (
+                                        <div key={title} className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{title}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="flex flex-wrap gap-4">
-                                {stats.top_titles.map((title, idx) => (
-                                    <div key={title} className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{title}</span>
-                                    </div>
-                                ))}
+                            <div className="h-[350px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={stats.trend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            {stats.top_titles.map((title, idx) => (
+                                                <linearGradient key={`grad-${idx}`} id={`color-${idx}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor={COLORS[idx % COLORS.length]} stopOpacity={0.1} />
+                                                    <stop offset="95%" stopColor={COLORS[idx % COLORS.length]} stopOpacity={0} />
+                                                </linearGradient>
+                                            ))}
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F8FAFC" />
+                                        <XAxis
+                                            dataKey="date_label"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94A3B8' }}
+                                            dy={15}
+                                        />
+                                        <YAxis
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94A3B8' }}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '16px' }}
+                                            itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                                        />
+                                        {stats.top_titles.map((title, idx) => (
+                                            <Area
+                                                key={title}
+                                                type="monotone"
+                                                dataKey={title}
+                                                stroke={COLORS[idx % COLORS.length]}
+                                                fill={`url(#color-${idx})`}
+                                                strokeWidth={3}
+                                                animationDuration={2000}
+                                            />
+                                        ))}
+                                    </AreaChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
-                        <div className="h-[350px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={stats.trend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        {stats.top_titles.map((title, idx) => (
-                                            <linearGradient key={`grad-${idx}`} id={`color-${idx}`} x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor={COLORS[idx % COLORS.length]} stopOpacity={0.1}/>
-                                                <stop offset="95%" stopColor={COLORS[idx % COLORS.length]} stopOpacity={0}/>
-                                            </linearGradient>
-                                        ))}
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F8FAFC" />
-                                    <XAxis 
-                                        dataKey="date_label" 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{fontSize: 10, fontWeight: 'bold', fill: '#94A3B8'}}
-                                        dy={15}
-                                    />
-                                    <YAxis 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{fontSize: 10, fontWeight: 'bold', fill: '#94A3B8'}}
-                                    />
-                                    <Tooltip 
-                                        contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '16px' }}
-                                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                                    />
-                                    {stats.top_titles.map((title, idx) => (
-                                        <Area 
-                                            key={title}
-                                            type="monotone" 
-                                            dataKey={title} 
-                                            stroke={COLORS[idx % COLORS.length]} 
-                                            fill={`url(#color-${idx})`}
-                                            strokeWidth={3} 
-                                            animationDuration={2000}
-                                        />
-                                    ))}
-                                </AreaChart>
-                            </ResponsiveContainer>
+
+                        {/* Booking Sources */}
+                        <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
+                            <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Sumber Booking</h3>
+                            <div className="space-y-3">
+                                {stats.booking_sources.map((source, i) => {
+                                    const maxVal = Math.max(...stats.booking_sources.map(s => s.value), 1);
+                                    const pct = Math.round((source.value / maxVal) * 100);
+                                    return (
+                                        <div key={i} className="flex flex-col gap-2 p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:border-zenith-orange/30 transition-all">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-zenith-orange border border-gray-100 shadow-sm shrink-0">
+                                                        <ShoppingCartIcon className="w-4 h-4" />
+                                                    </div>
+                                                    <p className="text-xs font-bold text-gray-900 truncate">{source.name}</p>
+                                                </div>
+                                                <span className="text-xs font-black text-zenith-orange bg-zenith-orange/5 px-3 py-1 rounded-full shrink-0">
+                                                    {source.value} Order
+                                                </span>
+                                            </div>
+                                            <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
+                                                <div
+                                                    className="h-full bg-zenith-orange transition-all duration-1000"
+                                                    style={{ width: `${pct}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Secondary Insights */}
-                    <div className="lg:col-span-4 space-y-8">
+                    {/* Right Column */}
+                    <div className="lg:col-span-4 flex flex-col gap-8">
                         {/* Device Distribution */}
                         <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
                             <h3 className="text-lg font-black text-gray-900 tracking-tight mb-8">Platform Pengguna</h3>
@@ -239,7 +274,7 @@ export default function Index({ analytics, stats, filters }) {
                                             <Cell fill="#F26440" />
                                             <Cell fill="#407BFF" />
                                         </Pie>
-                                        <Tooltip 
+                                        <Tooltip
                                             contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                         />
                                     </PieChart>
@@ -281,37 +316,6 @@ export default function Index({ analytics, stats, filters }) {
                             </div>
                         </div>
 
-                        {/* Booking Sources */}
-                        <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
-                            <h3 className="text-lg font-black text-gray-900 tracking-tight mb-6">Sumber Booking</h3>
-                            <div className="space-y-3">
-                                {stats.booking_sources.map((source, i) => {
-                                    const maxVal = Math.max(...stats.booking_sources.map(s => s.value), 1);
-                                    const pct = Math.round((source.value / maxVal) * 100);
-                                    return (
-                                        <div key={i} className="flex flex-col gap-2 p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:border-zenith-orange/30 transition-all">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-zenith-orange border border-gray-100 shadow-sm shrink-0">
-                                                        <ShoppingCartIcon className="w-4 h-4" />
-                                                    </div>
-                                                    <p className="text-xs font-bold text-gray-900 truncate">{source.name}</p>
-                                                </div>
-                                                <span className="text-xs font-black text-zenith-orange bg-zenith-orange/5 px-3 py-1 rounded-full shrink-0">
-                                                    {source.value} Order
-                                                </span>
-                                            </div>
-                                            <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
-                                                <div 
-                                                    className="h-full bg-zenith-orange transition-all duration-1000"
-                                                    style={{ width: `${pct}%` }}
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -413,9 +417,9 @@ export default function Index({ analytics, stats, filters }) {
                             <tbody className="divide-y divide-gray-100">
                                 {analytics.data.length > 0 ? (
                                     analytics.data.map((item) => {
-                                        const isMobile = item.user_agent.toLowerCase().includes('mobile') || 
-                                                       item.user_agent.toLowerCase().includes('android') || 
-                                                       item.user_agent.toLowerCase().includes('iphone');
+                                        const isMobile = item.user_agent.toLowerCase().includes('mobile') ||
+                                            item.user_agent.toLowerCase().includes('android') ||
+                                            item.user_agent.toLowerCase().includes('iphone');
                                         return (
                                             <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="py-5 px-8">
@@ -481,6 +485,7 @@ export default function Index({ analytics, stats, filters }) {
                     )}
                 </div>
             </div>
+
         </AuthenticatedLayout>
     );
 }
