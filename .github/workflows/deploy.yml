@@ -48,8 +48,6 @@ jobs:
           composer  install --ignore-platform-reqs
           echo "migrate"
           php artisan migrate --force
-          echo "generate swagger"
-          php artisan l5-swagger:generate
           echo "cleare cache"
           php artisan config:clear
           php artisan config:cache
