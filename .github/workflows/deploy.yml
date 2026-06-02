@@ -1,0 +1,63 @@
+name: Jemari Home SPA CI/CD
+
+on:
+  pull_request:
+    types:
+      - closed  # Hanya berjalan saat merge ke main
+    branches:
+      - main  # Ubah sesuai branch utama Anda
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --prefer-dist
+
+      - name: Deploy to Server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+
+        run: |
+          echo "Installing SSH Client..."
+          sudo apt-get install -y openssh-client
+
+          echo "Setting up SSH..."
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p 22 $SSH_HOST >> ~/.ssh/known_hosts
+
+          echo "Connecting to server and deploying..."
+          ssh -o StrictHostKeyChecking=no -p 22 $SSH_USER@$SSH_HOST 'bash -s' << 'EOF'
+          set -e
+          echo "Deploying on server..."
+          cd  /var/www/jemarispa
+          git pull origin main
+          composer  install --ignore-platform-reqs
+          echo "migrate"
+          php artisan migrate --force
+          echo "generate swagger"
+          php artisan l5-swagger:generate
+          echo "cleare cache"
+          php artisan config:clear
+          php artisan config:cache
+          php artisan view:clear
+          php artisan route:cache
+          echo "Node Install"
+          npm install --legacy-peer-deps
+          echo "Build asset"
+          npm run build
+          echo "Deployment successful!" >> deploy.log
+          EOF
