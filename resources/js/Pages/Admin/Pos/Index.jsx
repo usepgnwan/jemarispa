@@ -947,28 +947,30 @@ jemarihomespa.com`;
             {/* ... rest of the modal logic (unchanged) ... */}
 
             <Modal show={showAddModal} onClose={() => setShowAddModal(false)} maxWidth="2xl">
-                <div className="p-5 sm:p-8">
-                    <div className="flex justify-between items-center mb-6 sm:mb-8">
-                        <div>
-                            <h3 className="text-xl font-bold text-gray-900">Pilih Layanan</h3>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pilih paket untuk Pelanggan ke-{activeGuestIndex + 1}</p>
+                <div className="flex flex-col max-h-[90vh] md:max-h-[85vh]">
+                    <div className="p-4 md:p-6 border-b border-gray-100 flex-shrink-0">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900">Pilih Layanan</h3>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pilih paket untuk Pelanggan ke-{activeGuestIndex + 1}</p>
+                            </div>
+                            <button onClick={() => setShowAddModal(false)} className="p-2 text-gray-400 hover:text-zenith-orange hover:bg-gray-100 rounded-full transition-colors">
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
                         </div>
-                        <button onClick={() => setShowAddModal(false)} className="p-2 text-gray-400 hover:text-zenith-orange transition-colors">
-                            <XMarkIcon className="w-6 h-6" />
-                        </button>
+                        
+                        <div className="relative">
+                            <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                            <input
+                                type="text" placeholder="Cari nama paket atau kategori..."
+                                className="w-full bg-gray-50 border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-gray-700 focus:ring-zenith-orange transition-all"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
                     </div>
 
-                    <div className="relative mb-6">
-                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
-                        <input
-                            type="text" placeholder="Cari nama paket atau kategori..."
-                            className="w-full bg-gray-50 border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-gray-700 focus:ring-zenith-orange transition-all"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="max-h-[60vh] sm:max-h-[500px] overflow-y-auto pr-2 space-y-4">
+                    <div className="p-4 md:p-6 overflow-y-auto space-y-4">
                         {filteredPackages.map(pkg => {
                             const durationIndex = selectedDurations[pkg.id] || 0;
                             const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
@@ -1033,8 +1035,8 @@ jemarihomespa.com`;
 
             {/* History Modal */}
             <Modal show={showHistoryModal} onClose={() => setShowHistoryModal(false)} maxWidth="4xl">
-                <div className="p-8">
-                    <div className="flex justify-between items-center mb-8 pb-6 border-b border-gray-50">
+                <div className="flex flex-col max-h-[90vh] md:max-h-[85vh]">
+                    <div className="p-4 md:p-6 border-b border-gray-100 flex-shrink-0 flex justify-between items-center">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-zenith-orange/10 rounded-2xl flex items-center justify-center text-zenith-orange">
                                 <ArrowPathIcon className="w-6 h-6" />
@@ -1044,12 +1046,12 @@ jemarihomespa.com`;
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Today's Transactions Session</p>
                             </div>
                         </div>
-                        <button onClick={() => setShowHistoryModal(false)} className="p-2 text-gray-400 hover:text-zenith-orange">
+                        <button onClick={() => setShowHistoryModal(false)} className="p-2 text-gray-400 hover:text-zenith-orange hover:bg-gray-100 rounded-full transition-colors">
                             <XMarkIcon className="w-6 h-6" />
                         </button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="p-4 md:p-6 overflow-y-auto space-y-4">
                         {todayTransactions.length === 0 ? (
                             <div className="py-20 text-center">
                                 <ClipboardDocumentListIcon className="w-12 h-12 text-gray-100 mx-auto mb-4" />
@@ -1105,14 +1107,15 @@ jemarihomespa.com`;
 
             {/* Success Invoice Modal */}
             <Modal show={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} maxWidth="md">
-                <div className="p-10 text-center">
-                    <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 mx-auto mb-6 shadow-lg shadow-green-500/10">
-                        <CheckCircleIcon className="w-12 h-12" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Transaksi Berhasil!</h3>
-                    <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed">
-                        Data transaksi telah disimpan secara otomatis ke dalam sistem. Klik tombol di bawah untuk mengirim invoice via WhatsApp.
-                    </p>
+                <div className="flex flex-col max-h-[90vh] md:max-h-[85vh]">
+                    <div className="p-6 md:p-8 text-center overflow-y-auto">
+                        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500 mx-auto mb-6 shadow-lg shadow-green-500/10">
+                            <CheckCircleIcon className="w-12 h-12" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Transaksi Berhasil!</h3>
+                        <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed">
+                            Data transaksi telah disimpan secara otomatis ke dalam sistem. Klik tombol di bawah untuk mengirim invoice via WhatsApp.
+                        </p>
 
                     <div className="flex flex-col gap-3">
                         <div className="grid grid-cols-2 gap-3">
@@ -1137,6 +1140,7 @@ jemarihomespa.com`;
                         >
                             Tutup
                         </button>
+                    </div>
                     </div>
                 </div>
             </Modal>
