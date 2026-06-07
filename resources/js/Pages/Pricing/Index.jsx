@@ -45,7 +45,7 @@ const translations = {
     }
 };
 
-export default function Index({ auth, packages = [], signaturePackages = [] }) {
+export default function Index({ auth, packages = [], signaturePackages = [], initialSlug = null }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
     const [activeService, setActiveService] = useState(() => localStorage.getItem('active_service') || 'Default');
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
@@ -69,6 +69,17 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
         checkSelection();
         syncService();
+
+        if (initialSlug && signaturePackages.length > 0) {
+            const matchingService = signaturePackages.find(s => 
+                (s.title_id && s.title_id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') === initialSlug) ||
+                (s.title_en && s.title_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') === initialSlug)
+            );
+            if (matchingService) {
+                setActiveService(matchingService.title_id);
+                localStorage.setItem('active_service', matchingService.title_id);
+            }
+        }
 
         window.addEventListener('cart-updated', checkSelection);
         window.addEventListener('storage', syncService);

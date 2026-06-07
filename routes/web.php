@@ -254,12 +254,15 @@ Route::post('/review/{token}', [TestimoniController::class, 'submitReview'])->na
 Route::get('/blog', [BlogController::class, 'publicIndex'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'publicShow'])->name('blog.show');
 
-Route::get('/pricing', function () {
+Route::get('/treatment/{slug?}', function ($slug = null) {
     return Inertia::render('Pricing/Index', [
         'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
-        'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'initialSlug' => $slug
     ]);
-})->name('pricing.index');
+})->name('treatment.index');
+
+Route::redirect('/pricing', '/treatment', 301);
 
 Route::get('/cart', function () {
     return Inertia::render('Cart/Index', [
@@ -275,5 +278,15 @@ Route::get('/api/faqs', function () {
 Route::post('/api/voucher/validate', [VoucherController::class, 'validateCode'])->name('api.voucher.validate');
 
 Route::post('/api/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+
+Route::get('/sitemap.xml', function () {
+    $blogs = \App\Models\Blog::latest()->get();
+    $packages = \App\Models\Package::where('is_signature', true)->get();
+
+    return response()->view('sitemap', [
+        'blogs' => $blogs,
+        'packages' => $packages,
+    ])->header('Content-Type', 'text/xml');
+});
 
 require __DIR__.'/auth.php';

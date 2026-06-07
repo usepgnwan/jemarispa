@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -8,6 +8,21 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
     const [showServices, setShowServices] = useState(false);
     const [cartCount, setCartCount] = useState(0);
     const [activeHash, setActiveHash] = useState('');
+
+    const { app_settings } = usePage().props;
+    const phone = app_settings?.phone || '6289516166090';
+    const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
+    let waPhone = cleanPhone;
+    if (cleanPhone.startsWith('0')) {
+        waPhone = '62' + cleanPhone.substring(1);
+    } else if (cleanPhone.startsWith('8')) {
+        waPhone = '62' + cleanPhone;
+    }
+    const isMobile = typeof navigator !== 'undefined' ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : false;
+    const defaultWaMessage = "Halo Jemari Home Spa, saya ingin bertanya mengenai layanan spa.";
+    const waUrl = isMobile 
+        ? `https://wa.me/${waPhone}?text=${encodeURIComponent(defaultWaMessage)}`
+        : `https://web.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(defaultWaMessage)}`;
 
     const isSolid = isScrolled || forceSolid;
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
@@ -138,12 +153,9 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                             key={s}
                                             onClick={() => {
                                                 logAnalytic('Layanan', `Pilih ${s}`);
-                                                if (window.location.pathname === '/') {
-                                                    setActiveService(s);
-                                                } else {
-                                                    window.location.href = '/';
-                                                    localStorage.setItem('pending_service', s);
-                                                }
+                                                const slug = s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                                                localStorage.setItem('active_service', s);
+                                                router.visit(`/treatment/${slug}`);
                                                 setShowServices(false);
                                             }}
                                             className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-between group ${activeService === s ? 'bg-zenith-orange/5 text-zenith-orange' : 'text-zenith-charcoal/60 hover:text-zenith-orange hover:bg-zenith-orange/5'}`}
@@ -164,9 +176,9 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                             {t.testimonial}
                         </Link>
                         <Link 
-                            href="/pricing" 
+                            href="/treatment" 
                             onClick={() => logAnalytic('Menu', 'Klik Harga')}
-                            className={`transition-colors ${isActive('/pricing') ? activeClass : inactiveClass}`}
+                            className={`transition-colors ${isActive('/treatment') ? activeClass : inactiveClass}`}
                         >
                             {t.pricing}
                         </Link>
@@ -177,13 +189,15 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                         >
                             {t.blog}
                         </Link>
-                        <Link 
-                            href="/#contact" 
+                        <a 
+                            href={waUrl} 
+                            target="_blank"
+                            rel="noopener noreferrer"
                             onClick={() => logAnalytic('Menu', 'Klik Kontak')}
-                            className={`transition-colors ${isActive('/', '#contact') ? activeClass : inactiveClass}`}
+                            className={`transition-colors ${inactiveClass}`}
                         >
                             {t.contact}
-                        </Link>
+                        </a>
                     </div>
 
                     <div className="flex items-center gap-x-6">
@@ -258,12 +272,9 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                             key={s}
                                             onClick={() => {
                                                 logAnalytic('Layanan Mobile', `Pilih ${s}`);
-                                                if (window.location.pathname === '/') {
-                                                    setActiveService(s);
-                                                } else {
-                                                    window.location.href = '/';
-                                                    localStorage.setItem('pending_service', s);
-                                                }
+                                                const slug = s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                                                localStorage.setItem('active_service', s);
+                                                router.visit(`/treatment/${slug}`);
                                                 setShowServices(false);
                                             }}
                                             className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-between group ${activeService === s ? 'bg-zenith-orange/5 text-zenith-orange' : 'text-zenith-charcoal/60 hover:text-zenith-orange hover:bg-zenith-orange/5'}`}
