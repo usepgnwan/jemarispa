@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <!-- Google Tag Manager -->
-        @if(config('services.gtm.code') && !request()->is('admin*', 'dashboard', 'login', 'register', 'profile', 'api/*'))
+        @if(config('services.gtm.code') && !request()->is('admin*', 'dashboard', 'login', 'register', 'profile', 'api/*', 'testimoni', 'faq', 'platform'))
         <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
         new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
         j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -17,6 +17,20 @@
 
         <title inertia>{{ config('app.name', 'Jemari Home Spa - Pijat Panggilan Bandung') }}</title>
         <meta name="description" inertia content="Layanan pijat panggilan profesional 24 jam di Bandung dan Cimahi. Tersedia pijat tradisional, bekam, totok wajah, refleksi, lulur, dan kerokan. Langsung ke rumah, hotel, atau apartemen Anda.">
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:title" inertia content="Jemari Home Spa - Pijat Panggilan Bandung">
+        <meta property="og:description" inertia content="Layanan pijat panggilan profesional 24 jam di Bandung dan Cimahi. Tersedia pijat tradisional, bekam, totok wajah, refleksi, lulur, dan kerokan.">
+        <meta property="og:image" inertia content="{{ asset('images/logo-pwa-192.png') }}">
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image">
+        <meta property="twitter:url" content="{{ url()->current() }}">
+        <meta property="twitter:title" inertia content="Jemari Home Spa - Pijat Panggilan Bandung">
+        <meta property="twitter:description" inertia content="Layanan pijat panggilan profesional 24 jam di Bandung dan Cimahi. Tersedia pijat tradisional, bekam, totok wajah, refleksi, lulur, dan kerokan.">
+        <meta property="twitter:image" inertia content="{{ asset('images/logo-pwa-192.png') }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -232,7 +246,7 @@
     </head>
     <body class="font-sans antialiased">
         <!-- Google Tag Manager (noscript) -->
-        @if(config('services.gtm.code') && !request()->is('admin*', 'dashboard', 'login', 'register', 'profile', 'api/*'))
+        @if(config('services.gtm.code') && !request()->is('admin*', 'dashboard', 'login', 'register', 'profile', 'api/*', 'testimoni', 'faq', 'platform'))
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ config('services.gtm.code') }}"
         height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         @endif
