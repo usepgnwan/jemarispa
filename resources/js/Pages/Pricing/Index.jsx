@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
+import Hero from '@/Components/Landing/Hero';
 
 const translations = {
     'ID': {
@@ -218,37 +219,42 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                 auth={auth} 
                 lang={lang} 
                 setLang={setLang} 
-                forceSolid={true} 
+                forceSolid={activeService === 'Default'} 
                 signaturePackages={signaturePackages} 
                 activeService={activeService} 
                 setActiveService={handleSetActiveService}
             />
 
-            <main className="pt-32 md:pt-40 pb-20 px-6">
+            {activeService !== 'Default' && (
+                <Hero activeService={activeService} lang={lang} hideButtonsAndStats={true} />
+            )}
+
+            <main className={activeService !== 'Default' ? "pb-20 px-6 -mt-40 md:-mt-64 lg:-mt-80 relative z-20" : "pt-32 md:pt-40 pb-20 px-6"}>
                 <div className="max-w-5xl mx-auto">
-                    <div className="text-center mb-12 md:mb-16">
-                        <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[8px] md:text-[10px] mb-3 md:mb-4 block">{t.badge}</span>
-                        <h1 className="text-3xl md:text-6xl font-bold text-zenith-charcoal mb-4 md:mb-6 leading-tight">{t.title}</h1>
-                        <p className="text-zenith-charcoal/60 text-xs md:text-sm max-w-md mx-auto px-4 md:px-0 leading-relaxed">{t.desc}</p>
-                        
-                        {/* Filter Status */}
+                    {activeService === 'Default' && (
+                        <div className="text-center mb-12 md:mb-16">
+                            <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[8px] md:text-[10px] mb-3 md:mb-4 block">{t.badge}</span>
+                            <h1 className="text-3xl md:text-6xl font-bold text-zenith-charcoal mb-4 md:mb-6 leading-tight">{t.title}</h1>
+                            <p className="text-zenith-charcoal/60 text-xs md:text-sm max-w-md mx-auto px-4 md:px-0 leading-relaxed">{t.desc}</p>
+                        </div>
+                    )}
+
+                    <div className="bg-white rounded-[3rem] shadow-2xl shadow-zenith-orange/5 overflow-hidden border border-zenith-orange/5">
                         {activeService !== 'Default' && (
-                            <div className="mt-8 flex items-center justify-center gap-4">
-                                <span className="px-4 py-2 rounded-full bg-zenith-orange/10 text-zenith-orange text-[10px] font-bold uppercase tracking-widest border border-zenith-orange/20">
+                            <div className="bg-zenith-orange/5 px-6 md:px-10 py-5 flex items-center justify-between border-b border-zenith-orange/10">
+                                <span className="text-zenith-orange text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm md:text-base">filter_list</span>
                                     {t.filterLabel}: {displayService}
                                 </span>
                                 <button 
                                     onClick={() => handleSetActiveService('Default')}
-                                    className="text-[10px] font-bold text-gray-400 hover:text-zenith-orange transition-colors uppercase tracking-widest flex items-center gap-1"
+                                    className="text-[10px] font-bold text-gray-500 hover:text-white transition-all uppercase tracking-widest flex items-center gap-1 bg-white hover:bg-zenith-orange px-4 py-2 rounded-full shadow-sm border border-gray-100"
                                 >
                                     <span className="material-symbols-outlined text-sm">close</span>
                                     {t.clearLabel}
                                 </button>
                             </div>
                         )}
-                    </div>
-
-                    <div className="bg-white rounded-[3rem] shadow-2xl shadow-zenith-orange/5 overflow-hidden border border-zenith-orange/5">
                         <div className="divide-y divide-zenith-orange/5">
                             {/* Table Header */}
                             <div className="hidden md:flex items-center px-8 md:px-10 py-4 bg-zenith-surface/30">

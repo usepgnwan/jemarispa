@@ -92,7 +92,7 @@ const serviceContent = {
     }
 };
 
-export default function Hero({ activeService, lang }) {
+export default function Hero({ activeService, lang, hideButtonsAndStats = false }) {
     const [dynamicContent, setDynamicContent] = useState(null);
     const [isVisible, setIsVisible] = useState(true);
 
@@ -190,45 +190,50 @@ export default function Hero({ activeService, lang }) {
                     </p>
                 )}
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <Link
-                        href="/cart"
-                        onClick={() => logAnalytic('CTA', 'Klik Pesan Sekarang (Hero)')}
-                        className="w-full sm:w-auto rounded-full bg-zenith-orange px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-zenith-orange/40 hover:bg-zenith-orange/80 transition-all transform hover:scale-105 active:scale-95 text-center"
-                    >
-                        {b.book}
-                    </Link>
-                    <button
-                        onClick={() => {
-                            logAnalytic('CTA', 'Klik Hubungi Kami (Hero)');
-                            window.dispatchEvent(new CustomEvent('open-wa-popover'));
-                        }}
-                        className="w-full sm:w-auto rounded-full border border-white/30 backdrop-blur-md px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all"
-                    >
-                        {b.contact}
-                    </button>
-                </div>
+                {!hideButtonsAndStats && (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                        <Link
+                            href="/cart"
+                            onClick={() => logAnalytic('CTA', 'Klik Pesan Sekarang (Hero)')}
+                            className="w-full sm:w-auto rounded-full bg-zenith-orange px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-2xl shadow-zenith-orange/40 hover:bg-zenith-orange/80 transition-all transform hover:scale-105 active:scale-95 text-center"
+                        >
+                            {b.book}
+                        </Link>
+                        <button
+                            onClick={() => {
+                                logAnalytic('CTA', 'Klik Hubungi Kami (Hero)');
+                                window.dispatchEvent(new CustomEvent('open-wa-popover'));
+                            }}
+                            className="w-full sm:w-auto rounded-full border border-white/30 backdrop-blur-md px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white hover:bg-white/10 transition-all"
+                        >
+                            {b.contact}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Bottom Stats Grid (Improved Visibility & Added Stars) */}
-            <div className="absolute bottom-8 lg:bottom-12 left-0 right-0 hidden lg:block">
-                <div className="mx-auto max-w-xl px-6">
-                    <div className="grid grid-cols-3 gap-x-4 items-center justify-center bg-black/20 backdrop-blur-2xl border border-white/20 rounded-2xl p-6 shadow-2xl scale-90">
-                        <div className="text-center">
-                            <p className="text-white text-2xl font-serif italic">2021</p>
-                            <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Berdiri Sejak' : 'Since 2021'}</p>
-                        </div>
-                        <div className="h-8 w-px bg-white/20 mx-auto"></div>
-                        <div className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                                <p className="text-white text-2xl font-serif italic">4.9</p>
-                                <span className="material-symbols-outlined text-zenith-gold text-lg">star</span>
+            {/* Bottom Stats Grid (Improved Visibility & Added Stars) */}
+            {!hideButtonsAndStats && (
+                <div className="absolute bottom-8 lg:bottom-12 left-0 right-0 hidden lg:block">
+                    <div className="mx-auto max-w-xl px-6">
+                        <div className="grid grid-cols-3 gap-x-4 items-center justify-center bg-black/20 backdrop-blur-2xl border border-white/20 rounded-2xl p-6 shadow-2xl scale-90">
+                            <div className="text-center">
+                                <p className="text-white text-2xl font-serif italic">2021</p>
+                                <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Berdiri Sejak' : 'Since 2021'}</p>
                             </div>
-                            <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Penilaian Pengguna' : 'User Rating'}</p>
+                            <div className="h-8 w-px bg-white/20 mx-auto"></div>
+                            <div className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                    <p className="text-white text-2xl font-serif italic">4.9</p>
+                                    <span className="material-symbols-outlined text-zenith-gold text-lg">star</span>
+                                </div>
+                                <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Penilaian Pengguna' : 'User Rating'}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </section>
     );
 }

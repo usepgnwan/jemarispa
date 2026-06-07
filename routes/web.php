@@ -281,12 +281,27 @@ Route::post('/api/transactions', [TransactionController::class, 'store'])->name(
 
 Route::get('/sitemap.xml', function () {
     $blogs = \App\Models\Blog::latest()->get();
-    $packages = \App\Models\Package::where('is_signature', true)->get();
+    $packages = \App\Models\Package::all(); // Get all packages (signature and non-signature)
 
     return response()->view('sitemap', [
         'blogs' => $blogs,
         'packages' => $packages,
     ])->header('Content-Type', 'text/xml');
+});
+
+Route::get('/robots.txt', function () {
+    $content = "User-agent: *\n";
+    $content .= "Disallow: /admin/\n";
+    $content .= "Disallow: /api/\n";
+    $content .= "Disallow: /dashboard\n";
+    $content .= "Disallow: /login\n";
+    $content .= "Disallow: /register\n";
+    $content .= "Disallow: /forgot-password\n";
+    $content .= "Disallow: /reset-password\n";
+    $content .= "Allow: /\n\n";
+    $content .= "Sitemap: " . url('/sitemap.xml');
+
+    return response($content)->header('Content-Type', 'text/plain');
 });
 
 require __DIR__.'/auth.php';
