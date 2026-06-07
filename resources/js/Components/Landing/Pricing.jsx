@@ -302,7 +302,7 @@ export default function Pricing({ packages = [], lang = 'ID', activeService = 'D
 
                 <div className="mt-8 md:mt-20 text-center">
                     <Link
-                        href="/pricing"
+                        href="/treatment"
                         className="inline-flex items-center gap-x-3 text-[10px] font-bold uppercase tracking-[0.3em] text-zenith-orange hover:text-zenith-charcoal transition-all group"
                     >
                         {t.seeAll}

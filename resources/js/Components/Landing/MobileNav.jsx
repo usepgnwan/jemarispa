@@ -65,7 +65,7 @@ export default function MobileNav({ setActiveService, lang = 'ID' }) {
     const navItems = [
         { label: t.home, icon: 'home', href: '/', active: isActive('/') },
         { label: t.blog, icon: 'newspaper', href: '/blog', active: isActive('/blog') },
-        { label: t.pricing, icon: 'receipt_long', href: '/pricing', active: isActive('/pricing') },
+        { label: t.pricing, icon: 'receipt_long', href: '/treatment', active: isActive('/treatment') },
         { label: t.cart, icon: 'shopping_bag', href: '/cart', isCart: true, active: isActive('/cart') },
         { label: t.faq, icon: 'quiz', href: '/#faq', active: isActive('/', '#faq') },
     ];

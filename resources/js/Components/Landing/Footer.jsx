@@ -75,7 +75,7 @@ export default function Footer({ lang = 'ID', setLang }) {
                             </li>
                             <li className="flex items-center gap-x-3">
                                 <span className="material-symbols-outlined text-white text-base font-bold">check</span>
-                                <a href="/pricing" className="hover:text-zenith-orange transition-colors">Price List</a>
+                                <a href="/treatment" className="hover:text-zenith-orange transition-colors">Price List</a>
                             </li>
                             <li className="flex items-center gap-x-3">
                                 <span className="material-symbols-outlined text-white text-base font-bold">check</span>

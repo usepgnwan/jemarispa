@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <!-- Google Tag Manager -->
-        @if(config('services.gtm.code'))
+        @if(config('services.gtm.code') && !request()->is('admin*', 'dashboard', 'login', 'register', 'profile', 'api/*'))
         <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
         new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
         j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -15,7 +15,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ config('app.name', 'Jemari Home Spa - Pijat Panggilan Bandung') }}</title>
+        <meta name="description" inertia content="Layanan pijat panggilan profesional 24 jam di Bandung dan Cimahi. Tersedia pijat tradisional, bekam, totok wajah, refleksi, lulur, dan kerokan. Langsung ke rumah, hotel, atau apartemen Anda.">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -231,13 +232,29 @@
     </head>
     <body class="font-sans antialiased">
         <!-- Google Tag Manager (noscript) -->
-        @if(config('services.gtm.code'))
+        @if(config('services.gtm.code') && !request()->is('admin*', 'dashboard', 'login', 'register', 'profile', 'api/*'))
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ config('services.gtm.code') }}"
         height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         @endif
         <!-- End Google Tag Manager (noscript) -->
 
         @inertia
+
+        <!-- Static SEO Content for bots that do not execute JavaScript -->
+        <div id="seo-content" style="display: none; visibility: hidden;">
+            <h1>Jemari Home Spa - Layanan Pijat Panggilan Bandung &amp; Cimahi</h1>
+            <p>Jemari Home Spa adalah layanan pijat panggilan profesional untuk area Bandung dan Cimahi. Kami melayani panggilan ke rumah, hotel, dan apartemen dengan terapis pria dan wanita bersertifikat.</p>
+            <h2>Layanan Utama Kami:</h2>
+            <ul>
+                <li>Pijat Tradisional (Traditional Massage)</li>
+                <li>Bekam / Kop (Cupping Therapy)</li>
+                <li>Totok Wajah (Face Acupressure)</li>
+                <li>Refleksi (Reflexology)</li>
+                <li>Body Scrub / Lulur</li>
+                <li>Pijat Keseleo / Terkilir (Sprain Massage)</li>
+                <li>Kerokan</li>
+            </ul>
+        </div>
 
         <!-- PWA Install Prompt Toast HTML -->
         <div id="pwa-install-toast" class="pwa-toast">
