@@ -17,6 +17,10 @@
 
         <title inertia>{{ config('app.name', 'Jemari Home Spa - Pijat Panggilan Bandung') }}</title>
         <meta name="description" inertia content="Layanan pijat panggilan profesional 24 jam di Bandung dan Cimahi. Tersedia pijat tradisional, bekam, totok wajah, refleksi, lulur, dan kerokan. Langsung ke rumah, hotel, atau apartemen Anda.">
+        <meta name="keywords" inertia content="pijat panggilan bandung, pijat panggilan cimahi, spa panggilan bandung, pijat tradisional, bekam, totok wajah, refleksi, lulur">
+        <meta name="author" content="Jemari Home Spa">
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+        <link rel="canonical" href="{{ url()->current() }}">
 
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">
