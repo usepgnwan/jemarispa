@@ -229,7 +229,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                 <Hero activeService={activeService} lang={lang} hideButtonsAndStats={true} />
             )}
 
-            <main className={activeService !== 'Default' ? "pb-20 px-6 -mt-40 md:-mt-64 lg:-mt-80 relative z-20" : "pt-32 md:pt-40 pb-20 px-6"}>
+            <main className={activeService !== 'Default' ? "pb-20 px-6 -mt-20 md:-mt-32 lg:-mt-48 relative z-20" : "pt-32 md:pt-40 pb-20 px-6"}>
                 <div className="max-w-5xl mx-auto">
                     {activeService === 'Default' && (
                         <div className="text-center mb-12 md:mb-16">

@@ -181,11 +181,11 @@ export default function Hero({ activeService, lang, hideButtonsAndStats = false 
 
                 {content.isHTML ? (
                     <div 
-                        className="max-w-2xl mx-auto text-sm md:text-lg text-white/80 leading-relaxed mb-12 font-sans prose prose-invert prose-sm md:prose-base"
+                        className="max-w-2xl mx-auto text-sm md:text-lg text-white/80 leading-relaxed mb-12 font-sans prose prose-invert prose-sm md:prose-base line-clamp-3"
                         dangerouslySetInnerHTML={{ __html: content.desc }}
                     />
                 ) : (
-                    <p className="max-w-2xl mx-auto text-sm md:text-lg text-white/80 leading-relaxed mb-12 font-sans">
+                    <p className="max-w-2xl mx-auto text-sm md:text-lg text-white/80 leading-relaxed mb-12 font-sans line-clamp-3">
                         {content.desc}
                     </p>
                 )}
