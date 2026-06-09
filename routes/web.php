@@ -289,19 +289,19 @@ Route::get('/sitemap.xml', function () {
     ])->header('Content-Type', 'text/xml');
 });
 
-Route::get('/robots.txt', function () {
-    $content = "User-agent: *\n";
-    $content .= "Disallow: /admin/\n";
-    $content .= "Disallow: /api/\n";
-    $content .= "Disallow: /dashboard\n";
-    $content .= "Disallow: /login\n";
-    $content .= "Disallow: /register\n";
-    $content .= "Disallow: /forgot-password\n";
-    $content .= "Disallow: /reset-password\n";
-    $content .= "Allow: /\n\n";
-    $content .= "Sitemap: " . url('/sitemap.xml');
+// Route::get('/robots.txt', function () {
+//     $content = "User-agent: *\n";
+//     $content .= "Disallow: /admin/\n";
+//     $content .= "Disallow: /api/\n";
+//     $content .= "Disallow: /dashboard\n";
+//     $content .= "Disallow: /login\n";
+//     $content .= "Disallow: /register\n";
+//     $content .= "Disallow: /forgot-password\n";
+//     $content .= "Disallow: /reset-password\n";
+//     $content .= "Allow: /\n\n";
+//     $content .= "Sitemap: " . url('/sitemap.xml');
 
-    return response($content)->header('Content-Type', 'text/plain');
-});
+//     return response($content)->header('Content-Type', 'text/plain');
+// });
 
 require __DIR__.'/auth.php';
