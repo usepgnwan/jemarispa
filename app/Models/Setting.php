@@ -22,5 +22,7 @@ class Setting extends Model
         'url_tiktok',
         'voucher_instructions',
         'website',
+        'operational_start',
+        'operational_end',
     ];
 }

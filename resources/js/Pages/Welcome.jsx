@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import Navbar from '@/Components/Landing/Navbar';
 import Hero from '@/Components/Landing/Hero';
 import Highlights from '@/Components/Landing/Highlights';
@@ -11,8 +11,12 @@ import FAQ from '@/Components/Landing/FAQ';
 import FloatingWhatsApp from '@/Components/Landing/FloatingWhatsApp';
 import MobileNav from '@/Components/Landing/MobileNav';
 import Footer from '@/Components/Landing/Footer';
+import Modal from '@/Components/Modal';
+import PrimaryButton from '@/Components/PrimaryButton';
 
 export default function Welcome({ auth, packages = [], signaturePackages = [], testimonials = [], platforms = [] }) {
+    const { app_settings } = usePage().props;
+    const [showOpsModal, setShowOpsModal] = useState(false);
     const [activeService, setActiveService] = useState(() => {
         return localStorage.getItem('active_service') || 'Default';
     });
@@ -20,6 +24,36 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
         return localStorage.getItem('app_lang') || 'ID';
     });
     const [localPackages, setLocalPackages] = useState(signaturePackages);
+
+    useEffect(() => {
+        if (app_settings?.operational_start && app_settings?.operational_end) {
+            const now = new Date();
+            const currentHours = now.getHours();
+            const currentMinutes = now.getMinutes();
+            const currentTime = `${currentHours.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
+            
+            const start = app_settings.operational_start.substring(0, 5);
+            const end = app_settings.operational_end.substring(0, 5);
+
+            let isOutside = false;
+            if (start <= end) {
+                if (currentTime < start || currentTime > end) {
+                    isOutside = true;
+                }
+            } else {
+                if (currentTime < start && currentTime > end) {
+                    isOutside = true;
+                }
+            }
+
+            if (isOutside) {
+                if (!sessionStorage.getItem('ops_modal_shown')) {
+                    setShowOpsModal(true);
+                    sessionStorage.setItem('ops_modal_shown', 'true');
+                }
+            }
+        }
+    }, [app_settings]);
 
     const logAnalytic = (category, title) => {
         try {
@@ -286,6 +320,19 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
             <FloatingWhatsApp />
             <MobileNav setActiveService={setActiveService} lang={lang} />
             <Footer lang={lang} setLang={setLang} />
+
+            <Modal show={showOpsModal} onClose={() => setShowOpsModal(false)}>
+                <div className="p-8 text-center">
+                    <span className="material-symbols-outlined text-6xl text-amber-500 mb-4 block">schedule</span>
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Mohon Maaf, Jam Operasional Kami Sudah Berakhir 🙏🏻</h2>
+                    <p className="text-gray-600 mb-8 leading-relaxed">
+                        Pesanan Kakak akan kami proses di jam kerja mulai dari pukul <span className="font-bold text-zenith-orange">{app_settings?.operational_start?.substring(0, 5)} - {app_settings?.operational_end?.substring(0, 5)}</span> ya 😊
+                    </p>
+                    <PrimaryButton onClick={() => setShowOpsModal(false)} className="w-full justify-center bg-zenith-orange hover:bg-zenith-orange/90 py-3">
+                        Mengerti
+                    </PrimaryButton>
+                </div>
+            </Modal>
         </div>
     );
 }
