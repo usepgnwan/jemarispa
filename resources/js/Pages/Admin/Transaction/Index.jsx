@@ -136,6 +136,15 @@ export default function Index({ transactions, filters, counts, employees, packag
     const [pendingDeleteItemId, setPendingDeleteItemId] = useState(null);
     const { patch, delete: destroy, processing } = useForm();
 
+    React.useEffect(() => {
+        if (flash?.message) {
+            setToastMessage(flash.message);
+            setShowToast(true);
+            const timer = setTimeout(() => setShowToast(false), 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
+
     const fetchFilteredData = useCallback(
         debounce((query, limitValue, tabValue, fromVal, toVal, therapistVal) => {
             router.get(
@@ -221,7 +230,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                 setPenaltyPercent(0);
                 setToastMessage('Transaksi berhasil diperbarui');
                 setShowToast(true);
-                setTimeout(() => setShowToast(false), 3000);
+                setTimeout(() => setShowToast(false), 1500);
             }
         });
     };
@@ -1451,7 +1460,7 @@ export default function Index({ transactions, filters, counts, employees, packag
             </Modal>
 
             {/* Toast Notification */}
-            {(showToast || flash?.message) && (
+            {showToast && (
                 <div className="fixed bottom-10 right-10 z-[110] animate-slide-up">
                     <div className="bg-gray-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-x-4 border border-white/10">
                         <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -1459,7 +1468,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                         </div>
                         <div>
                             <p className="text-sm font-bold">Berhasil!</p>
-                            <p className="text-xs text-gray-400">{toastMessage || flash?.message}</p>
+                            <p className="text-xs text-gray-400">{toastMessage}</p>
                         </div>
                     </div>
                 </div>

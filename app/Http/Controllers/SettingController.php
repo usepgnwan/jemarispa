@@ -38,6 +38,8 @@ class SettingController extends Controller
             'url_tiktok' => 'nullable|string|max:255',
             'voucher_instructions' => 'nullable|string',
             'website' => 'nullable|string|max:255',
+            'operational_start' => 'nullable|string|max:10',
+            'operational_end' => 'nullable|string|max:10',
         ]);
 
         $setting = Setting::first();

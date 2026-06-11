@@ -21,6 +21,8 @@ export default function Index({ auth, settings, serviceAreas }) {
         url_tiktok: settings?.url_tiktok || '',
         voucher_instructions: settings?.voucher_instructions || '',
         website: settings?.website || '',
+        operational_start: settings?.operational_start || '',
+        operational_end: settings?.operational_end || '',
     });
 
     const [newArea, setNewArea] = useState('');
@@ -202,6 +204,29 @@ export default function Index({ auth, settings, serviceAreas }) {
                                             placeholder="e.g. 30000"
                                         />
                                         {errors.default_commission && <div className="text-red-500 text-xs mt-1">{errors.default_commission}</div>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">Jam Operasional (Mulai)</label>
+                                        <input
+                                            type="time"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.operational_start}
+                                            onChange={e => setData('operational_start', e.target.value)}
+                                        />
+                                        {errors.operational_start && <div className="text-red-500 text-xs mt-1">{errors.operational_start}</div>}
+                                    </div>
+                                    <div>
+                                        <label className="block font-medium text-sm text-gray-700">Jam Operasional (Selesai)</label>
+                                        <input
+                                            type="time"
+                                            className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                            value={data.operational_end}
+                                            onChange={e => setData('operational_end', e.target.value)}
+                                        />
+                                        {errors.operational_end && <div className="text-red-500 text-xs mt-1">{errors.operational_end}</div>}
                                     </div>
                                 </div>
 

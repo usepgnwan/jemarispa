@@ -124,6 +124,9 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
+    const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+    const [checkoutWaUrl, setCheckoutWaUrl] = useState('');
+    const [waCountdown, setWaCountdown] = useState(10);
 
     // Initial State loading from LocalStorage
     const [pax, setPax] = useState(() => {
@@ -172,6 +175,21 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             device_type: isMobileDevice ? 'mobile' : 'desktop'
         }).catch(err => console.error('Analytic failed', err));
     }, []);
+
+    // Auto redirect countdown
+    useEffect(() => {
+        let timer;
+        if (checkoutSuccess && waCountdown > 0) {
+            timer = setTimeout(() => setWaCountdown(waCountdown - 1), 1000);
+        } else if (checkoutSuccess && waCountdown === 0) {
+            localStorage.removeItem('jemari_checkout_pax');
+            localStorage.removeItem('jemari_checkout_form');
+            localStorage.removeItem('jemari_checkout_guests');
+            setCheckoutSuccess(false);
+            if (checkoutWaUrl) window.location.href = checkoutWaUrl;
+        }
+        return () => clearTimeout(timer);
+    }, [checkoutSuccess, waCountdown, checkoutWaUrl]);
 
     // Persist changes to LocalStorage
     useEffect(() => {
@@ -491,14 +509,10 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                     console.error('Tracking failed', e);
                 }
 
-                window.open(waUrl, '_blank');
-
-                // Clear cart and state
-                localStorage.removeItem('jemari_checkout_pax');
-                localStorage.removeItem('jemari_checkout_form');
-                localStorage.removeItem('jemari_checkout_guests');
-
-                router.visit('/');
+                setCheckoutWaUrl(waUrl);
+                setWaCountdown(5);
+                setCheckoutSuccess(true);
+                setIsSubmitting(false);
             } else {
                 setIsSubmitting(false);
             }
@@ -1014,6 +1028,35 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                 {t.finish}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* WhatsApp Modal */}
+            {checkoutSuccess && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-zenith-charcoal/60 backdrop-blur-md"></div>
+                    <div className="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 text-center animate-scale-in">
+                        <div className="mx-auto w-16 h-16 bg-[#25D366]/10 rounded-full flex items-center justify-center mb-6">
+                            <span className="material-symbols-outlined text-3xl text-[#25D366]">chat</span>
+                        </div>
+                        <h3 className="text-2xl font-bold text-zenith-charcoal mb-4">Perhatian!!!</h3>
+                        <p className="text-sm text-zenith-charcoal/60 leading-relaxed mb-8">
+                            Setelah ini anda akan dialihkan ke aplikasi whatsapp. Kirimkan teks form order yang sudah otomatis dibuat sesuai data yang telah anda isi dengan klik tombol "kirim chat" pada aplikasi whatsapp Anda untuk melanjutkan pemesanan.
+                        </p>
+                        <button
+                            onClick={() => {
+                                window.open(checkoutWaUrl, '_blank');
+                                localStorage.removeItem('jemari_checkout_pax');
+                                localStorage.removeItem('jemari_checkout_form');
+                                localStorage.removeItem('jemari_checkout_guests');
+                                setCheckoutSuccess(false);
+                                router.visit('/');
+                            }}
+                            className="w-full py-4 bg-[#25D366] text-white rounded-full text-[12px] font-bold uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            (Klik untuk buka whatsapp) ({waCountdown}s)
+                        </button>
                     </div>
                 </div>
             )}
