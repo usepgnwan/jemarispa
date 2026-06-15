@@ -597,6 +597,7 @@ class TransactionController extends Controller
                 'commission' => (float) $row->total_commission,
                 'net'        => (float) max(0, $row->total_revenue - $row->total_commission),
                 'jobs'       => (int) $row->job_count,
+                'invoices'   => \App\Models\TherapistInvoice::with('items.transactionItem.transaction')->where('employee_id', $row->employee_id)->orderBy('created_at', 'desc')->get()
             ];
         })->values();
 
@@ -622,6 +623,7 @@ class TransactionController extends Controller
 
         $items = \App\Models\TransactionItem::with('transaction')
             ->where('employee_id', $employeeId)
+            ->whereDoesntHave('invoiceItems')
             ->whereHas('transaction', function ($query) use ($startDate, $endDate) {
                 $query->where('status', 'success')
                       ->where('schedule_date', '>=', $startDate)
@@ -637,6 +639,7 @@ class TransactionController extends Controller
                     'package_duration' => $item->package_duration,
                     'price' => (float) $item->price,
                     'commission' => (float) $item->therapist_commission,
+                    'payment_method' => $item->transaction->payment_method ?? '-',
                 ];
             })
             ->sortBy('schedule_date')
@@ -646,5 +649,54 @@ class TransactionController extends Controller
             'success' => true,
             'data' => $items
         ]);
+    }
+
+    public function storeTherapistInvoice(Request $request)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'transaction_item_ids' => 'required|array',
+            'transaction_item_ids.*' => 'exists:transaction_items,id'
+        ]);
+
+        return DB::transaction(function() use ($validated) {
+            $items = \App\Models\TransactionItem::with('transaction')
+                ->whereIn('id', $validated['transaction_item_ids'])
+                ->where('employee_id', $validated['employee_id'])
+                ->get();
+
+            $totalTransferCommission = 0;
+            $totalCashNetProfit = 0;
+
+            foreach ($items as $item) {
+                $method = strtolower($item->transaction->payment_method ?? '');
+                if ($method === 'transfer') {
+                    $totalTransferCommission += $item->therapist_commission;
+                } else if ($method === 'cash') {
+                    $totalCashNetProfit += ($item->price - $item->therapist_commission);
+                }
+            }
+
+            $totalAmount = $totalTransferCommission - $totalCashNetProfit;
+            $invoiceNo = 'INV-TRP/' . now()->format('Ymd') . '/' . strtoupper(substr(uniqid(), -4));
+
+            $invoice = \App\Models\TherapistInvoice::create([
+                'invoice_no' => $invoiceNo,
+                'employee_id' => $validated['employee_id'],
+                'total_transfer_commission' => $totalTransferCommission,
+                'total_cash_net_profit' => $totalCashNetProfit,
+                'total_amount' => $totalAmount,
+                'status' => 'paid',
+            ]);
+
+            foreach ($items as $item) {
+                \App\Models\TherapistInvoiceItem::create([
+                    'therapist_invoice_id' => $invoice->id,
+                    'transaction_item_id' => $item->id
+                ]);
+            }
+
+            return back()->with('message', 'Invoice berhasil disimpan');
+        });
     }
 }
