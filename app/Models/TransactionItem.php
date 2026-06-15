@@ -20,4 +20,9 @@ class TransactionItem extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function invoiceItems()
+    {
+        return $this->hasMany(TherapistInvoiceItem::class);
+    }
 }
