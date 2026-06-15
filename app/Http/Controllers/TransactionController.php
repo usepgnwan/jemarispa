@@ -444,6 +444,7 @@ class TransactionController extends Controller
             'penalty_amount' => 'nullable|numeric',
             'total_price' => 'nullable|numeric',
             'status' => 'nullable|in:pending,send_terapis,invoice,success,failed',
+            'payment_method' => 'nullable|string',
             'new_items' => 'nullable|array',
             'items' => 'nullable|array',
             'deleted_items' => 'nullable|array',
@@ -621,9 +622,20 @@ class TransactionController extends Controller
             $endDate = now()->endOfMonth()->format('Y-m-d');
         }
 
+        $invoiceId = $request->query('invoice_id');
+
         $items = \App\Models\TransactionItem::with('transaction')
             ->where('employee_id', $employeeId)
-            ->whereDoesntHave('invoiceItems')
+            ->where(function($q) use ($invoiceId) {
+                if ($invoiceId) {
+                    $q->whereDoesntHave('invoiceItems')
+                      ->orWhereHas('invoiceItems', function($q2) use ($invoiceId) {
+                          $q2->where('therapist_invoice_id', $invoiceId);
+                      });
+                } else {
+                    $q->whereDoesntHave('invoiceItems');
+                }
+            })
             ->whereHas('transaction', function ($query) use ($startDate, $endDate) {
                 $query->where('status', 'success')
                       ->where('schedule_date', '>=', $startDate)
@@ -634,6 +646,7 @@ class TransactionController extends Controller
                 return [
                     'id' => $item->id,
                     'invoice_no' => $item->transaction->order_number ?? '-',
+                    'customer_name' => $item->transaction->customer_name ?? '-',
                     'schedule_date' => \Carbon\Carbon::parse($item->transaction->schedule_date)->format('d/m/Y'),
                     'package_name' => $item->package_name,
                     'package_duration' => $item->package_duration,
@@ -698,5 +711,60 @@ class TransactionController extends Controller
 
             return back()->with('message', 'Invoice berhasil disimpan');
         });
+    }
+
+    public function updateTherapistInvoice(Request $request, \App\Models\TherapistInvoice $invoice)
+    {
+        $validated = $request->validate([
+            'transaction_item_ids' => 'required|array',
+            'transaction_item_ids.*' => 'exists:transaction_items,id'
+        ]);
+
+        return DB::transaction(function() use ($validated, $invoice) {
+            $items = \App\Models\TransactionItem::with('transaction')
+                ->whereIn('id', $validated['transaction_item_ids'])
+                ->where('employee_id', $invoice->employee_id)
+                ->get();
+
+            $totalTransferCommission = 0;
+            $totalCashNetProfit = 0;
+
+            foreach ($items as $item) {
+                $method = strtolower($item->transaction->payment_method ?? '');
+                if ($method === 'transfer') {
+                    $totalTransferCommission += $item->therapist_commission;
+                } else if ($method === 'cash') {
+                    $totalCashNetProfit += ($item->price - $item->therapist_commission);
+                }
+            }
+
+            $totalAmount = $totalTransferCommission - $totalCashNetProfit;
+
+            $invoice->update([
+                'total_transfer_commission' => $totalTransferCommission,
+                'total_cash_net_profit' => $totalCashNetProfit,
+                'total_amount' => $totalAmount,
+            ]);
+
+            // Sync items (delete old, create new)
+            $invoice->items()->delete();
+
+            foreach ($items as $item) {
+                \App\Models\TherapistInvoiceItem::create([
+                    'therapist_invoice_id' => $invoice->id,
+                    'transaction_item_id' => $item->id
+                ]);
+            }
+
+            return back()->with('message', 'Invoice berhasil diperbarui');
+        });
+    }
+
+    public function destroyTherapistInvoice(\App\Models\TherapistInvoice $invoice)
+    {
+        $invoice->items()->delete();
+        $invoice->delete();
+
+        return back()->with('message', 'Invoice berhasil dihapus');
     }
 }

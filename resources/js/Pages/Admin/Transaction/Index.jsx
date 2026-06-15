@@ -1026,10 +1026,20 @@ export default function Index({ transactions, filters, counts, employees, packag
 
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Metode Pembayaran</label>
-                                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
-                                        <p className="text-xs font-bold text-gray-900 uppercase">{selectedTransaction?.payment_method?.replace('_', ' ') || 'Cash'}</p>
-                                        <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center">
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <CreditCardIcon className="w-4 h-4 text-gray-400" />
+                                        </div>
+                                        <select
+                                            className="w-full pl-10 bg-gray-50 border-gray-200 rounded-xl text-xs font-bold text-gray-900 uppercase focus:ring-zenith-orange focus:border-zenith-orange cursor-pointer appearance-none"
+                                            value={selectedTransaction?.payment_method || 'cash'}
+                                            onChange={(e) => setSelectedTransaction({ ...selectedTransaction, payment_method: e.target.value })}
+                                        >
+                                            <option value="cash">Tunai (Cash)</option>
+                                            <option value="transfer">Transfer</option>
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <span className="material-symbols-outlined text-gray-400 text-sm">expand_more</span>
                                         </div>
                                     </div>
                                 </div>
