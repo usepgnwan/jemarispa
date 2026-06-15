@@ -20,6 +20,7 @@ export default function Edit({ ritual }) {
         description_id: ritual.description_id || '',
         description_en: ritual.description_en || '',
         image: null,
+        status: ritual.status || 'public',
     });
 
     const [imagePreview, setImagePreview] = useState(ritual.image ? `/storage/${ritual.image}` : null);
@@ -104,6 +105,25 @@ export default function Edit({ ritual }) {
                                         onChange={(e) => setData('category_id', e.target.value)}
                                     />
                                     <InputError message={errors.category_id} className="mt-2" />
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="status" value="Status Tampilan" />
+                                    <div className="mt-1 relative">
+                                        <select
+                                            id="status"
+                                            value={data.status}
+                                            className="mt-1 block w-full rounded-xl border-gray-300 focus:border-[#0057B8] focus:ring-[#0057B8] shadow-sm appearance-none pr-10"
+                                            onChange={(e) => setData('status', e.target.value)}
+                                        >
+                                            <option value="public">Public (Tampil di Home & Admin)</option>
+                                            <option value="private">Private (Hanya tampil di Admin)</option>
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                                            <span className="material-symbols-outlined text-gray-400">expand_more</span>
+                                        </div>
+                                    </div>
+                                    <InputError message={errors.status} className="mt-2" />
                                 </div>
 
                                 <div>

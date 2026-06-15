@@ -182,6 +182,9 @@ export default function Index({ packages, filters }) {
                                                  Prioritas: {pkg.priority}
                                              </span>
                                          )}
+                                         <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${pkg.status === 'private' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                             {pkg.status || 'Public'}
+                                         </span>
                                      </div>
                                      <h3 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
                                          {pkg.title_id}
@@ -202,7 +205,12 @@ export default function Index({ packages, filters }) {
                                             pkg.durations.map((duration) => (
                                                 <div key={duration.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 group/item hover:border-[#0057B8]/30 transition-colors">
                                                     <div className="flex justify-between items-center mb-1">
-                                                        <span className="text-sm font-semibold text-gray-700">{duration.duration} Menit</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-semibold text-gray-700">{duration.duration} Menit</span>
+                                                            <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${duration.status === 'private' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                                                {duration.status || 'Public'}
+                                                            </span>
+                                                        </div>
                                                         <span className="text-sm font-bold text-[#0057B8]">{formatRupiah(duration.price)}</span>
                                                     </div>
                                                     <div className="flex justify-between items-center pt-1 border-t border-gray-200 mt-1">
