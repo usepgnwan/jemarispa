@@ -22,13 +22,14 @@ export default function Edit({ pkg, signaturePackages = [] }) {
         parent_id: pkg.parent_id || '',
         is_signature: pkg.is_signature || false,
         priority: pkg.priority !== null && pkg.priority !== undefined ? pkg.priority : '',
+        status: pkg.status || 'public',
         durations: pkg.durations.length > 0
-            ? pkg.durations.map(d => ({ id: d.id, duration: d.duration, price: d.price, commission: d.commission || '' }))
-            : [{ duration: '', price: '', commission: '' }]
+            ? pkg.durations.map(d => ({ id: d.id, duration: d.duration, price: d.price, commission: d.commission || '', status: d.status || 'public' }))
+            : [{ duration: '', price: '', commission: '', status: 'public' }]
     });
 
     const handleAddDuration = () => {
-        setData('durations', [...data.durations, { duration: '', price: '', commission: '' }]);
+        setData('durations', [...data.durations, { duration: '', price: '', commission: '', status: 'public' }]);
     };
 
     const handleRemoveDuration = (index) => {
@@ -117,6 +118,24 @@ export default function Edit({ pkg, signaturePackages = [] }) {
                                         Semakin kecil angkanya, semakin tinggi prioritas tampilannya di halaman beranda.
                                     </p>
                                     <InputError message={errors.priority} className="mt-2" />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <InputLabel htmlFor="status" value="Status Tampilan" />
+                                    <div className="mt-1 relative">
+                                        <select
+                                            id="status"
+                                            value={data.status}
+                                            className="mt-1 block w-full rounded-xl border-gray-300 focus:border-[#0057B8] focus:ring-[#0057B8] shadow-sm appearance-none pr-10"
+                                            onChange={(e) => setData('status', e.target.value)}
+                                        >
+                                            <option value="public">Public (Tampil di Home & Admin)</option>
+                                            <option value="private">Private (Hanya tampil di Admin)</option>
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                                            <span className="material-symbols-outlined text-gray-400">expand_more</span>
+                                        </div>
+                                    </div>
+                                    <InputError message={errors.status} className="mt-2" />
                                 </div>
                             </div>
                         </div>
@@ -291,6 +310,24 @@ export default function Edit({ pkg, signaturePackages = [] }) {
                                                     />
                                                 </div>
                                                 <InputError message={errors[`durations.${index}.commission`]} className="mt-1 text-xs" />
+                                            </div>
+
+                                            <div className="flex-1 w-full">
+                                                <InputLabel value="Status Tampilan" className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5" />
+                                                <div className="relative">
+                                                    <select
+                                                        className="w-full rounded-xl border-gray-300 focus:border-[#0057B8] focus:ring-[#0057B8] sm:text-sm py-2.5 shadow-sm bg-white appearance-none pr-8"
+                                                        value={item.status || 'public'}
+                                                        onChange={(e) => handleDurationChange(index, 'status', e.target.value)}
+                                                    >
+                                                        <option value="public">Public</option>
+                                                        <option value="private">Private</option>
+                                                    </select>
+                                                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                                        <span className="material-symbols-outlined text-gray-400 text-sm">expand_more</span>
+                                                    </div>
+                                                </div>
+                                                <InputError message={errors[`durations.${index}.status`]} className="mt-1 text-xs" />
                                             </div>
 
                                             {data.durations.length > 1 && (

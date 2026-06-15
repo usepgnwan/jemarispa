@@ -180,6 +180,9 @@ export default function Index({ rituals, filters }) {
                                                  EN: {ritual.category_en}
                                              </span>
                                          )}
+                                         <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${ritual.status === 'private' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                             {ritual.status || 'Public'}
+                                         </span>
                                      </div>
                                      <h3 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
                                          {ritual.title_id}

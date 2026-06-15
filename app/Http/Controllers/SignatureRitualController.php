@@ -49,6 +49,7 @@ class SignatureRitualController extends Controller
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
             'image' => 'nullable|image|max:5120',
+            'status' => 'required|in:public,private',
         ]);
 
         $imagePath = null;
@@ -65,6 +66,7 @@ class SignatureRitualController extends Controller
             'description_en' => $validated['description_en'],
             'is_signature' => true,
             'image' => $imagePath,
+            'status' => $validated['status'] ?? 'public',
         ]);
 
         return redirect()->route('admin.signature-ritual.index')->with('message', 'Main Service berhasil ditambahkan!');
@@ -92,6 +94,7 @@ class SignatureRitualController extends Controller
             'description_id' => 'nullable|string',
             'description_en' => 'nullable|string',
             'image' => 'nullable|image|max:5120',
+            'status' => 'required|in:public,private',
         ]);
 
         if ($request->hasFile('image')) {
@@ -110,6 +113,7 @@ class SignatureRitualController extends Controller
             'description_en' => $validated['description_en'],
             'is_signature' => true,
             'image' => $signature_ritual->image,
+            'status' => $validated['status'] ?? 'public',
         ]);
 
         return redirect()->route('admin.signature-ritual.index')->with('message', 'Main Service berhasil diperbarui!');

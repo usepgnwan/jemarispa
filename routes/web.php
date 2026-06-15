@@ -11,8 +11,8 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
-        'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
-        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'packages' => \App\Models\Package::with(['durations' => fn($q) => $q->where('status', 'public')])->where('is_signature', false)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
         'testimonials' => \App\Models\Testimoni::where('is_published', true)->inRandomOrder()->take(6)->get(),
         'platforms' => \App\Models\Platform::latest()->get()
     ]);
@@ -256,8 +256,8 @@ Route::get('/blog/{slug}', [BlogController::class, 'publicShow'])->name('blog.sh
 
 Route::get('/treatment/{slug?}', function ($slug = null) {
     return Inertia::render('Pricing/Index', [
-        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
-        'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'packages' => \App\Models\Package::with(['durations' => fn($q) => $q->where('status', 'public')])->where('is_signature', false)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
         'initialSlug' => $slug
     ]);
 })->name('treatment.index');
@@ -266,8 +266,8 @@ Route::redirect('/pricing', '/treatment', 301);
 
 Route::get('/cart', function () {
     return Inertia::render('Cart/Index', [
-        'packages' => \App\Models\Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
-        'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
+        'packages' => \App\Models\Package::with(['durations' => fn($q) => $q->where('status', 'public')])->where('is_signature', false)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+        'signaturePackages' => \App\Models\Package::where('is_signature', true)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
     ]);
 })->name('cart.index');
 
@@ -281,7 +281,7 @@ Route::post('/api/transactions', [TransactionController::class, 'store'])->name(
 
 Route::get('/sitemap.xml', function () {
     $blogs = \App\Models\Blog::latest()->get();
-    $packages = \App\Models\Package::all(); // Get all packages (signature and non-signature)
+    $packages = \App\Models\Package::where('status', 'public')->get(); // Get all public packages (signature and non-signature)
 
     return response()->view('sitemap', [
         'blogs' => $blogs,

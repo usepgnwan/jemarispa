@@ -60,6 +60,8 @@ class PackageController extends Controller
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
             'durations.*.commission' => 'nullable|numeric|min:0',
+            'durations.*.status' => 'required|in:public,private',
+            'status' => 'required|in:public,private',
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -72,6 +74,7 @@ class PackageController extends Controller
                 'description_en' => $validated['description_en'],
                 'parent_id' => $validated['parent_id'],
                 'priority' => $validated['priority'] ?? null,
+                'status' => $validated['status'] ?? 'public',
                 'is_signature' => false,
             ]);
 
@@ -80,6 +83,7 @@ class PackageController extends Controller
                     'duration' => $durationData['duration'],
                     'price' => $durationData['price'],
                     'commission' => $durationData['commission'] ?? 0,
+                    'status' => $durationData['status'] ?? 'public',
                 ]);
             }
         });
@@ -117,6 +121,8 @@ class PackageController extends Controller
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
             'durations.*.commission' => 'nullable|numeric|min:0',
+            'durations.*.status' => 'required|in:public,private',
+            'status' => 'required|in:public,private',
         ]);
 
         DB::transaction(function () use ($package, $validated) {
@@ -129,6 +135,7 @@ class PackageController extends Controller
                 'description_en' => $validated['description_en'],
                 'parent_id' => $validated['parent_id'],
                 'priority' => $validated['priority'] ?? null,
+                'status' => $validated['status'] ?? 'public',
                 'is_signature' => false,
             ]);
 
@@ -139,6 +146,7 @@ class PackageController extends Controller
                     'duration' => $durationData['duration'],
                     'price' => $durationData['price'],
                     'commission' => $durationData['commission'] ?? 0,
+                    'status' => $durationData['status'] ?? 'public',
                 ]);
             }
         });

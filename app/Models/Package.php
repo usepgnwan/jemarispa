@@ -19,6 +19,7 @@ class Package extends Model
         'image',
         'parent_id',
         'priority',
+        'status',
     ];
 
     public function durations()
