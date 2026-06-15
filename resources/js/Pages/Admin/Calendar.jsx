@@ -936,6 +936,17 @@ jemarihomespa.com`;
                                                                         </div>
                                                                     </div>
                                                                 )}
+                                                                <div>
+                                                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Metode Bayar</label>
+                                                                    <select
+                                                                        className="w-full bg-gray-50 border-gray-100 rounded-xl py-2 px-4 text-sm font-bold text-gray-700 focus:ring-zenith-orange focus:border-zenith-orange"
+                                                                        value={selectedTransaction.payment_method || 'cash'}
+                                                                        onChange={(e) => setSelectedTransaction({ ...selectedTransaction, payment_method: e.target.value })}
+                                                                    >
+                                                                        <option value="cash">Tunai (Cash)</option>
+                                                                        <option value="transfer">Transfer</option>
+                                                                    </select>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}

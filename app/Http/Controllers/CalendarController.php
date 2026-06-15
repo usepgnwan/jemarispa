@@ -46,6 +46,7 @@ class CalendarController extends Controller
                         'notes'            => $t->notes,
                         'schedule_date'    => $t->schedule_date,
                         'schedule_time'    => $t->schedule_time,
+                        'payment_method'   => $t->payment_method,
                     ]
                 ];
             });

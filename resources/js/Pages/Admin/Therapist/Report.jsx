@@ -27,6 +27,7 @@ export default function Report({ therapistRevenue, filters }) {
     const [selectedItems, setSelectedItems] = useState([]);
     const [expandedRows, setExpandedRows] = useState([]);
     const [expandedInvoices, setExpandedInvoices] = useState([]);
+    const [editingInvoiceId, setEditingInvoiceId] = useState(null);
 
     const toggleRow = (id) => {
         setExpandedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
@@ -41,22 +42,53 @@ export default function Report({ therapistRevenue, filters }) {
             ? "Total Dibayarkan Terapis ke Jemari Home Spa"
             : "Total Dibayarkan Jemari Home Spa ke Terapis";
 
-        const text = `INVOICE: ${invoice.invoice_no}\nTanggal: ${new Date(invoice.created_at).toLocaleDateString()}\n---------------------------------\nTotal Komisi (Transfer) : ${fmt(invoice.total_transfer_commission)}\nTotal Net Profit (Cash) : - ${fmt(invoice.total_cash_net_profit)}\n---------------------------------\n${title}: ${fmt(invoice.total_amount)}`;
+        let detailsText = '';
+        if (invoice.items && invoice.items.length > 0) {
+            invoice.items.forEach((invItem) => {
+                const ti = invItem.transaction_item || invItem.transactionItem;
+                const method = ti?.transaction?.payment_method?.toLowerCase() || '';
+                const price = ti?.price || 0;
+                const comm = ti?.therapist_commission || 0;
+                const dateStr = new Date(ti?.transaction?.schedule_date).toLocaleDateString();
+                const customer = ti?.transaction?.customer_name || '-';
+                
+                const commStr = method === 'transfer' ? fmt(comm) : '-';
+                const netStr = method === 'cash' ? fmt(price - comm) : '-';
+                
+                detailsText += `${dateStr}\t${customer} (${method})\t${commStr}\t${netStr}\n`;
+            });
+            detailsText += '\n';
+        }
+
+        const text = `${detailsText}---------------------------------\nTotal Komisi (Transfer) : ${fmt(invoice.total_transfer_commission)}\nTotal Net Profit (Cash) : - ${fmt(invoice.total_cash_net_profit)}\n---------------------------------\n${title}: ${fmt(invoice.total_amount)}`;
         navigator.clipboard.writeText(text);
         alert('Invoice berhasil disalin ke clipboard!');
     };
 
     const handleSaveInvoice = () => {
         if (selectedItems.length === 0) return;
-        router.post(route('admin.therapist.invoice.store'), {
-            employee_id: selectedTherapist.id,
-            transaction_item_ids: selectedItems
-        }, {
-            onSuccess: () => {
-                setIsModalOpen(false);
-                setSelectedItems([]);
-            }
-        });
+        
+        if (editingInvoiceId) {
+            router.put(route('admin.therapist.invoice.update', editingInvoiceId), {
+                transaction_item_ids: selectedItems
+            }, {
+                onSuccess: () => {
+                    setIsModalOpen(false);
+                    setSelectedItems([]);
+                    setEditingInvoiceId(null);
+                }
+            });
+        } else {
+            router.post(route('admin.therapist.invoice.store'), {
+                employee_id: selectedTherapist.id,
+                transaction_item_ids: selectedItems
+            }, {
+                onSuccess: () => {
+                    setIsModalOpen(false);
+                    setSelectedItems([]);
+                }
+            });
+        }
     };
     const handleFilter = () => {
         router.get(route('admin.therapist.report'), { start_date: startDate, end_date: endDate }, {
@@ -70,6 +102,7 @@ export default function Report({ therapistRevenue, filters }) {
         setIsModalOpen(true);
         setIsLoadingDetails(true);
         setSelectedItems([]);
+        setEditingInvoiceId(null);
         try {
             const response = await axios.get(route('admin.therapist.report.detail', {
                 employee_id: therapist.id,
@@ -83,6 +116,39 @@ export default function Report({ therapistRevenue, filters }) {
             console.error('Failed to load details:', error);
         } finally {
             setIsLoadingDetails(false);
+        }
+    };
+
+    const handleEditInvoice = async (invoice, therapist) => {
+        setSelectedTherapist(therapist);
+        setIsModalOpen(true);
+        setIsLoadingDetails(true);
+        setEditingInvoiceId(invoice.id);
+        
+        // Preselect existing items
+        const existingItemIds = invoice.items.map(item => item.transaction_item_id);
+        setSelectedItems(existingItemIds);
+
+        try {
+            const response = await axios.get(route('admin.therapist.report.detail', {
+                employee_id: therapist.id,
+                start_date: startDate,
+                end_date: endDate,
+                invoice_id: invoice.id
+            }));
+            if (response.data.success) {
+                setTherapistDetails(response.data.data);
+            }
+        } catch (error) {
+            console.error('Failed to load details for editing:', error);
+        } finally {
+            setIsLoadingDetails(false);
+        }
+    };
+
+    const handleDeleteInvoice = (invoiceId) => {
+        if (confirm('Apakah Anda yakin ingin menghapus invoice ini? Data sesi akan kembali ke status belum dibayar.')) {
+            router.delete(route('admin.therapist.invoice.destroy', invoiceId));
         }
     };
 
@@ -337,9 +403,23 @@ export default function Report({ therapistRevenue, filters }) {
                                                                                             </button>
                                                                                             <button
                                                                                                 onClick={() => toggleInvoiceRow(inv.id)}
-                                                                                                className="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium rounded text-[10px] transition-colors"
+                                                                                                className="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium rounded text-[10px] transition-colors mr-2"
                                                                                             >
                                                                                                 {expandedInvoices.includes(inv.id) ? 'Tutup Detail' : 'Lihat Detail'}
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => handleEditInvoice(inv, t)}
+                                                                                                className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium rounded text-[10px] transition-colors mr-2"
+                                                                                                title="Edit Invoice"
+                                                                                            >
+                                                                                                <span className="material-symbols-outlined text-[14px] align-middle">edit</span>
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => handleDeleteInvoice(inv.id)}
+                                                                                                className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded text-[10px] transition-colors"
+                                                                                                title="Hapus Invoice"
+                                                                                            >
+                                                                                                <span className="material-symbols-outlined text-[14px] align-middle">delete</span>
                                                                                             </button>
                                                                                         </td>
                                                                                     </tr>
@@ -370,6 +450,7 @@ export default function Report({ therapistRevenue, filters }) {
                                                                                                                         <td className="py-2 px-2 text-gray-700">
                                                                                                                             <div>{new Date(ti?.transaction?.schedule_date).toLocaleDateString()}</div>
                                                                                                                             <div className="font-bold text-purple-600">{ti?.transaction?.order_number}</div>
+                                                                                                                            <div className="text-[10px] text-gray-500">{ti?.transaction?.customer_name}</div>
                                                                                                                         </td>
                                                                                                                         <td className="py-2 px-2 text-gray-700">
                                                                                                                             <div className="font-semibold">{ti?.package_name}</div>
@@ -427,8 +508,8 @@ export default function Report({ therapistRevenue, filters }) {
                 <div className="flex flex-col max-h-[90vh] md:max-h-[85vh]">
                     <div className="p-4 md:p-6 border-b border-gray-100 flex-shrink-0 flex items-center justify-between">
                         <div>
-                            <h3 className="text-lg font-black text-gray-900">Detail Komisi: {selectedTherapist?.name}</h3>
-                            <p className="text-sm text-gray-500 mt-1">{dateLabel}</p>
+                            <h3 className="text-2xl font-bold text-gray-900">{selectedTherapist?.name}</h3>
+                            <p className="text-sm text-gray-500">{editingInvoiceId ? 'Edit Invoice Komisi' : 'Detail Komisi & Buat Invoice'}</p>
                         </div>
                         <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors">
                             <XMarkIcon className="w-5 h-5" />
@@ -491,7 +572,10 @@ export default function Report({ therapistRevenue, filters }) {
                                                         />
                                                     </td>
                                                     <td className="py-3 px-4 text-gray-900 font-medium whitespace-nowrap">{detail.schedule_date}</td>
-                                                    <td className="py-3 px-4 text-purple-600 font-bold whitespace-nowrap">{detail.invoice_no}</td>
+                                                    <td className="py-3 px-4">
+                                                        <div className="text-purple-600 font-bold whitespace-nowrap">{detail.invoice_no}</div>
+                                                        <div className="text-[10px] text-gray-500">{detail.customer_name}</div>
+                                                    </td>
                                                     <td className="py-3 px-4">
                                                         <div className="text-gray-900 font-bold">{detail.package_name}</div>
                                                         <div className="text-xs text-gray-500">{detail.package_duration}</div>
@@ -550,7 +634,7 @@ export default function Report({ therapistRevenue, filters }) {
                                                     onClick={handleSaveInvoice}
                                                 >
                                                     <span className="material-symbols-outlined text-sm">save</span>
-                                                    Simpan & Buat Invoice
+                                                    {editingInvoiceId ? 'Update Invoice' : 'Simpan & Buat Invoice'}
                                                 </button>
                                             </div>
                                         </div>

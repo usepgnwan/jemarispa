@@ -214,6 +214,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('admin/therapist/report', [TransactionController::class, 'therapistReport'])->name('admin.therapist.report');
         Route::get('admin/therapist/report/detail', [TransactionController::class, 'therapistDetail'])->name('admin.therapist.report.detail');
         Route::post('admin/therapist/invoice', [TransactionController::class, 'storeTherapistInvoice'])->name('admin.therapist.invoice.store');
+        Route::put('admin/therapist/invoice/{invoice}', [TransactionController::class, 'updateTherapistInvoice'])->name('admin.therapist.invoice.update');
+        Route::delete('admin/therapist/invoice/{invoice}', [TransactionController::class, 'destroyTherapistInvoice'])->name('admin.therapist.invoice.destroy');
 
         // POS routes
         Route::get('admin/pos', [TransactionController::class, 'pos'])->name('admin.pos.index');
