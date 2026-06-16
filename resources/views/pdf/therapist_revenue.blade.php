@@ -121,7 +121,7 @@
             </div>
         </div>
         <div class="status-container">
-            <h1 class="invoice-title">REVENUE TERAPIS</h1>
+            <h1 class="invoice-title">PENDAPATAN TERAPIS</h1>
             <p class="invoice-number">{{ $therapistName }}</p>
             <p class="invoice-number">
                 @if($startDate && $endDate)
