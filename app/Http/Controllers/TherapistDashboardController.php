@@ -200,6 +200,8 @@ class TherapistDashboardController extends Controller
             $q->where('transactions.payment_method', 'cash')->orWhereNull('transactions.payment_method');
         })->sum(\Illuminate\Support\Facades\DB::raw('transaction_items.price - transaction_items.therapist_commission'));
 
+        $totalCommission = (clone $summaryQuery)->sum('transaction_items.therapist_commission');
+
         return Inertia::render('Admin/Therapist/Revenue', [
             'transactions' => $paginator,
             'filters' => [
@@ -209,6 +211,7 @@ class TherapistDashboardController extends Controller
             'totals' => [
                 'transfer_commission' => (float) $totalTransferKomisi,
                 'cash_net_profit' => (float) $totalCashNetProfit,
+                'total_commission' => (float) $totalCommission,
             ]
         ]);
     }
