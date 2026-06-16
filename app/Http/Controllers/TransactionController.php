@@ -573,7 +573,7 @@ class TransactionController extends Controller
                 FROM transaction_items ti
                 JOIN transactions t ON t.id = ti.transaction_id
                 WHERE ti.employee_id IS NOT NULL
-                  AND t.status = 'success'
+                  AND t.status IN ('success', 'invoice')
                   {$dateFilter}
                 GROUP BY ti.employee_id
             )
@@ -637,7 +637,7 @@ class TransactionController extends Controller
                 }
             })
             ->whereHas('transaction', function ($query) use ($startDate, $endDate) {
-                $query->where('status', 'success')
+                $query->whereIn('status', ['success', 'invoice'])
                       ->where('schedule_date', '>=', $startDate)
                       ->where('schedule_date', '<=', $endDate);
             })
@@ -653,6 +653,7 @@ class TransactionController extends Controller
                     'price' => (float) $item->price,
                     'commission' => (float) $item->therapist_commission,
                     'payment_method' => $item->transaction->payment_method ?? '-',
+                    'status' => $item->transaction->status ?? '-',
                 ];
             })
             ->sortBy('schedule_date')

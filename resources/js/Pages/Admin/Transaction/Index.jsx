@@ -641,7 +641,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jadwal</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Voucher</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Diskon</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Reschedule</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Metode Pembayaran</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Aksi</th>
@@ -712,14 +712,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-5 text-center">
-                                                        {transaction.penalty_amount > 0 ? (
-                                                            <>
-                                                                <span className="text-xs font-bold text-orange-500 block">+{formatCurrency(transaction.penalty_amount)}</span>
-                                                                <span className="text-[9px] font-medium text-gray-400 uppercase">({parseFloat(transaction.penalty_percent)}%)</span>
-                                                            </>
-                                                        ) : (
-                                                            <span className="text-gray-300">—</span>
-                                                        )}
+                                                        <span className="text-xs font-bold text-gray-700 uppercase block">{transaction.payment_method || '-'}</span>
                                                     </td>
                                                     <td className="px-6 py-5">
                                                         <span className="text-sm font-bold text-gray-900">{formatCurrency(transaction.total_price)}</span>
