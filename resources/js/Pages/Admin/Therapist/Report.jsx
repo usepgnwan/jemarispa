@@ -59,23 +59,23 @@ export default function Report({ therapistRevenue, filters }) {
                 const comm = ti?.therapist_commission || 0;
                 const dateStr = new Date(ti?.transaction?.schedule_date).toLocaleDateString();
                 const customer = ti?.transaction?.customer_name || '-';
-                
+
                 const commStr = method === 'transfer' ? fmt(comm) : '-';
                 const netStr = method === 'cash' ? fmt(price - comm) : '-';
-                
+
                 detailsText += `${dateStr}\t${customer} (${method})\t${commStr}\t${netStr}\n`;
             });
             detailsText += '\n';
         }
 
-        const text = `${detailsText}---------------------------------\nTotal Komisi (Transfer) : ${fmt(invoice.total_transfer_commission)}\nTotal Net Profit (Cash) : - ${fmt(invoice.total_cash_net_profit)}\n---------------------------------\n${title}: ${fmt(invoice.total_amount)}`;
+        const text = `${detailsText}---------------------------------\nTotal Transfer : ${fmt(invoice.total_transfer_commission)}\nTotal Cash : - ${fmt(invoice.total_cash_net_profit)}\n---------------------------------\n${title}: ${fmt(invoice.total_amount)}`;
         navigator.clipboard.writeText(text);
         alert('Invoice berhasil disalin ke clipboard!');
     };
 
     const handleSaveInvoice = () => {
         if (selectedItems.length === 0) return;
-        
+
         if (editingInvoiceId) {
             router.put(route('admin.therapist.invoice.update', editingInvoiceId), {
                 transaction_item_ids: selectedItems
@@ -132,7 +132,7 @@ export default function Report({ therapistRevenue, filters }) {
         setIsModalOpen(true);
         setIsLoadingDetails(true);
         setEditingInvoiceId(invoice.id);
-        
+
         // Preselect existing items
         const existingItemIds = invoice.items.map(item => item.transaction_item_id);
         setSelectedItems(existingItemIds);
