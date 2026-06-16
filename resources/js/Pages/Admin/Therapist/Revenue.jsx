@@ -38,9 +38,7 @@ export default function Revenue({ auth, transactions, filters, totals }) {
     };
 
     // Calculate totals using server-provided data
-    const totalTransferKomisi = totals?.transfer_commission || 0;
-    const totalCashNetProfit = totals?.cash_net_profit || 0;
-    const totalRevenue = totalTransferKomisi + totalCashNetProfit;
+    const totalRevenue = totals?.total_commission || 0;
 
     return (
         <AuthenticatedLayout auth={auth}>
@@ -216,12 +214,9 @@ export default function Revenue({ auth, transactions, filters, totals }) {
                                 {transactions.data && transactions.data.length > 0 && (
                                     <tfoot className="bg-gray-50 border-t border-gray-100">
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-4 text-right text-[10px] font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">Total (Halaman Ini)</td>
-                                            {/* <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 whitespace-nowrap">
-                                                {fmt(transactions.data.reduce((sum, item) => sum + Number(item.price || 0), 0))}
-                                            </td> */}
+                                            <td colSpan="5" className="px-6 py-4 text-right text-[10px] font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">Total Keseluruhan</td>
                                             <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 whitespace-nowrap">
-                                                {fmt(transactions.data.reduce((sum, item) => sum + Number(item.commission || 0), 0))}
+                                                {fmt(totalRevenue)}
                                             </td>
                                             <td className="px-6 py-4"></td>
                                         </tr>
