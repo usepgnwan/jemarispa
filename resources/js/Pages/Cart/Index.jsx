@@ -413,7 +413,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             address: formData.address,
             schedule_date: formData.date,
             schedule_time: formData.time,
-            payment_method: formData.paymentMethod === 'cash' ? t.cash : t.transfer,
+            payment_method: formData.paymentMethod,
             source: formData.source,
             notes: formData.notes,
             total_price: totalPrice,
@@ -460,7 +460,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                     date: formattedDate,
                     time: formData.time,
                     schedule: `${formattedDate}, ${formData.time}`,
-                    payment: payload.payment_method,
+                    payment: formData.paymentMethod === 'cash' ? t.cash : t.transfer,
                     pax: pax,
                     details: guestDetails, // Keeping this for backward compatibility
                     gender: allGenders,
