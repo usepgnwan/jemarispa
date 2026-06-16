@@ -12,11 +12,22 @@ class CalendarController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        $isTerapis = $user && $user->isTerapis();
+        $employeeId = $isTerapis ? $user->employee_id : null;
+
+        $query = Transaction::with(['items.employee', 'voucher'])
+            ->whereNotNull('schedule_date');
+
+        if ($isTerapis && $employeeId) {
+            $query->whereHas('items', function ($q) use ($employeeId) {
+                $q->where('employee_id', $employeeId);
+            });
+        }
+
         // Fetch transactions with items for detail view
-        $transactions = Transaction::with(['items.employee', 'voucher'])
-            ->whereNotNull('schedule_date')
-            ->get()
-            ->map(function ($t) {
+        $transactions = $query->get()
+            ->map(function ($t) use ($isTerapis, $employeeId) {
                 // Determine color based on status
                 $color = '#94a3b8'; // Default pending (Slate 400)
                 if ($t->status === 'send_terapis') $color = '#60a5fa'; // Blue 400
@@ -24,9 +35,14 @@ class CalendarController extends Controller
                 if ($t->status === 'success') $color = '#34d399';      // Emerald 400
                 if ($t->status === 'failed') $color = '#f87171';       // Red 400
 
+                // If terapis, only show items assigned to them
+                $items = $isTerapis 
+                    ? $t->items->filter(fn($i) => $i->employee_id == $employeeId)->values() 
+                    : $t->items;
+
                 return [
                     'id' => $t->id,
-                    'title' => $t->customer_name . ' - ' . ($t->items->first()->package_name ?? 'Package'),
+                    'title' => $t->customer_name . ' - ' . ($items->first()->package_name ?? 'Package'),
                     'start' => $t->schedule_date . ($t->schedule_time ? 'T' . $t->schedule_time : ''),
                     'backgroundColor' => $color,
                     'borderColor' => $color,
@@ -42,7 +58,7 @@ class CalendarController extends Controller
                         'penalty_percent'  => $t->penalty_percent,
                         'penalty_amount'   => $t->penalty_amount,
                         'voucher'          => $t->voucher,
-                        'items'            => $t->items,
+                        'items'            => $items,
                         'notes'            => $t->notes,
                         'schedule_date'    => $t->schedule_date,
                         'schedule_time'    => $t->schedule_time,
@@ -52,9 +68,15 @@ class CalendarController extends Controller
             });
 
         // Summary totals based on status
-        $statusCounts = Transaction::selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status');
+        $summaryQuery = Transaction::selectRaw('status, COUNT(*) as count');
+        
+        if ($isTerapis && $employeeId) {
+            $summaryQuery->whereHas('items', function ($q) use ($employeeId) {
+                $q->where('employee_id', $employeeId);
+            });
+        }
+
+        $statusCounts = $summaryQuery->groupBy('status')->pluck('count', 'status');
 
         $summary = [
             'pending' => $statusCounts['pending'] ?? 0,

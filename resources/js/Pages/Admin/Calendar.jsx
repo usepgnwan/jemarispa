@@ -557,19 +557,21 @@ jemarihomespa.com`;
                             <p className="mt-1 text-sm text-gray-500">Pantau jadwal layanan spa harian Anda</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-6">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Terapis:</span>
-                                <select
-                                    className="text-xs border-gray-200 rounded-xl focus:ring-zenith-orange focus:border-zenith-orange bg-white shadow-sm pr-8 py-1.5"
-                                    value={selectedTherapist}
-                                    onChange={(e) => setSelectedTherapist(e.target.value)}
-                                >
-                                    <option value="all">Semua Terapis</option>
-                                    {employees?.map(emp => (
-                                        <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            {auth.user.role !== 'terapis' && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Terapis:</span>
+                                    <select
+                                        className="text-xs border-gray-200 rounded-xl focus:ring-zenith-orange focus:border-zenith-orange bg-white shadow-sm pr-8 py-1.5"
+                                        value={selectedTherapist}
+                                        onChange={(e) => setSelectedTherapist(e.target.value)}
+                                    >
+                                        <option value="all">Semua Terapis</option>
+                                        {employees?.map(emp => (
+                                            <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             <div className="flex items-center gap-2">
                                 <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 overflow-x-auto scrollbar-hide max-w-[90vw] sm:max-w-none">
                                     <button
@@ -821,10 +823,12 @@ jemarihomespa.com`;
                                                             </div>
                                                             <h3 className="text-xl font-black text-gray-900">{currentData.customer_name}</h3>
                                                             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5">
-                                                                <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400">
-                                                                    <PhoneIcon className="w-3 h-3" />
-                                                                    {currentData.phone}
-                                                                </span>
+                                                                {auth.user.role !== 'terapis' && (
+                                                                    <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400">
+                                                                        <PhoneIcon className="w-3 h-3" />
+                                                                        {currentData.phone}
+                                                                    </span>
+                                                                )}
                                                                 <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400 shrink-0">
                                                                     <MapPinIcon className="w-3 h-3" />
                                                                     {currentData.address}
@@ -832,7 +836,7 @@ jemarihomespa.com`;
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-2">
-                                                            {!isEditing && (
+                                                            {!isEditing && auth.user.role !== 'terapis' && (
                                                                 <button
                                                                     onClick={() => setIsEditing(true)}
                                                                     className="flex items-center gap-2 px-4 py-2 bg-zenith-orange/10 text-zenith-orange rounded-xl text-xs font-bold hover:bg-zenith-orange/20 transition-all"
@@ -1143,7 +1147,7 @@ jemarihomespa.com`;
                                                                                         )}
                                                                                     </div>
                                                                                 </td>
-                                                                                <td className="px-4 py-2.5 text-center text-gray-500">{item.package_duration} mnt</td>
+                                                                                <td className="px-4 py-2.5 text-center text-gray-500">{item.package_duration}</td>
                                                                                 <td className="px-4 py-2.5 text-right font-bold text-gray-700">{formatCurrency(item.price)}</td>
                                                                                 {isEditing && items.length > 1 && (
                                                                                     <td className="px-4 py-2.5 text-right">
@@ -1233,8 +1237,12 @@ jemarihomespa.com`;
                                                                 </div>
                                                             ) : (
                                                                 <div className="mt-4 flex gap-2 justify-end">
-                                                                    <PrimaryButton onClick={() => sendInvoice(selectedEvent)} className="bg-green-600 hover:bg-green-700">WA</PrimaryButton>
-                                                                    <PrimaryButton onClick={() => copyInvoiceText(selectedEvent)} className="bg-blue-600 hover:bg-blue-700 text-[10px]">Salin Text</PrimaryButton>
+                                                                    {auth.user.role !== 'terapis' && (
+                                                                        <>
+                                                                            <PrimaryButton onClick={() => sendInvoice(selectedEvent)} className="bg-green-600 hover:bg-green-700">WA</PrimaryButton>
+                                                                            <PrimaryButton onClick={() => copyInvoiceText(selectedEvent)} className="bg-blue-600 hover:bg-blue-700 text-[10px]">Salin Text</PrimaryButton>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>

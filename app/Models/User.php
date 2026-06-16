@@ -19,10 +19,12 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'employee_id',
         'name',
         'email',
         'password',
         'role',
+        'is_active',
     ];
 
     /**
@@ -48,6 +50,16 @@ class User extends Authenticatable
     public function isCs()
     {
         return $this->role === 'cs';
+    }
+
+    public function isTerapis()
+    {
+        return $this->role === 'terapis';
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
     }
 
     /**

@@ -12,4 +12,9 @@ class Employee extends Model
         'title',
         'join_date',
     ];
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'employee_id');
+    }
 }

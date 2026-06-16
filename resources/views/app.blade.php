@@ -15,9 +15,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Jemari Home Spa - Pijat Panggilan Bandung') }}</title>
-        <meta name="description" inertia content="Layanan pijat panggilan profesional 24 jam di Bandung dan Cimahi. Tersedia pijat tradisional, bekam, totok wajah, refleksi, lulur, dan kerokan. Langsung ke rumah, hotel, atau apartemen Anda.">
-        <meta name="keywords" inertia content="pijat panggilan bandung, pijat panggilan cimahi, spa panggilan bandung, pijat tradisional, bekam, totok wajah, refleksi, lulur">
+        <title inertia>{{ config('app.name', 'Pijat Panggilan Bandung & Cimahi 24 Jam - Jemari Home Spa') }}</title>
+        <meta name="description" inertia content="Layanan pijat panggilan Bandung 24 jam terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi. Terapis pria & wanita profesional.">
+        <meta name="keywords" inertia content="pijat panggilan bandung, pijat panggilan bandung 24 jam, pijat panggilan cimahi, spa panggilan bandung, pijat tradisional bandung, massage panggilan bandung, pijat ke rumah bandung, pijat panggilan hotel bandung, terapis pijat bandung, lulur panggilan bandung, bekam panggilan bandung, pijat refleksi bandung, pijat panggilan terdekat dari lokasi saya">
         <meta name="author" content="Jemari Home Spa">
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
         <link rel="canonical" href="{{ url()->current() }}">
@@ -25,15 +25,15 @@
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">
         <meta property="og:url" content="{{ url()->current() }}">
-        <meta property="og:title" inertia content="Jemari Home Spa - Pijat Panggilan Bandung">
-        <meta property="og:description" inertia content="Layanan pijat panggilan profesional 24 jam di Bandung dan Cimahi. Tersedia pijat tradisional, bekam, totok wajah, refleksi, lulur, dan kerokan.">
+        <meta property="og:title" inertia content="Pijat Panggilan Bandung 24 Jam - Jemari Home Spa">
+        <meta property="og:description" inertia content="Layanan pijat panggilan Bandung 24 jam terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi. Terapis profesional.">
         <meta property="og:image" inertia content="{{ asset('images/logo-pwa-192.png') }}">
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image">
         <meta property="twitter:url" content="{{ url()->current() }}">
-        <meta property="twitter:title" inertia content="Jemari Home Spa - Pijat Panggilan Bandung">
-        <meta property="twitter:description" inertia content="Layanan pijat panggilan profesional 24 jam di Bandung dan Cimahi. Tersedia pijat tradisional, bekam, totok wajah, refleksi, lulur, dan kerokan.">
+        <meta property="twitter:title" inertia content="Pijat Panggilan Bandung 24 Jam - Jemari Home Spa">
+        <meta property="twitter:description" inertia content="Layanan pijat panggilan Bandung 24 jam terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi.">
         <meta property="twitter:image" inertia content="{{ asset('images/logo-pwa-192.png') }}">
 
         <!-- Fonts -->
@@ -260,19 +260,68 @@
 
         <!-- Static SEO Content for bots that do not execute JavaScript -->
         <div id="seo-content" style="display: none; visibility: hidden;">
-            <h1>Jemari Home Spa - Layanan Pijat Panggilan Bandung &amp; Cimahi</h1>
-            <p>Jemari Home Spa adalah layanan pijat panggilan profesional untuk area Bandung dan Cimahi. Kami melayani panggilan ke rumah, hotel, dan apartemen dengan terapis pria dan wanita bersertifikat.</p>
-            <h2>Layanan Utama Kami:</h2>
+            <h1>Pijat Panggilan Bandung &amp; Cimahi 24 Jam - Jemari Home Spa</h1>
+            <p>Jemari Home Spa adalah layanan <strong>pijat panggilan Bandung</strong> profesional terpercaya untuk area Kota Bandung, Cimahi, Kabupaten Bandung, dan Bandung Barat. Kami melayani jasa pijat panggilan 24 jam ke rumah, hotel, dan apartemen dengan terapis pria dan wanita bersertifikat dan berpengalaman.</p>
+            <h2>Layanan Utama Jemari Home Spa:</h2>
             <ul>
-                <li>Pijat Tradisional (Traditional Massage)</li>
-                <li>Bekam / Kop (Cupping Therapy)</li>
+                <li>Pijat Tradisional Bandung (Traditional Massage)</li>
+                <li>Bekam / Kop Bandung (Cupping Therapy)</li>
                 <li>Totok Wajah (Face Acupressure)</li>
-                <li>Refleksi (Reflexology)</li>
-                <li>Body Scrub / Lulur</li>
+                <li>Refleksi Bandung (Reflexology)</li>
+                <li>Body Scrub / Lulur Panggilan Bandung</li>
                 <li>Pijat Keseleo / Terkilir (Sprain Massage)</li>
                 <li>Kerokan</li>
+                <li>Pijat Ibu Hamil / Prenatal Massage</li>
             </ul>
+            <p>Cari <strong>pijat panggilan terdekat dari lokasi saya</strong> di Bandung? Jemari Home Spa adalah solusinya. Nikmati relaksasi maksimal tanpa perlu keluar rumah.</p>
         </div>
+
+        @php
+            $setting = \App\Models\Setting::first();
+        @endphp
+        <!-- LocalBusiness Schema Markup -->
+        <script type="application/ld+json">
+        {
+          "@@context": "https://schema.org",
+          "@@type": "HealthAndBeautyBusiness",
+          "name": "Jemari Home Spa - Pijat Panggilan Bandung",
+          "image": "{{ asset('images/logo-pwa-192.png') }}",
+          "@@id": "{{ url()->current() }}",
+          "url": "{{ url('/') }}",
+          "telephone": "{{ $setting ? $setting->phone : '+6289516166090' }}",
+          "address": {
+            "@@type": "PostalAddress",
+            "addressLocality": "Bandung",
+            "addressRegion": "Jawa Barat",
+            "addressCountry": "ID"
+          },
+          "geo": {
+            "@@type": "GeoCoordinates",
+            "latitude": -6.9174639,
+            "longitude": 107.6191228
+          },
+          "openingHoursSpecification": {
+            "@@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+            ],
+            "opens": "00:00",
+            "closes": "23:59"
+          },
+          "priceRange": "$$",
+          "description": "Layanan pijat panggilan Bandung 24 jam. Jemari Home Spa melayani pijat tradisional, refleksi, lulur ke rumah dan hotel di Bandung dan Cimahi.",
+          "areaServed": [
+            {
+              "@@type": "City",
+              "name": "Bandung"
+            },
+            {
+              "@@type": "City",
+              "name": "Cimahi"
+            }
+          ]
+        }
+        </script>
 
         <!-- PWA Install Prompt Toast HTML -->
         <div id="pwa-install-toast" class="pwa-toast">

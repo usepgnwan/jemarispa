@@ -107,6 +107,7 @@ export default function Index({ employees, filters }) {
                                         <th scope="col" className="px-6 py-4 font-bold tracking-wider">Jabatan</th>
                                         <th scope="col" className="px-6 py-4 font-bold tracking-wider">No. HP</th>
                                         <th scope="col" className="px-6 py-4 font-bold tracking-wider">Tanggal Bergabung</th>
+                                        <th scope="col" className="px-6 py-4 font-bold tracking-wider">Akses Login</th>
                                         <th scope="col" className="px-6 py-4 font-bold tracking-wider text-right">Aksi</th>
                                     </tr>
                                 </thead>
@@ -133,6 +134,26 @@ export default function Index({ employees, filters }) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                                                     {employee.join_date ? new Date(employee.join_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {employee.user ? (
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className="text-sm font-medium text-gray-900">{employee.user.email}</span>
+                                                            {employee.user.is_active ? (
+                                                                <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                                    Aktif
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-700 border border-red-100">
+                                                                    Nonaktif
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-50 text-gray-600 border border-gray-200">
+                                                            Belum Punya Akses
+                                                        </span>
+                                                    )}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Link
@@ -155,7 +176,7 @@ export default function Index({ employees, filters }) {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-12 text-center">
+                                            <td colSpan="6" className="px-6 py-12 text-center">
                                                 <UsersIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                                 <p className="text-gray-500 font-medium">Tidak ada data karyawan ditemukan.</p>
                                             </td>

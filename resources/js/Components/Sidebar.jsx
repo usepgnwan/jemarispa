@@ -14,7 +14,10 @@ import {
     Cog6ToothIcon,
     ClipboardDocumentListIcon,
     TicketIcon,
-    CalendarDaysIcon
+    CalendarDaysIcon,
+    ChartBarSquareIcon,
+    CalendarIcon,
+    BanknotesIcon
 } from '@heroicons/react/24/outline';
 
 function classNames(...classes) {
@@ -64,6 +67,14 @@ export default function Sidebar({ collapsed }) {
             items: [
                 { name: 'Setting', href: route('admin.settings.index'), icon: Cog6ToothIcon, current: route().current('admin.settings.*'), roles: ['admin'] },
                 { name: 'Main Service', href: route('admin.signature-ritual.index'), icon: SparklesIcon, current: route().current('admin.signature-ritual.*'), roles: ['admin'] },
+            ]
+        },
+        { 
+            section: 'TERAPIS',
+            items: [
+                { name: 'Dashboard', href: route('admin.therapist_user.dashboard'), icon: ChartBarSquareIcon, current: route().current('admin.therapist_user.dashboard'), roles: ['terapis'] },
+                { name: 'Jadwal', href: route('admin.calendar.index'), icon: CalendarIcon, current: route().current('admin.calendar.index'), roles: ['terapis'] },
+                { name: 'Pendapatan', href: route('admin.therapist_user.revenue'), icon: BanknotesIcon, current: route().current('admin.therapist_user.revenue'), roles: ['terapis'] },
             ]
         }
     ];

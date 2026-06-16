@@ -13,6 +13,8 @@ export default function Edit({ employee }) {
         name: employee.name || '',
         nohp: employee.nohp || '',
         title: employee.title || '',
+        email: employee.email || '',
+        is_active: employee.is_active !== undefined ? employee.is_active : true,
         join_date: employee.join_date || ''
     });
 
@@ -55,6 +57,35 @@ export default function Edit({ employee }) {
                                         isFocused
                                     />
                                     <InputError message={errors.name} className="mt-2" />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <InputLabel htmlFor="email" value="Alamat Email (Akses Login)" />
+                                        <TextInput
+                                            id="email"
+                                            type="email"
+                                            name="email"
+                                            value={data.email}
+                                            className="mt-1 block w-full"
+                                            onChange={(e) => setData('email', e.target.value)}
+                                            required
+                                        />
+                                        <InputError message={errors.email} className="mt-2" />
+                                    </div>
+                                    
+                                    <div className="flex flex-col justify-center pt-6">
+                                        <label className="flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-gray-300 text-zenith-orange shadow-sm focus:ring-zenith-orange w-5 h-5 cursor-pointer"
+                                                checked={data.is_active}
+                                                onChange={(e) => setData('is_active', e.target.checked)}
+                                            />
+                                            <span className="ml-3 text-sm font-medium text-gray-700">Aktifkan Akses Login</span>
+                                        </label>
+                                        <p className="mt-1 text-xs text-gray-500 ml-8">Jika tidak dicentang, karyawan tidak bisa login.</p>
+                                    </div>
                                 </div>
 
                                 <div>

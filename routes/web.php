@@ -19,6 +19,10 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+    if (auth()->check() && auth()->user()->isTerapis()) {
+        return redirect()->route('admin.therapist_user.dashboard');
+    }
+
     $month = $request->query('month');
 
     // ── Monthly Revenue (status = success, last 12 months) — PostgreSQL ──────
@@ -202,8 +206,6 @@ Route::middleware(['auth'])->group(function () {
 
     // ── CS & ADMIN ─────────────────────────────────────────────────────────
     Route::middleware(['role:admin,cs'])->group(function() {
-        // Calendar
-        Route::get('admin/calendar', [\App\Http\Controllers\CalendarController::class, 'index'])->name('admin.calendar.index');
 
         // Transaction management
         Route::get('admin/transaction', [TransactionController::class, 'index'])->name('admin.transaction.index');
@@ -245,6 +247,22 @@ Route::middleware(['auth'])->group(function () {
         Route::post('admin/settings/areas', [SettingController::class, 'storeArea'])->name('admin.settings.areas.store');
         Route::put('admin/settings/areas/{area}', [SettingController::class, 'updateArea'])->name('admin.settings.areas.update');
         Route::delete('admin/settings/areas/{area}', [SettingController::class, 'destroyArea'])->name('admin.settings.areas.destroy');
+    });
+
+    // ── ALL ROLES (Admin, CS, Terapis) ─────────────────────────────────────
+    Route::middleware(['role:admin,cs,terapis'])->group(function() {
+        // Shared Calendar
+        Route::get('admin/calendar', [\App\Http\Controllers\CalendarController::class, 'index'])->name('admin.calendar.index');
+    });
+
+    // ── TERAPIS ONLY ───────────────────────────────────────────────────────
+    Route::middleware(['role:terapis'])->group(function() {
+        Route::get('terapis', function() {
+            return redirect()->route('admin.therapist_user.dashboard');
+        });
+        Route::get('terapis/dashboard', [\App\Http\Controllers\TherapistDashboardController::class, 'index'])->name('admin.therapist_user.dashboard');
+        Route::get('terapis/revenue', [\App\Http\Controllers\TherapistDashboardController::class, 'revenue'])->name('admin.therapist_user.revenue');
+        Route::get('terapis/revenue/export', [\App\Http\Controllers\TherapistDashboardController::class, 'exportRevenuePDF'])->name('admin.therapist_user.revenue.export');
     });
 });
 
