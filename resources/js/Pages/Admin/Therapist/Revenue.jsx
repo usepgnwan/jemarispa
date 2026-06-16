@@ -48,7 +48,7 @@ export default function Revenue({ auth, transactions, filters, totals }) {
 
             <div className="py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    
+
                     {/* Header and Filter */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                         <div>
@@ -59,7 +59,7 @@ export default function Revenue({ auth, transactions, filters, totals }) {
                                 Berikut laporan keuangan mu
                             </p>
                         </div>
-                        
+
                         <div className="flex flex-wrap items-center gap-2">
                             <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2.5 shadow-sm">
                                 <CalendarIcon className="w-4 h-4 text-gray-400" />
@@ -100,7 +100,7 @@ export default function Revenue({ auth, transactions, filters, totals }) {
                                 <BanknotesIcon className="w-5 h-5 text-blue-500" />
                             </div>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                                TOTAL REVENUE
+                                TOTAL PENDAPATAN
                             </div>
                             <div className="text-2xl font-black text-gray-900 mb-1">
                                 {fmt(totalRevenue)}

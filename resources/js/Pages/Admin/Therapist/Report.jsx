@@ -236,7 +236,7 @@ export default function Report({ therapistRevenue, filters }) {
                             <BanknotesIcon className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Revenue</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Pendapatan</p>
                             <p className="text-2xl font-extrabold text-gray-900 leading-tight">{fmt(totalRevenue)}</p>
                             <p className="text-xs text-gray-400 mt-1">{dateLabel}</p>
                         </div>
@@ -595,12 +595,11 @@ export default function Report({ therapistRevenue, filters }) {
                                                     </td>
                                                     <td className="py-3 px-4 text-left text-gray-900 font-bold whitespace-nowrap uppercase text-xs">{detail.payment_method}</td>
                                                     <td className="py-3 px-4 text-center">
-                                                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${
-                                                            detail.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
-                                                            detail.status === 'invoice' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
-                                                        }`}>
-                                                            {detail.status === 'success' ? 'Selesai' : 
-                                                             detail.status === 'invoice' ? 'Invoice' : detail.status}
+                                                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${detail.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
+                                                                detail.status === 'invoice' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                                                            }`}>
+                                                            {detail.status === 'success' ? 'Selesai' :
+                                                                detail.status === 'invoice' ? 'Invoice' : detail.status}
                                                         </span>
                                                     </td>
                                                     <td className="py-3 px-4 text-right text-gray-900 font-bold whitespace-nowrap">{fmt(detail.price)}</td>
