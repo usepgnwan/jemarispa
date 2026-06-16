@@ -561,6 +561,7 @@ export default function Report({ therapistRevenue, filters }) {
                                                 <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">No Invoice</th>
                                                 <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">Layanan</th>
                                                 <th className="py-3 px-4 text-left font-bold uppercase tracking-wider text-[10px]">Metode</th>
+                                                <th className="py-3 px-4 text-center font-bold uppercase tracking-wider text-[10px]">Status</th>
                                                 <th className="py-3 px-4 text-right font-bold uppercase tracking-wider text-[10px]">Harga</th>
                                                 <th className="py-3 px-4 text-right font-bold uppercase tracking-wider text-[10px]">Komisi</th>
                                                 <th className="py-3 px-4 text-right font-bold uppercase tracking-wider text-[10px]">Net Profit</th>
@@ -593,6 +594,15 @@ export default function Report({ therapistRevenue, filters }) {
                                                         <div className="text-xs text-gray-500">{detail.package_duration}</div>
                                                     </td>
                                                     <td className="py-3 px-4 text-left text-gray-900 font-bold whitespace-nowrap uppercase text-xs">{detail.payment_method}</td>
+                                                    <td className="py-3 px-4 text-center">
+                                                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${
+                                                            detail.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
+                                                            detail.status === 'invoice' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                                                        }`}>
+                                                            {detail.status === 'success' ? 'Selesai' : 
+                                                             detail.status === 'invoice' ? 'Invoice' : detail.status}
+                                                        </span>
+                                                    </td>
                                                     <td className="py-3 px-4 text-right text-gray-900 font-bold whitespace-nowrap">{fmt(detail.price)}</td>
                                                     <td className="py-3 px-4 text-right text-red-500 font-bold whitespace-nowrap">{fmt(detail.commission)}</td>
                                                     <td className="py-3 px-4 text-right text-emerald-600 font-bold whitespace-nowrap">{fmt(detail.price - detail.commission)}</td>
@@ -601,7 +611,7 @@ export default function Report({ therapistRevenue, filters }) {
                                         </tbody>
                                         <tfoot>
                                             <tr className="bg-gray-900 text-white font-bold">
-                                                <td colSpan={5} className="py-3 px-4 text-right uppercase text-[10px] tracking-wider">Total</td>
+                                                <td colSpan={6} className="py-3 px-4 text-right uppercase text-[10px] tracking-wider">Total</td>
                                                 <td className="py-3 px-4 text-right whitespace-nowrap">{fmt(therapistDetails.reduce((a, b) => a + b.price, 0))}</td>
                                                 <td className="py-3 px-4 text-right whitespace-nowrap text-red-400">{fmt(therapistDetails.reduce((a, b) => a + b.commission, 0))}</td>
                                                 <td className="py-3 px-4 text-right whitespace-nowrap text-emerald-400">{fmt(therapistDetails.reduce((a, b) => a + (b.price - b.commission), 0))}</td>
