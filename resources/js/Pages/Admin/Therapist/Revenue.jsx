@@ -8,7 +8,10 @@ import {
     DocumentTextIcon,
     CheckCircleIcon,
     ClockIcon,
-    DocumentArrowDownIcon
+    DocumentArrowDownIcon,
+    ArrowTrendingDownIcon,
+    ArrowTrendingUpIcon,
+    UsersIcon
 } from '@heroicons/react/24/outline';
 
 const fmt = (n) =>
@@ -37,7 +40,7 @@ export default function Revenue({ auth, transactions, filters, totals }) {
     // Calculate totals using server-provided data
     const totalTransferKomisi = totals?.transfer_commission || 0;
     const totalCashNetProfit = totals?.cash_net_profit || 0;
-    const totalSemua = totalTransferKomisi - totalCashNetProfit;
+    const totalRevenue = totalTransferKomisi + totalCashNetProfit;
 
     return (
         <AuthenticatedLayout auth={auth}>
@@ -45,55 +48,95 @@ export default function Revenue({ auth, transactions, filters, totals }) {
 
             <div className="py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900 font-serif italic">Riwayat Pendapatan Anda</h2>
-                        <p className="mt-1 text-sm text-gray-500">Daftar layanan, pembayaran komisi, dan riwayat transaksi Anda</p>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-[2rem] border border-gray-100 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
+                    
+                    {/* Header and Filter */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                         <div>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Mulai Tanggal</label>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="text-xs border-gray-200 rounded-xl focus:ring-zenith-orange focus:border-zenith-orange bg-white shadow-sm"
-                            />
+                            <h2 className="text-2xl font-bold text-gray-900 font-serif italic">
+                                Halo, {auth.user.name} 👋
+                            </h2>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Berikut laporan keuangan mu
+                            </p>
                         </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Sampai Tanggal</label>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="text-xs border-gray-200 rounded-xl focus:ring-zenith-orange focus:border-zenith-orange bg-white shadow-sm"
-                            />
-                        </div>
-                        <div className="flex gap-2">
+                        
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2.5 shadow-sm">
+                                <CalendarIcon className="w-4 h-4 text-gray-400" />
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="bg-transparent border-none text-sm text-gray-700 focus:ring-0 p-0 font-bold w-[120px]"
+                                />
+                                <span className="text-gray-300 font-bold mx-1">-</span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="bg-transparent border-none text-sm text-gray-700 focus:ring-0 p-0 font-bold w-[120px]"
+                                />
+                            </div>
                             <button
                                 onClick={handleFilter}
-                                className="px-4 py-2 bg-zenith-orange text-white text-xs font-bold rounded-xl hover:bg-opacity-90 shadow-sm transition-colors"
+                                className="px-5 py-2.5 bg-gray-600 text-white text-sm font-bold rounded-full hover:bg-gray-700 shadow-sm transition-colors"
                             >
                                 Filter
                             </button>
-                            {(startDate || endDate) && (
-                                <button
-                                    onClick={handleReset}
-                                    className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors"
-                                >
-                                    Reset
-                                </button>
-                            )}
-                            <a
-                                href={route('admin.therapist_user.revenue.export', { start_date: startDate, end_date: endDate })}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-sm transition-colors flex items-center gap-2 ml-auto"
+                            <button
+                                onClick={handleReset}
+                                className="px-5 py-2.5 bg-white text-gray-600 border border-gray-200 text-sm font-bold rounded-full hover:bg-gray-50 transition-colors"
                             >
-                                <DocumentArrowDownIcon className="w-4 h-4" />
-                                Export PDF
-                            </a>
+                                Reset
+                            </button>
                         </div>
+                    </div>
+
+                    {/* Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        {/* Total Revenue */}
+                        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+                                <BanknotesIcon className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                                TOTAL REVENUE
+                            </div>
+                            <div className="text-2xl font-black text-gray-900 mb-1">
+                                {fmt(totalRevenue)}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                                {startDate && endDate ? `${new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} - ${new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}` : 'Semua waktu'}
+                            </div>
+                        </div>
+
+                        {/* Total Sesi */}
+                        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+                            <div className="w-10 h-10 rounded-2xl bg-purple-50 flex items-center justify-center mb-4">
+                                <UsersIcon className="w-5 h-5 text-purple-500" />
+                            </div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                                TOTAL SESI
+                            </div>
+                            <div className="text-2xl font-black text-gray-900 mb-1">
+                                {transactions.total || 0} Sesi
+                            </div>
+                            <div className="text-xs text-gray-400">
+                                Dari 1 terapis
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end mb-4">
+                        <a
+                            href={route('admin.therapist_user.revenue.export', { start_date: startDate, end_date: endDate })}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-sm transition-colors flex items-center gap-2"
+                        >
+                            <DocumentArrowDownIcon className="w-4 h-4" />
+                            Export PDF
+                        </a>
                     </div>
 
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden mb-6">
