@@ -236,8 +236,8 @@ class TherapistDashboardController extends Controller
             $query->whereDate('transactions.schedule_date', '<=', $endDate);
         }
 
-        $items = $query->orderBy('transactions.schedule_date', 'desc')
-            ->orderBy('transactions.schedule_time', 'desc')
+        $items = $query->orderBy('transactions.schedule_date', 'asc')
+            ->orderBy('transactions.schedule_time', 'asc')
             ->get();
 
         $transactions = $items->map(function ($item) {
