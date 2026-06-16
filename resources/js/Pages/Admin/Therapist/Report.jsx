@@ -44,7 +44,15 @@ export default function Report({ therapistRevenue, filters }) {
 
         let detailsText = '';
         if (invoice.items && invoice.items.length > 0) {
-            invoice.items.forEach((invItem) => {
+            const sortedItems = [...invoice.items].sort((a, b) => {
+                const tiA = a.transaction_item || a.transactionItem;
+                const tiB = b.transaction_item || b.transactionItem;
+                const dateA = new Date(tiA?.transaction?.schedule_date || 0).getTime();
+                const dateB = new Date(tiB?.transaction?.schedule_date || 0).getTime();
+                return dateA - dateB;
+            });
+
+            sortedItems.forEach((invItem) => {
                 const ti = invItem.transaction_item || invItem.transactionItem;
                 const method = ti?.transaction?.payment_method?.toLowerCase() || '';
                 const price = ti?.price || 0;
@@ -440,7 +448,11 @@ export default function Report({ therapistRevenue, filters }) {
                                                                                                             </tr>
                                                                                                         </thead>
                                                                                                         <tbody>
-                                                                                                            {inv.items && inv.items.map((invItem) => {
+                                                                                                            {inv.items && [...inv.items].sort((a, b) => {
+                                                                                                                const tiA = a.transaction_item || a.transactionItem;
+                                                                                                                const tiB = b.transaction_item || b.transactionItem;
+                                                                                                                return new Date(tiA?.transaction?.schedule_date || 0).getTime() - new Date(tiB?.transaction?.schedule_date || 0).getTime();
+                                                                                                            }).map((invItem) => {
                                                                                                                 const ti = invItem.transaction_item || invItem.transactionItem;
                                                                                                                 const method = ti?.transaction?.payment_method?.toLowerCase() || '';
                                                                                                                 const price = ti?.price || 0;
