@@ -223,6 +223,7 @@ export default function Index({ transactions, filters, counts, employees, packag
             penalty_amount: penaltyAmount,
             total_price: finalTotal
         }, {
+            preserveScroll: true,
             onSuccess: () => {
                 setIsDetailModalOpen(false);
                 setNewItems([]);
@@ -238,6 +239,7 @@ export default function Index({ transactions, filters, counts, employees, packag
     const updateTherapistData = (itemId, data) => {
         router.patch(route('admin.transaction_item.update', itemId), data, {
             preserveState: true,
+            preserveScroll: true,
         });
     };
 
@@ -290,7 +292,9 @@ export default function Index({ transactions, filters, counts, employees, packag
 
     const confirmDelete = (id) => {
         if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
-            destroy(route('admin.transaction.destroy', id));
+            destroy(route('admin.transaction.destroy', id), {
+                preserveScroll: true,
+            });
         }
     };
 

@@ -4,6 +4,7 @@ import axios from 'axios';
 import Navbar from '@/Components/Landing/Navbar';
 import Footer from '@/Components/Landing/Footer';
 import MobileNav from '@/Components/Landing/MobileNav';
+import ReactSelect from 'react-select';
 
 const translations = {
     'ID': {
@@ -116,6 +117,25 @@ const translations = {
     }
 };
 
+const getCountryOptions = (lang) => [
+    { value: '+62', label: '🇮🇩 +62' },
+    { value: '+60', label: '🇲🇾 +60' },
+    { value: '+65', label: '🇸🇬 +65' },
+    { value: '+66', label: '🇹🇭 +66' },
+    { value: '+63', label: '🇵🇭 +63' },
+    { value: '+84', label: '🇻🇳 +84' },
+    { value: '+61', label: '🇦🇺 +61' },
+    { value: '+1',  label: '🇺🇸 +1' },
+    { value: '+44', label: '🇬🇧 +44' },
+    { value: '+81', label: '🇯🇵 +81' },
+    { value: '+82', label: '🇰🇷 +82' },
+    { value: '+86', label: '🇨🇳 +86' },
+    { value: '+91', label: '🇮🇳 +91' },
+    { value: '+966', label: '🇸🇦 +966' },
+    { value: '+971', label: '🇦🇪 +971' },
+    { value: 'other', label: lang === 'ID' ? '🌐 Lainnya' : '🌐 Other' },
+];
+
 export default function Index({ auth, packages = [], signaturePackages = [] }) {
     const { app_settings } = usePage().props;
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
@@ -136,9 +156,17 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
     const [formData, setFormData] = useState(() => {
         const saved = localStorage.getItem('jemari_checkout_form');
-        return saved ? JSON.parse(saved) : {
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            return {
+                ...parsed,
+                countryCode: parsed.countryCode || '+62'
+            };
+        }
+        return {
             name: '',
             phone: '',
+            countryCode: '+62',
             address: '',
             paymentMethod: 'cash',
             source: 'Instagram',
@@ -407,9 +435,19 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
             return `Pelanggan ${i + 1}:\n  Gender: ${g.guestGender === 'pria' ? t.pria : t.wanita}\n  Terapis: ${g.therapistGender === 'pria' ? t.pria : t.wanita}\n  Treatment:\n    ${pkgs || '(Belum pilih paket)'}`;
         }).join('\n\n');
 
+        let fullPhone = formData.phone;
+        if (formData.countryCode !== 'other') {
+            let cleanPhone = formData.phone.toString().replace(/[^0-9]/g, '');
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = cleanPhone.substring(1);
+            }
+            const cleanCountryCode = formData.countryCode.replace('+', '');
+            fullPhone = `${cleanCountryCode}${cleanPhone}`;
+        }
+
         const payload = {
             customer_name: formData.name,
-            phone: formData.phone,
+            phone: fullPhone,
             address: formData.address,
             schedule_date: formData.date,
             schedule_time: formData.time,
@@ -455,7 +493,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
                 const waData = {
                     name: formData.name,
-                    phone: formData.phone,
+                    phone: fullPhone,
                     address: formData.address,
                     date: formattedDate,
                     time: formData.time,
@@ -736,12 +774,47 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
 
                                         <div>
                                             <label className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest block mb-2">{t.phone}</label>
-                                            <input
-                                                required type="tel" placeholder={t.phonePlaceholder}
-                                                className="w-full bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange"
-                                                value={formData.phone}
-                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            />
+                                            <div className="flex gap-2 items-center">
+                                                <div className="w-1/3 min-w-[120px] [&_input:focus]:!ring-0 [&_input:focus]:!border-none [&_input]:!border-none [&_input]:!shadow-none">
+                                                    <ReactSelect
+                                                        options={getCountryOptions(lang)}
+                                                        value={getCountryOptions(lang).find(opt => opt.value === formData.countryCode)}
+                                                        onChange={(option) => setFormData({ ...formData, countryCode: option.value })}
+                                                        isSearchable={true}
+                                                        styles={{
+                                                            control: (base, state) => ({
+                                                                ...base,
+                                                                backgroundColor: '#f8fafc', // bg-zenith-surface
+                                                                border: 'none',
+                                                                borderRadius: '1rem', // rounded-2xl
+                                                                padding: '0.4rem',
+                                                                boxShadow: state.isFocused ? '0 0 0 2px #F97316' : 'none', // focus:ring-2 focus:ring-zenith-orange
+                                                                fontSize: '0.875rem', // text-sm
+                                                                fontWeight: 500, // font-medium
+                                                            }),
+                                                            valueContainer: (base) => ({
+                                                                ...base,
+                                                                padding: '0 8px',
+                                                            }),
+                                                            indicatorSeparator: () => ({ display: 'none' }),
+                                                            dropdownIndicator: (base) => ({ ...base, padding: '0 8px', color: '#94a3b8' }),
+                                                            menu: (base) => ({ ...base, zIndex: 50, borderRadius: '1rem', overflow: 'hidden' }),
+                                                            option: (base, state) => ({
+                                                                ...base,
+                                                                fontSize: '0.875rem',
+                                                                backgroundColor: state.isSelected ? '#F97316' : state.isFocused ? '#f1f5f9' : 'white',
+                                                                color: state.isSelected ? 'white' : '#334155'
+                                                            })
+                                                        }}
+                                                    />
+                                                </div>
+                                                <input
+                                                    required type="tel" placeholder={formData.countryCode === 'other' ? (lang === 'ID' ? 'Contoh: +44 123...' : 'Example: +44 123...') : t.phonePlaceholder}
+                                                    className="flex-1 bg-zenith-surface border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-zenith-orange min-w-0"
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="space-y-6">
