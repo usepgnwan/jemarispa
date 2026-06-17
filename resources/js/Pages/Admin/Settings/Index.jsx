@@ -13,6 +13,7 @@ export default function Index({ auth, settings, serviceAreas }) {
         template_order: settings?.template_order || '',
         template_question: settings?.template_question || '',
         template_invoice: settings?.template_invoice || '',
+        template_invoice_en: settings?.template_invoice_en || '',
         default_commission: settings?.default_commission || 0,
         title: settings?.title || '',
         url_fb: settings?.url_fb || '',
@@ -353,12 +354,25 @@ export default function Index({ auth, settings, serviceAreas }) {
                                 </div>
 
                                 <div>
-                                    <label className="block font-medium text-sm text-gray-700 mb-2">Invoice Billing Template</label>
+                                    <label className="block font-medium text-sm text-gray-700 mb-2">Invoice Billing Template (ID)</label>
                                     <div className="bg-white">
                                         <ReactQuill 
                                             theme="snow" 
                                             value={data.template_invoice} 
                                             onChange={val => setData('template_invoice', val)}
+                                            modules={modules}
+                                        />
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-400">Placeholders: [name], [invoice_no], [details], [transport], [total], [link], [link_review]</p>
+                                </div>
+
+                                <div>
+                                    <label className="block font-medium text-sm text-gray-700 mb-2">Invoice Billing Template (EN)</label>
+                                    <div className="bg-white">
+                                        <ReactQuill 
+                                            theme="snow" 
+                                            value={data.template_invoice_en} 
+                                            onChange={val => setData('template_invoice_en', val)}
                                             modules={modules}
                                         />
                                     </div>
