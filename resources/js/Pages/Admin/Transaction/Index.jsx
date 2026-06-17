@@ -315,10 +315,12 @@ export default function Index({ transactions, filters, counts, employees, packag
         return parseFloat(transaction.voucher.discount_amount);
     };
 
-    const prepareInvoiceMessage = async (transaction) => {
+    const prepareInvoiceMessage = async (transaction, lang = 'id') => {
         if (!transaction) return '';
 
-        let message = app_settings?.template_invoice || defaultInvoiceTemplate;
+        let message = lang === 'en' && app_settings?.template_invoice_en 
+            ? app_settings.template_invoice_en 
+            : app_settings?.template_invoice || defaultInvoiceTemplate;
 
         let linkReview = '';
         if (message.includes('[link_review]')) {
@@ -411,13 +413,13 @@ export default function Index({ transactions, filters, counts, employees, packag
         window.open(finalUrl, '_blank');
     };
 
-    const copyInvoiceText = async (transaction) => {
+    const copyInvoiceText = async (transaction, lang = 'id') => {
         if (!transaction) return;
 
-        const message = await prepareInvoiceMessage(transaction);
+        const message = await prepareInvoiceMessage(transaction, lang);
 
         navigator.clipboard.writeText(message).then(() => {
-            setToastMessage('Teks invoice berhasil disalin!');
+            setToastMessage(lang === 'en' ? 'Teks invoice (EN) berhasil disalin!' : 'Teks invoice berhasil disalin!');
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
         }).catch(err => {
@@ -740,10 +742,18 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                             </button>
                                                             <button
                                                                 onClick={() => copyInvoiceText(transaction)}
-                                                                className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
-                                                                title="Copy Text WA"
+                                                                className="p-2 text-gray-400 hover:text-blue-500 transition-colors flex items-center gap-1"
+                                                                title="Copy Text WA (ID)"
                                                             >
                                                                 <ClipboardDocumentListIcon className="w-5 h-5" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => copyInvoiceText(transaction, 'en')}
+                                                                className="p-2 text-gray-400 hover:text-blue-500 transition-colors flex items-center gap-1"
+                                                                title="Copy Text WA (EN)"
+                                                            >
+                                                                <ClipboardDocumentListIcon className="w-5 h-5" />
+                                                                <span className="text-[10px] font-bold">EN</span>
                                                             </button>
                                                             <a
                                                                 href={route('admin.transaction.pdf', transaction.id)}
@@ -1443,7 +1453,14 @@ export default function Index({ transactions, filters, counts, employees, packag
                                     className="bg-blue-500 hover:bg-blue-600 border-blue-500 inline-flex items-center gap-2 whitespace-nowrap"
                                 >
                                     <ClipboardDocumentListIcon className="w-4 h-4" />
-                                    Copy Text
+                                    Copy Text (ID)
+                                </PrimaryButton>
+                                <PrimaryButton
+                                    onClick={() => copyInvoiceText(selectedTransaction, 'en')}
+                                    className="bg-blue-500 hover:bg-blue-600 border-blue-500 inline-flex items-center gap-2 whitespace-nowrap"
+                                >
+                                    <ClipboardDocumentListIcon className="w-4 h-4" />
+                                    Copy Text (EN)
                                 </PrimaryButton>
                             </div>
 

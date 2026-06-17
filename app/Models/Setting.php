@@ -14,6 +14,7 @@ class Setting extends Model
         'template_order',
         'template_question',
         'template_invoice',
+        'template_invoice_en',
         'default_commission',
         'title',
         'url_fb',

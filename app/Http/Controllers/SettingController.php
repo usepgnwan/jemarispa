@@ -30,6 +30,7 @@ class SettingController extends Controller
             'template_order' => 'nullable|string',
             'template_question' => 'nullable|string',
             'template_invoice' => 'nullable|string',
+            'template_invoice_en' => 'nullable|string',
             'default_commission' => 'nullable|numeric',
             'title' => 'nullable|string|max:255',
             'url_fb' => 'nullable|string|max:255',
