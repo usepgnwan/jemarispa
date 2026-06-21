@@ -1085,7 +1085,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                 <div className="flex-col md:flex-row flex md:items-center gap-2 md:border-l md:border-gray-200 md:pl-4 pl-0 w-full">
                                                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Terapis:</span>
                                                     <ReactSelect
-                                                        className="text-[10px] font-bold text-gray-600 min-w-[150px] flex-1"
+                                                        className="text-[10px] font-bold text-gray-600 min-w-[150px] flex-1 [&_input:focus]:!ring-0 [&_input:focus]:!border-none [&_input]:!border-none [&_input]:!shadow-none"
                                                         styles={{
                                                             control: (base) => ({
                                                                 ...base,
@@ -1144,7 +1144,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                             <div className="gap-2">
                                                 <div className="relative">
                                                     <ReactSelect
-                                                        className="min-w-[200px]"
+                                                        className="min-w-[200px] [&_input:focus]:!ring-0 [&_input:focus]:!border-none [&_input]:!border-none [&_input]:!shadow-none"
                                                         styles={{
                                                             control: (base) => ({
                                                                 ...base,
@@ -1220,7 +1220,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                 <div className="flex items-center gap-2">
                                                                     {item.isNew && <span className="bg-green-100 text-green-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase shrink-0">BARU</span>}
                                                                     <ReactSelect
-                                                                        className="w-full min-w-[180px] sm:min-w-[220px]"
+                                                                        className="w-full min-w-[180px] sm:min-w-[220px] [&_input:focus]:!ring-0 [&_input:focus]:!border-none [&_input]:!border-none [&_input]:!shadow-none"
                                                                         styles={{
                                                                             control: (base) => ({
                                                                                 ...base,
