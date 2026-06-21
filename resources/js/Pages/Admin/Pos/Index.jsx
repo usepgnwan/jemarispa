@@ -637,6 +637,7 @@ jemarihomespa.com`;
                                                             Terapis
                                                         </label>
                                                         <Select
+                                                            className="[&_input:focus]:!ring-0 [&_input:focus]:!border-none [&_input]:!border-none [&_input]:!shadow-none"
                                                             options={employees.map(emp => ({ value: emp.id, label: emp.name }))}
                                                             value={employees.filter(emp => emp.id === guest.employee_id).map(emp => ({ value: emp.id, label: emp.name }))[0] || null}
                                                             onChange={(selectedOption) => updateGuest(gIndex, 'employee_id', selectedOption ? selectedOption.value : '')}
