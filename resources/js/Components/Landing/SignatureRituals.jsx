@@ -67,7 +67,7 @@ export default function SignatureRituals({ lang, rituals = [], setActiveService 
                             {/* Indicator for Mobile */}
                             <div className="absolute top-8 right-8 md:hidden">
                                 <div className={`h-10 w-10 rounded-full bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-transform duration-500 ${activeTab === i ? 'rotate-45' : ''}`}>
-                                    <span className="material-symbols-outlined text-xl">add</span>
+                                    <span aria-hidden="true" className="material-symbols-outlined text-xl">add</span>
                                 </div>
                             </div>
                         </div>

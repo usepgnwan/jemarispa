@@ -100,7 +100,7 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                                             {t.orderNowBtn}
                                         </Link>
                                     </div>
-                                    <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-white/5 text-8xl rotate-12">spa</span>
+                                    <span aria-hidden="true" className="material-symbols-outlined absolute -bottom-4 -right-4 text-white/5 text-8xl rotate-12">spa</span>
                                 </div>
                             </div>
                         </aside>
@@ -117,11 +117,11 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                                 </h1>
                                 <div className="flex items-center gap-x-6 text-[10px] font-bold uppercase tracking-[0.2em] text-zenith-charcoal/40 border-b border-zenith-orange/5 pb-8">
                                     <div className="flex items-center gap-x-2">
-                                        <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                                        <span aria-hidden="true" className="material-symbols-outlined text-[14px]">calendar_today</span>
                                         {new Date(blog.created_at).toLocaleDateString(lang === 'EN' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </div>
                                     <div className="flex items-center gap-x-2 text-zenith-orange">
-                                        <span className="material-symbols-outlined text-[14px]">person</span>
+                                        <span aria-hidden="true" className="material-symbols-outlined text-[14px]">person</span>
                                         {blog.user?.name || t.adminName}
                                     </div>
                                 </div>

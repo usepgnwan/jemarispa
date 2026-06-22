@@ -145,7 +145,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                     value={search}
                                     onChange={handleSearch}
                                 />
-                                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zenith-charcoal/30">search</span>
+                                <span aria-hidden="true" className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zenith-charcoal/30">search</span>
                             </div>
                         </div>
 
@@ -177,7 +177,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                         </p>
                                         <div className="flex items-center gap-x-2 text-zenith-orange font-bold text-[10px] uppercase tracking-widest pt-4 border-t border-zenith-orange/5">
                                             {t.readMore}
-                                            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                                            <span aria-hidden="true" className="material-symbols-outlined text-[14px]">arrow_forward</span>
                                         </div>
                                     </div>
                                 </Link>

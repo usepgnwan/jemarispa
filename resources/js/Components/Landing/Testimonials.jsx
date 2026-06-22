@@ -68,7 +68,7 @@ export default function Testimonials({ testimonials = [], lang = 'ID' }) {
                                 </div>
                                 <div className="flex flex-col items-end shrink-0">
                                     <div className="h-7 w-7 md:h-10 md:w-10 rounded-full bg-zenith-dim/5 flex items-center justify-center mb-2 md:mb-3 group-hover:bg-zenith-orange group-hover:text-white transition-all duration-500">
-                                        <span className="material-symbols-outlined text-xs md:text-base">format_quote</span>
+                                        <span aria-hidden="true" className="material-symbols-outlined text-xs md:text-base">format_quote</span>
                                     </div>
                                     <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[6px] md:text-[8px] font-bold uppercase tracking-widest shadow-sm ${
                                         review.source?.toLowerCase() === 'traveloka' ? 'bg-blue-50 text-blue-600' :

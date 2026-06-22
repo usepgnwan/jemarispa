@@ -59,7 +59,7 @@ export default function Footer({ lang = 'ID', setLang }) {
                         <ul className="space-y-4 text-sm text-white/80 font-medium">
                             {service_areas?.map((area) => (
                                 <li key={area.id} className="flex items-center gap-x-3">
-                                    <span className="material-symbols-outlined text-white text-base font-bold">check</span>
+                                    <span aria-hidden="true" className="material-symbols-outlined text-white text-base font-bold">check</span>
                                     <span>{area.name}</span>
                                 </li>
                             ))}
@@ -70,23 +70,23 @@ export default function Footer({ lang = 'ID', setLang }) {
                         <h4 className="text-lg font-bold mb-8 text-white font-serif">Price List & Reservasi</h4>
                         <ul className="space-y-4 text-sm text-white/80 font-medium">
                             <li className="flex items-center gap-x-3">
-                                <span className="material-symbols-outlined text-white text-base font-bold">check</span>
+                                <span aria-hidden="true" className="material-symbols-outlined text-white text-base font-bold">check</span>
                                 <a href="#pricing" className="hover:text-zenith-orange transition-colors">Reservasi</a>
                             </li>
                             <li className="flex items-center gap-x-3">
-                                <span className="material-symbols-outlined text-white text-base font-bold">check</span>
+                                <span aria-hidden="true" className="material-symbols-outlined text-white text-base font-bold">check</span>
                                 <a href="/treatment" className="hover:text-zenith-orange transition-colors">Price List</a>
                             </li>
                             <li className="flex items-center gap-x-3">
-                                <span className="material-symbols-outlined text-white text-base font-bold">check</span>
+                                <span aria-hidden="true" className="material-symbols-outlined text-white text-base font-bold">check</span>
                                 <span>Phone: {app_settings?.phone}</span>
                             </li>
                             <li className="flex items-center gap-x-3">
-                                <span className="material-symbols-outlined text-white text-base font-bold">check</span>
+                                <span aria-hidden="true" className="material-symbols-outlined text-white text-base font-bold">check</span>
                                 <a href="#" className="hover:text-zenith-orange transition-colors">Privacy Policy</a>
                             </li>
                             <li className="flex items-center gap-x-3">
-                                <span className="material-symbols-outlined text-white text-base font-bold">check</span>
+                                <span aria-hidden="true" className="material-symbols-outlined text-white text-base font-bold">check</span>
                                 <a href="#" className="hover:text-zenith-orange transition-colors">Term & Condition</a>
                             </li>
                         </ul>

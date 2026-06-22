@@ -82,7 +82,7 @@ export default function MobileNav({ setActiveService, lang = 'ID' }) {
                             className="flex flex-col items-center gap-y-1 relative group"
                         >
                             <div className="relative">
-                                <span className={`material-symbols-outlined text-[22px] transition-colors duration-300 ${item.active ? 'text-zenith-orange' : 'text-zenith-charcoal/60 group-hover:text-zenith-orange'}`}>
+                                <span aria-hidden="true" className={`material-symbols-outlined text-[22px] transition-colors duration-300 ${item.active ? 'text-zenith-orange' : 'text-zenith-charcoal/60 group-hover:text-zenith-orange'}`}>
                                     {item.icon}
                                 </span>
                                 {item.isCart && cartCount > 0 && (
