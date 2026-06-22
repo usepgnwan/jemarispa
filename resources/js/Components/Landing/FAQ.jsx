@@ -79,7 +79,7 @@ export default function FAQ({ lang: propLang }) {
                                             <span className="font-bold text-zenith-charcoal tracking-tight text-sm pr-4">
                                                 {question}
                                             </span>
-                                            <span className={`material-symbols-outlined transition-transform duration-500 text-zenith-orange text-sm ${openIndex === i ? 'rotate-180' : ''}`}>
+                                            <span aria-hidden="true" className={`material-symbols-outlined transition-transform duration-500 text-zenith-orange text-sm ${openIndex === i ? 'rotate-180' : ''}`}>
                                                 expand_more
                                             </span>
                                         </button>

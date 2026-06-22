@@ -60,7 +60,7 @@ export default function FloatingWhatsApp() {
                             onClick={() => setIsOpen(false)} 
                             className="h-8 w-8 rounded-full bg-zenith-surface flex items-center justify-center text-gray-400 hover:text-zenith-orange transition-colors"
                         >
-                            <span className="material-symbols-outlined text-[18px]">close</span>
+                            <span aria-hidden="true" className="material-symbols-outlined text-[18px]">close</span>
                         </button>
                     </div>
                     
@@ -115,7 +115,7 @@ export default function FloatingWhatsApp() {
                     
                     <div className={`relative h-16 w-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 ${isOpen ? 'bg-zenith-charcoal rotate-90 shadow-zenith-charcoal/40' : 'bg-[#25D366] shadow-green-500/40 hover:scale-110'}`}>
                         {isOpen ? (
-                            <span className="material-symbols-outlined text-white text-3xl">close</span>
+                            <span aria-hidden="true" className="material-symbols-outlined text-white text-3xl">close</span>
                         ) : (
                             <svg 
                                 className="w-8 h-8 text-white" 

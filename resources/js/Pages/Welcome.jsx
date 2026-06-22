@@ -232,7 +232,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                                             {platform.logo ? (
                                                 <img src={`/storage/${platform.logo}`} alt={platform.title} className="w-5 h-5 object-contain" />
                                             ) : (
-                                                <span className="material-symbols-outlined text-sm text-zenith-orange">link</span>
+                                                <span aria-hidden="true" className="material-symbols-outlined text-sm text-zenith-orange">link</span>
                                             )}
                                             {platform.title}
                                         </a>
@@ -254,9 +254,9 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                                     {/* Phone Screen Content */}
                                     <div className="absolute inset-0 bg-zenith-surface z-10 p-6 flex flex-col">
                                         <div className="flex justify-between items-center mb-8 mt-4">
-                                            <span className="material-symbols-outlined text-zenith-orange">menu</span>
+                                            <span aria-hidden="true" className="material-symbols-outlined text-zenith-orange">menu</span>
                                             <span className="font-bold text-zenith-orange tracking-[0.2em] text-[10px]">JEMARI SPA</span>
-                                            <span className="material-symbols-outlined text-zenith-orange">account_circle</span>
+                                            <span aria-hidden="true" className="material-symbols-outlined text-zenith-orange">account_circle</span>
                                         </div>
 
                                         <div className="bg-white rounded-2xl p-5 shadow-sm mb-6 border border-zenith-orange/10">
@@ -267,7 +267,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                                         <div className="space-y-4">
                                             <div className="bg-white rounded-2xl p-4 flex gap-4 border border-zenith-orange/5 shadow-sm">
                                                 <div className="w-10 h-10 bg-zenith-orange/5 rounded-xl flex items-center justify-center text-zenith-orange">
-                                                    <span className="material-symbols-outlined text-lg">medical_services</span>
+                                                    <span aria-hidden="true" className="material-symbols-outlined text-lg">medical_services</span>
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-xs text-zenith-charcoal">Bekam Profesional</p>
@@ -277,7 +277,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
 
                                             <div className="bg-white rounded-2xl p-4 flex gap-4 border border-zenith-orange/5 shadow-sm">
                                                 <div className="w-10 h-10 bg-zenith-orange/5 rounded-xl flex items-center justify-center text-zenith-orange">
-                                                    <span className="material-symbols-outlined text-lg">spa</span>
+                                                    <span aria-hidden="true" className="material-symbols-outlined text-lg">spa</span>
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-xs text-zenith-charcoal">Pijat Tradisional</p>
@@ -323,7 +323,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
 
             <Modal show={showOpsModal} onClose={() => setShowOpsModal(false)}>
                 <div className="p-8 text-center">
-                    <span className="material-symbols-outlined text-6xl text-amber-500 mb-4 block">schedule</span>
+                    <span aria-hidden="true" className="material-symbols-outlined text-6xl text-amber-500 mb-4 block">schedule</span>
                     <h2 className="text-xl font-bold text-gray-900 mb-4">Mohon Maaf, Jam Operasional Kami Sudah Berakhir 🙏🏻</h2>
                     <p className="text-gray-600 mb-8 leading-relaxed">
                         Pesanan Kakak akan kami proses di jam kerja mulai dari pukul <span className="font-bold text-zenith-orange">{app_settings?.operational_start?.substring(0, 5)} - {app_settings?.operational_end?.substring(0, 5)}</span> ya 😊

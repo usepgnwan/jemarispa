@@ -157,9 +157,12 @@ jemarihomespa.com`;
     };
 
     const saveTransaction = () => {
+        // Filter out placeholder items (no package selected yet)
+        const realNewItems = newItems.filter(item => !item.isPlaceholder && item.package_name);
+
         // Calculate total price including existing items, new items, transport, and penalty
         const baseTotal = selectedTransaction.items.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
-        const newItemsTotal = newItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+        const newItemsTotal = realNewItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
         const transport = parseFloat(selectedTransaction.transport_fee || 0);
 
         // Apply discount if exists
@@ -173,7 +176,7 @@ jemarihomespa.com`;
 
         router.patch(route('admin.transaction.update', selectedTransaction.id), {
             ...selectedTransaction,
-            new_items: newItems,
+            new_items: realNewItems,
             deleted_items: deletedItems,
             items: selectedTransaction.items || [],
             penalty_percent: pPercent,
@@ -821,19 +824,42 @@ jemarihomespa.com`;
                                                             <div className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border mb-2 ${statusColors[currentData.status]}`}>
                                                                 {statusLabels[currentData.status]}
                                                             </div>
-                                                            <h3 className="text-xl font-black text-gray-900">{currentData.customer_name}</h3>
-                                                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5">
-                                                                {auth.user.role !== 'terapis' && (
-                                                                    <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400">
-                                                                        <PhoneIcon className="w-3 h-3" />
-                                                                        {currentData.phone}
-                                                                    </span>
-                                                                )}
-                                                                <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400 shrink-0">
-                                                                    <MapPinIcon className="w-3 h-3" />
-                                                                    {currentData.address}
-                                                                </span>
-                                                            </div>
+                                                            {isEditing ? (
+                                                                <div className="space-y-1">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="text-xl font-black text-gray-900 bg-white border border-gray-200 rounded-xl px-3 py-1.5 w-full focus:ring-zenith-orange focus:border-zenith-orange"
+                                                                        value={selectedTransaction.customer_name || ''}
+                                                                        onChange={(e) => setSelectedTransaction({ ...selectedTransaction, customer_name: e.target.value })}
+                                                                        placeholder="Nama customer..."
+                                                                    />
+                                                                    {auth.user.role !== 'terapis' && (
+                                                                        <input
+                                                                            type="text"
+                                                                            className="text-xs text-gray-500 bg-white border border-gray-100 rounded-xl px-3 py-1 w-full focus:ring-zenith-orange focus:border-zenith-orange"
+                                                                            value={selectedTransaction.phone || ''}
+                                                                            onChange={(e) => setSelectedTransaction({ ...selectedTransaction, phone: e.target.value })}
+                                                                            placeholder="Nomor telepon..."
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <h3 className="text-xl font-black text-gray-900">{currentData.customer_name}</h3>
+                                                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5">
+                                                                        {auth.user.role !== 'terapis' && (
+                                                                            <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400">
+                                                                                <PhoneIcon className="w-3 h-3" />
+                                                                                {currentData.phone}
+                                                                            </span>
+                                                                        )}
+                                                                        <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-gray-400 shrink-0">
+                                                                            <MapPinIcon className="w-3 h-3" />
+                                                                            {currentData.address}
+                                                                        </span>
+                                                                    </div>
+                                                                </>
+                                                            )}
                                                         </div>
                                                         <div className="flex gap-2">
                                                             {!isEditing && auth.user.role !== 'terapis' && (
@@ -1048,7 +1074,7 @@ jemarihomespa.com`;
                                                                                         }))
                                                                                     }))}
                                                                                     value={null}
-                                                                                    onChange={(selectedOption) => {
+                                                                                        onChange={(selectedOption) => {
                                                                                         if (!selectedOption) return;
                                                                                         const [pkgId, durIdx] = selectedOption.value.split('|');
                                                                                         const pkg = packages.find(p => p.id == pkgId);
@@ -1063,19 +1089,33 @@ jemarihomespa.com`;
                                                                                             isNew: true,
                                                                                             tempId: Date.now() + Math.random()
                                                                                         };
-                                                                                        recalculateCommission(guestIdx, [...newItems, newItem], selectedTransaction.items);
+                                                                                        // Remove any placeholder for this guest before adding real item
+                                                                                        const filteredNewItems = newItems.filter(ni => !(ni.guest_index == guestIdx && ni.isPlaceholder));
+                                                                                        recalculateCommission(guestIdx, [...filteredNewItems, newItem], selectedTransaction.items);
                                                                                     }}
                                                                                     isSearchable
                                                                                 />
                                                                             </div>
                                                                         )}
                                                                     </div>
+                                                                    {/* Hapus Customer button for new-only guest groups */}
+                                                                    {isEditing && items.every(it => it.isNew) && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setNewItems(newItems.filter(ni => ni.guest_index != guestIdx))}
+                                                                            className="flex items-center gap-1 text-[9px] font-bold text-red-400 hover:text-red-600 uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-red-50 transition-colors border border-red-200 hover:border-red-300 whitespace-nowrap"
+                                                                            title="Hapus customer baru ini"
+                                                                        >
+                                                                            <XMarkIcon className="w-3 h-3" />
+                                                                            Hapus Customer
+                                                                        </button>
+                                                                    )}
                                                                 </div>
 
                                                                 {/* Package Table */}
                                                                 <table className="w-full text-xs">
                                                                     <tbody className="divide-y divide-gray-50">
-                                                                        {items.map((item, idx) => (
+                                                                        {items.filter(item => !item.isPlaceholder).map((item, idx) => (
                                                                             <tr key={idx} className={item.isNew ? 'bg-green-50/30' : ''}>
                                                                                 <td className="px-4 py-2.5">
                                                                                     <div className="flex items-center gap-2">
@@ -1175,6 +1215,35 @@ jemarihomespa.com`;
                                                             </div>
                                                         );
                                                     })}
+
+                                                    {/* Add New Customer Button */}
+                                                    {isEditing && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const allItems = [...(selectedTransaction?.items || []), ...newItems];
+                                                                const maxGuestIdx = allItems.reduce((max, it) => Math.max(max, parseInt(it.guest_index || 1)), 0);
+                                                                const nextGuestIndex = maxGuestIdx + 1;
+                                                                const placeholderItem = {
+                                                                    guest_index: nextGuestIndex,
+                                                                    package_name: '',
+                                                                    package_duration: '',
+                                                                    price: 0,
+                                                                    therapist_commission: 0,
+                                                                    employee_id: '',
+                                                                    guest_gender: 'wanita',
+                                                                    isNew: true,
+                                                                    isPlaceholder: true,
+                                                                    tempId: Date.now() + Math.random()
+                                                                };
+                                                                setNewItems([...newItems, placeholderItem]);
+                                                            }}
+                                                            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zenith-orange/30 hover:border-zenith-orange/60 text-zenith-orange/60 hover:text-zenith-orange rounded-2xl py-3 text-[11px] font-bold uppercase tracking-widest transition-all hover:bg-zenith-orange/5"
+                                                        >
+                                                            <PlusIcon className="w-4 h-4" />
+                                                            Tambah Customer Baru
+                                                        </button>
+                                                    )}
                                                 </div>
 
                                                 {/* Footer Summary */}

@@ -226,7 +226,7 @@ export default function Hero({ activeService, lang, hideButtonsAndStats = false 
                             <div className="text-center">
                                 <div className="flex items-center justify-center gap-1">
                                     <p className="text-white text-2xl font-serif italic">4.9</p>
-                                    <span className="material-symbols-outlined text-zenith-gold text-lg">star</span>
+                                    <span aria-hidden="true" className="material-symbols-outlined text-zenith-gold text-lg">star</span>
                                 </div>
                                 <p className="text-white/60 text-[8px] font-bold uppercase tracking-[0.1em] mt-1">{lang === 'ID' ? 'Penilaian Pengguna' : 'User Rating'}</p>
                             </div>

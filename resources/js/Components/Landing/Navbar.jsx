@@ -143,7 +143,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
 
                         <div className="relative" onMouseEnter={() => setShowServices(true)} onMouseLeave={() => setShowServices(false)}>
                             <button className={`flex items-center gap-x-1 uppercase transition-colors ${activeService !== 'Default' ? 'text-zenith-orange' : inactiveClass}`}>
-                                {t.service} <span className="material-symbols-outlined text-[12px]">expand_more</span>
+                                {t.service} <span aria-hidden="true" className="material-symbols-outlined text-[12px]">expand_more</span>
                             </button>
 
                             <div className={`absolute top-full left-0 pt-4 transition-all duration-300 ${showServices ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
@@ -161,7 +161,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                             className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-between group ${activeService === s ? 'bg-zenith-orange/5 text-zenith-orange' : 'text-zenith-charcoal/60 hover:text-zenith-orange hover:bg-zenith-orange/5'}`}
                                         >
                                             {sLabel[s]}
-                                            <span className={`material-symbols-outlined text-[14px] transition-opacity ${activeService === s ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>arrow_forward</span>
+                                            <span aria-hidden="true" className={`material-symbols-outlined text-[14px] transition-opacity ${activeService === s ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>arrow_forward</span>
                                         </button>
                                     ))}
                                 </div>
@@ -221,7 +221,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                             onClick={() => logAnalytic('Menu', 'Klik Keranjang')}
                             className={`relative h-12 w-12 flex items-center justify-center rounded-full transition-all shadow-lg shadow-zenith-orange/5 group ${currentPath === '/cart' ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange hover:bg-zenith-orange hover:text-white'}`}
                         >
-                            <span className="material-symbols-outlined">shopping_bag</span>
+                            <span aria-hidden="true" className="material-symbols-outlined">shopping_bag</span>
                             {cartCount > 0 && (
                                 <span className={`absolute -top-1 -right-1 h-5 w-5 text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-md ${currentPath === '/cart' ? 'bg-zenith-gold text-zenith-charcoal' : 'bg-zenith-gold text-zenith-charcoal'}`}>
                                     {cartCount}
@@ -261,7 +261,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                 onClick={() => setShowServices(!showServices)}
                                 className={`h-10 w-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${showServices ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange'}`}
                             >
-                                <span className="material-symbols-outlined text-[20px]">spa</span>
+                                <span aria-hidden="true" className="material-symbols-outlined text-[20px]">spa</span>
                             </button>
                             
                             {/* Mobile Services Dropdown */}
@@ -280,7 +280,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                                             className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-between group ${activeService === s ? 'bg-zenith-orange/5 text-zenith-orange' : 'text-zenith-charcoal/60 hover:text-zenith-orange hover:bg-zenith-orange/5'}`}
                                         >
                                             {sLabel[s]}
-                                            <span className={`material-symbols-outlined text-[14px] transition-opacity ${activeService === s ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>arrow_forward</span>
+                                            <span aria-hidden="true" className={`material-symbols-outlined text-[14px] transition-opacity ${activeService === s ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>arrow_forward</span>
                                         </button>
                                     ))}
                                 </div>
@@ -292,7 +292,7 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                             onClick={() => logAnalytic('Menu', 'Klik Keranjang (Mobile)')}
                             className={`relative h-10 w-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${currentPath === '/cart' ? 'bg-zenith-orange text-white' : 'bg-zenith-orange/10 text-zenith-orange'}`}
                         >
-                            <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
+                            <span aria-hidden="true" className="material-symbols-outlined text-[20px]">shopping_bag</span>
                             {cartCount > 0 && (
                                 <span className="absolute -top-1 -right-1 h-4 w-4 bg-zenith-gold text-zenith-charcoal text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">
                                     {cartCount}

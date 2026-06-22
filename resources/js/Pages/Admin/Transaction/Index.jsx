@@ -200,9 +200,12 @@ export default function Index({ transactions, filters, counts, employees, packag
     };
 
     const saveTransaction = () => {
+        // Filter out placeholder items (no package selected yet)
+        const realNewItems = newItems.filter(item => !item.isPlaceholder && item.package_name);
+
         // Calculate total price including existing items, new items, transport, and penalty
         const baseTotal = selectedTransaction.items.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
-        const newItemsTotal = newItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+        const newItemsTotal = realNewItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
         const transport = parseFloat(selectedTransaction.transport_fee || 0);
 
         // Apply discount if exists
@@ -216,7 +219,7 @@ export default function Index({ transactions, filters, counts, employees, packag
 
         router.patch(route('admin.transaction.update', selectedTransaction.id), {
             ...selectedTransaction,
-            new_items: newItems,
+            new_items: realNewItems,
             deleted_items: deletedItems,
             items: selectedTransaction.items,
             penalty_percent: pPercent,
@@ -918,10 +921,28 @@ export default function Index({ transactions, filters, counts, employees, packag
                             <div className="space-y-6">
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Informasi Pelanggan</label>
-                                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                        <p className="text-sm font-bold text-gray-900">{selectedTransaction?.customer_name}</p>
-                                        <p className="text-sm text-gray-600">{selectedTransaction?.phone}</p>
-                                        <div className="mt-3 pt-3 border-t border-gray-200">
+                                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
+                                        <div>
+                                            <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Nama Customer</label>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 px-3 py-2 focus:ring-zenith-orange focus:border-zenith-orange transition-colors"
+                                                value={selectedTransaction?.customer_name || ''}
+                                                onChange={(e) => setSelectedTransaction({ ...selectedTransaction, customer_name: e.target.value })}
+                                                placeholder="Nama customer..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Nomor Telepon</label>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-white border border-gray-200 rounded-xl text-sm text-gray-600 px-3 py-2 focus:ring-zenith-orange focus:border-zenith-orange transition-colors"
+                                                value={selectedTransaction?.phone || ''}
+                                                onChange={(e) => setSelectedTransaction({ ...selectedTransaction, phone: e.target.value })}
+                                                placeholder="Nomor telepon..."
+                                            />
+                                        </div>
+                                        <div className="pt-2 border-t border-gray-200">
                                             <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Alamat Pengantaran</label>
                                             <p className="text-xs text-gray-500 leading-relaxed">{selectedTransaction?.address || 'Tidak ada alamat.'}</p>
                                         </div>
@@ -1194,13 +1215,29 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                 tempId: Date.now() + Math.random()
                                                             };
 
-                                                            recalculateCommission(guestIndex, [...newItems, newItem], selectedTransaction.items);
+                                                            // Remove any placeholder item for this guest before adding the real item
+                                                            const filteredNewItems = newItems.filter(ni => !(ni.guest_index == guestIndex && ni.isPlaceholder));
+                                                            recalculateCommission(guestIndex, [...filteredNewItems, newItem], selectedTransaction.items);
                                                         }}
                                                         isSearchable
                                                     />
                                                     {/* <PlusIcon className="w-3 h-3 text-zenith-orange absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" /> */}
                                                 </div>
                                                 <span className="text-[10px] font-bold text-zenith-orange uppercase">Pelanggan Request : {items[0]?.guest_gender}</span>
+                                                {/* Remove entire new guest group */}
+                                                {items.every(it => it.isNew) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setNewItems(newItems.filter(ni => ni.guest_index != guestIndex));
+                                                        }}
+                                                        className="flex items-center gap-1 text-[9px] font-bold text-red-400 hover:text-red-600 uppercase tracking-wider px-2 py-1 rounded-lg hover:bg-red-50 transition-colors border border-red-200 hover:border-red-300 whitespace-nowrap"
+                                                        title="Hapus customer baru ini"
+                                                    >
+                                                        <XMarkIcon className="w-3 h-3" />
+                                                        Hapus Customer
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
@@ -1214,7 +1251,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-100">
-                                                    {items.map((item, idx) => (
+                                                    {items.filter(item => !item.isPlaceholder).map((item, idx) => (
                                                         <tr key={idx} className={item.isNew ? 'bg-green-50/30' : ''}>
                                                             <td className="px-4 py-3">
                                                                 <div className="flex items-center gap-2">
@@ -1341,6 +1378,34 @@ export default function Index({ transactions, filters, counts, employees, packag
                                         </div>
                                     </div>
                                 ))}
+
+                                {/* Add New Customer (Guest) Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const allItems = [...(selectedTransaction?.items || []), ...newItems];
+                                        const maxGuestIdx = allItems.reduce((max, it) => Math.max(max, parseInt(it.guest_index || 1)), 0);
+                                        const nextGuestIndex = maxGuestIdx + 1;
+                                        // Add a placeholder new item for the new guest so it shows up
+                                        const placeholderItem = {
+                                            guest_index: nextGuestIndex,
+                                            package_name: '',
+                                            package_duration: '',
+                                            price: 0,
+                                            therapist_commission: 0,
+                                            employee_id: '',
+                                            guest_gender: 'wanita',
+                                            isNew: true,
+                                            isPlaceholder: true,
+                                            tempId: Date.now() + Math.random()
+                                        };
+                                        setNewItems([...newItems, placeholderItem]);
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zenith-orange/30 hover:border-zenith-orange/60 text-zenith-orange/60 hover:text-zenith-orange rounded-2xl py-3 text-[11px] font-bold uppercase tracking-widest transition-all hover:bg-zenith-orange/5"
+                                >
+                                    <PlusIcon className="w-4 h-4" />
+                                    Tambah Customer Baru
+                                </button>
 
                                 <div className="bg-zenith-orange/5 p-6 rounded-2xl border border-zenith-orange/10 mt-6">
                                     <div className="flex justify-between items-start md:flex-row flex-col gap-6">

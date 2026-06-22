@@ -27,7 +27,7 @@ export default function Contact({ lang = 'ID' }) {
 
                         <div>
                             <button onClick={() => window.location.href = '/cart'} className="inline-flex items-center gap-x-3 bg-zenith-orange text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-zenith-orange/30 hover:bg-zenith-orange/80 transition-all transform hover:-translate-y-1">
-                                <span className="material-symbols-outlined text-sm">calendar_month</span>
+                                <span aria-hidden="true" className="material-symbols-outlined text-sm">calendar_month</span>
                                 {t.button}
                             </button>
                         </div>

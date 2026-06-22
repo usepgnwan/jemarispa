@@ -278,7 +278,7 @@ export default function Pricing({ packages = [], lang = 'ID', activeService = 'D
                             onClick={handleClearFilter}
                             className="text-[10px] font-bold text-gray-400 hover:text-zenith-orange transition-colors uppercase tracking-widest flex items-center gap-1"
                         >
-                            <span className="material-symbols-outlined text-sm">close</span>
+                            <span aria-hidden="true" className="material-symbols-outlined text-sm">close</span>
                             {t.clearLabel}
                         </button>
                     </div>
@@ -306,7 +306,7 @@ export default function Pricing({ packages = [], lang = 'ID', activeService = 'D
                         className="inline-flex items-center gap-x-3 text-[10px] font-bold uppercase tracking-[0.3em] text-zenith-orange hover:text-zenith-charcoal transition-all group"
                     >
                         {t.seeAll}
-                        <span className="material-symbols-outlined text-[18px] group-hover:translate-x-2 transition-transform">arrow_forward</span>
+                        <span aria-hidden="true" className="material-symbols-outlined text-[18px] group-hover:translate-x-2 transition-transform">arrow_forward</span>
                     </Link>
                 </div>
             </div>
@@ -315,7 +315,7 @@ export default function Pricing({ packages = [], lang = 'ID', activeService = 'D
             {toast.show && (
                 <div className="fixed bottom-10 right-10 z-[110] animate-slide-up">
                     <div className="bg-zenith-charcoal text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-x-4 border border-white/10">
-                        <span className="material-symbols-outlined text-zenith-orange">check_circle</span>
+                        <span aria-hidden="true" className="material-symbols-outlined text-zenith-orange">check_circle</span>
                         <p className="text-[10px] font-bold uppercase tracking-widest">{toast.message}</p>
                     </div>
                 </div>
