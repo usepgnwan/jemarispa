@@ -15,6 +15,12 @@ Route::get('/', function () {
         'packages' => \App\Models\Package::with(['durations' => fn($q) => $q->where('status', 'public')])->where('is_signature', false)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
         'testimonials' => \App\Models\Testimoni::where('is_published', true)->inRandomOrder()->take(6)->get(),
         'platforms' => \App\Models\Platform::latest()->get()
+    ])->withViewData([
+        'meta' => [
+            'title' => 'Pijat Panggilan Bandung & Cimahi 24 Jam - Jemari Home Spa',
+            'description' => 'Layanan pijat panggilan Bandung 24 jam terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi. Terapis pria & wanita profesional.'
+            // static_content not specified here, so app.blade.php will use the default static HTML block
+        ]
     ]);
 });
 
@@ -276,11 +282,27 @@ Route::get('/blog', [BlogController::class, 'publicIndex'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'publicShow'])->name('blog.show');
 
 Route::get('/treatment/{slug?}', function ($slug = null) {
+    $meta = [
+        'title' => 'Harga Layanan Spa & Pijat Panggilan Bandung - Jemari Home Spa',
+        'description' => 'Daftar harga layanan pijat panggilan, lulur, dan spa dari Jemari Home Spa. Tersedia paket pijat tradisional, refleksi, totok wajah dengan harga terjangkau.',
+        'static_content' => '<h1>Harga Layanan Pijat Panggilan Bandung</h1><p>Lihat daftar lengkap harga dan paket layanan Jemari Home Spa. Kami menawarkan Pijat Tradisional, Lulur, Totok Wajah, dan Refleksi panggilan ke rumah dan hotel Anda.</p>',
+    ];
+
+    if ($slug) {
+        // Attempt to find the specific package based on the slug
+        $package = \App\Models\Package::where('title_id', 'ilike', str_replace('-', ' ', $slug))->first();
+        if ($package) {
+            $meta['title'] = $package->title_id . ' - Jemari Home Spa Bandung';
+            $meta['description'] = strip_tags($package->description_id);
+            $meta['static_content'] = '<h1>' . $package->title_id . '</h1><p>' . $meta['description'] . '</p>';
+        }
+    }
+
     return Inertia::render('Pricing/Index', [
         'packages' => \App\Models\Package::with(['durations' => fn($q) => $q->where('status', 'public')])->where('is_signature', false)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
         'signaturePackages' => \App\Models\Package::where('is_signature', true)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
         'initialSlug' => $slug
-    ]);
+    ])->withViewData(['meta' => $meta]);
 })->name('treatment.index');
 
 Route::redirect('/pricing', '/treatment', 301);
@@ -289,6 +311,12 @@ Route::get('/cart', function () {
     return Inertia::render('Cart/Index', [
         'packages' => \App\Models\Package::with(['durations' => fn($q) => $q->where('status', 'public')])->where('is_signature', false)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
         'signaturePackages' => \App\Models\Package::where('is_signature', true)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
+    ])->withViewData([
+        'meta' => [
+            'title' => 'Keranjang Pemesanan - Jemari Home Spa',
+            'description' => 'Selesaikan pemesanan layanan pijat panggilan Jemari Home Spa Anda.',
+            'static_content' => '<h1>Keranjang Pemesanan Pijat Panggilan</h1><p>Halaman checkout untuk pemesanan layanan Jemari Home Spa.</p>'
+        ]
     ]);
 })->name('cart.index');
 

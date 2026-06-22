@@ -55,6 +55,12 @@ class BlogController extends Controller
             'blogs' => $blogs,
             'filters' => $request->only(['search', 'tag']),
             'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
+        ])->withViewData([
+            'meta' => [
+                'title' => 'Blog & Artikel Kesehatan - Jemari Home Spa',
+                'description' => 'Temukan artikel menarik seputar kesehatan, manfaat pijat, dan tips gaya hidup sehat dari Jemari Spa.',
+                'static_content' => '<h1>Blog Kesehatan Jemari Home Spa</h1><p>Kumpulan artikel dan tips kesehatan, manfaat pijat tradisional, dan panduan relaksasi dari Jemari Home Spa.</p>'
+            ]
         ]);
     }
 
@@ -71,6 +77,12 @@ class BlogController extends Controller
             'blog' => $blog,
             'suggestions' => $suggestions,
             'signaturePackages' => \App\Models\Package::where('is_signature', true)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get()
+        ])->withViewData([
+            'meta' => [
+                'title' => $blog->title . ' - Jemari Home Spa',
+                'description' => Str::limit(strip_tags($blog->description), 150),
+                'static_content' => '<h1>' . $blog->title . '</h1><div>' . $blog->description . '</div>'
+            ]
         ]);
     }
 
