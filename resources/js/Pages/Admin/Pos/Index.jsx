@@ -959,7 +959,7 @@ jemarihomespa.com`;
                                 <XMarkIcon className="w-6 h-6" />
                             </button>
                         </div>
-                        
+
                         <div className="relative">
                             <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
                             <input
@@ -992,7 +992,7 @@ jemarihomespa.com`;
                                             >
                                                 {pkg.durations.map((d, i) => (
                                                     <option key={d.id} value={i}>
-                                                        {d.duration} {d.description ? `- ${d.description}` : ''}
+                                                        {d.duration} {d.description ? ` ${d.description}` : ''}
                                                     </option>
                                                 ))}
                                             </select>
@@ -1125,30 +1125,30 @@ jemarihomespa.com`;
                             Data transaksi telah disimpan secara otomatis ke dalam sistem. Klik tombol di bawah untuk mengirim invoice via WhatsApp.
                         </p>
 
-                    <div className="flex flex-col gap-3">
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={sendWhatsApp}
+                                    className="py-4 bg-green-500 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-green-500/20 hover:bg-green-600 transition-all flex items-center justify-center gap-3"
+                                >
+                                    <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                                    Kirim WA
+                                </button>
+                                <button
+                                    onClick={() => copyInvoiceText()}
+                                    className="py-4 bg-zenith-charcoal text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-charcoal/20 hover:bg-black transition-all flex items-center justify-center gap-3"
+                                >
+                                    <ClipboardDocumentListIcon className="w-5 h-5" />
+                                    Copy Text
+                                </button>
+                            </div>
                             <button
-                                onClick={sendWhatsApp}
-                                className="py-4 bg-green-500 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-green-500/20 hover:bg-green-600 transition-all flex items-center justify-center gap-3"
+                                onClick={() => setShowInvoiceModal(false)}
+                                className="w-full py-4 bg-gray-100 text-gray-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-gray-200 transition-all"
                             >
-                                <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                                Kirim WA
-                            </button>
-                            <button
-                                onClick={() => copyInvoiceText()}
-                                className="py-4 bg-zenith-charcoal text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-zenith-charcoal/20 hover:bg-black transition-all flex items-center justify-center gap-3"
-                            >
-                                <ClipboardDocumentListIcon className="w-5 h-5" />
-                                Copy Text
+                                Tutup
                             </button>
                         </div>
-                        <button
-                            onClick={() => setShowInvoiceModal(false)}
-                            className="w-full py-4 bg-gray-100 text-gray-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-gray-200 transition-all"
-                        >
-                            Tutup
-                        </button>
-                    </div>
                     </div>
                 </div>
             </Modal>

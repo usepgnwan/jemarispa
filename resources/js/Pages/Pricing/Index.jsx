@@ -72,7 +72,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
         syncService();
 
         if (initialSlug && signaturePackages.length > 0) {
-            const matchingService = signaturePackages.find(s => 
+            const matchingService = signaturePackages.find(s =>
                 (s.title_id && s.title_id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') === initialSlug) ||
                 (s.title_en && s.title_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') === initialSlug)
             );
@@ -84,7 +84,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
 
         window.addEventListener('cart-updated', checkSelection);
         window.addEventListener('storage', syncService);
-        
+
         // Listen for custom event if Navbar uses it
         window.addEventListener('active-service-updated', syncService);
 
@@ -105,15 +105,15 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
     // Filter packages based on activeService
     const filteredPackages = useMemo(() => {
         if (!activeService || activeService === 'Default') return packages;
-        
+
         // Find matching signature package by title
-        const matchingSignature = signaturePackages.find(s => 
+        const matchingSignature = signaturePackages.find(s =>
             s.title_id.toLowerCase() === activeService.toLowerCase() ||
             (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
         );
 
         const search = activeService.toLowerCase();
-        
+
         return packages.filter(pkg => {
             // If we found a matching Signature Ritual (Main Service), 
             // filter EXCLUSIVELY by parent_id for maximum precision.
@@ -127,19 +127,19 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
             const catEn = (pkg.category_en || '').toLowerCase();
             const titleId = (pkg.title_id || '').toLowerCase();
             const titleEn = (pkg.title_en || '').toLowerCase();
-            
-            return catId.includes(search) || 
-                   catEn.includes(search) || 
-                   titleId.includes(search) || 
-                   titleEn.includes(search);
+
+            return catId.includes(search) ||
+                catEn.includes(search) ||
+                titleId.includes(search) ||
+                titleEn.includes(search);
         });
     }, [packages, activeService, signaturePackages]);
 
     // Get reactive display name for the active service
     const displayService = useMemo(() => {
         if (!activeService || activeService === 'Default') return '';
-        
-        const matchingSignature = signaturePackages.find(s => 
+
+        const matchingSignature = signaturePackages.find(s =>
             s.title_id.toLowerCase() === activeService.toLowerCase() ||
             (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
         );
@@ -215,13 +215,13 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                 <meta name="keywords" content="harga pijat panggilan bandung, pricelist jemari spa, biaya bekam bandung, paket spa rumah bandung" />
             </Head>
 
-            <Navbar 
-                auth={auth} 
-                lang={lang} 
-                setLang={setLang} 
-                forceSolid={activeService === 'Default'} 
-                signaturePackages={signaturePackages} 
-                activeService={activeService} 
+            <Navbar
+                auth={auth}
+                lang={lang}
+                setLang={setLang}
+                forceSolid={activeService === 'Default'}
+                signaturePackages={signaturePackages}
+                activeService={activeService}
                 setActiveService={handleSetActiveService}
             />
 
@@ -246,7 +246,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                                     <span className="material-symbols-outlined text-sm md:text-base">filter_list</span>
                                     {t.filterLabel}: {displayService}
                                 </span>
-                                <button 
+                                <button
                                     onClick={() => handleSetActiveService('Default')}
                                     className="text-[10px] font-bold text-gray-500 hover:text-white transition-all uppercase tracking-widest flex items-center gap-1 bg-white hover:bg-zenith-orange px-4 py-2 rounded-full shadow-sm border border-gray-100"
                                 >
@@ -311,7 +311,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                                                             >
                                                                 {pkg.durations.map((d, i) => (
                                                                     <option key={d.id} value={i}>
-                                                                        {formatDuration(d.duration)} {d.description ? `- ${d.description}` : ''}
+                                                                        {formatDuration(d.duration)} {d.description ? `${d.description}` : ''}
                                                                     </option>
                                                                 ))}
                                                             </select>
