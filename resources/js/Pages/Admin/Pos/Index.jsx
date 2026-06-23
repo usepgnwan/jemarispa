@@ -984,16 +984,23 @@ jemarihomespa.com`;
                                     </div>
 
                                     <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-none border-gray-100">
-                                        <div className="w-28 sm:w-32">
+                                        <div className="w-28 sm:w-40 flex flex-col items-end sm:items-start">
                                             <select
                                                 className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-[10px] sm:text-xs font-bold text-gray-700 focus:ring-zenith-orange"
                                                 value={durationIndex}
                                                 onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
                                             >
                                                 {pkg.durations.map((d, i) => (
-                                                    <option key={d.id} value={i}>{d.duration}</option>
+                                                    <option key={d.id} value={i}>
+                                                        {d.duration} {d.description ? `- ${d.description}` : ''}
+                                                    </option>
                                                 ))}
                                             </select>
+                                            {currentDuration.description && (
+                                                <p className="mt-1 text-[9px] text-gray-500 italic leading-tight">
+                                                    * {currentDuration.description}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="text-right sm:w-32">
                                             <p className="text-xs sm:text-sm font-bold text-zenith-orange whitespace-nowrap">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>

@@ -13,6 +13,7 @@ class PackageDuration extends Model
         'duration',
         'price',
         'commission',
+        'description',
         'status',
     ];
 

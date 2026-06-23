@@ -22,11 +22,11 @@ export default function Create({ signaturePackages = [] }) {
         is_signature: false,
         priority: '',
         status: 'public',
-        durations: [{ duration: '', price: '', commission: '', status: 'public' }]
+        durations: [{ duration: '', price: '', commission: '', description: '', status: 'public' }]
     });
 
     const handleAddDuration = () => {
-        setData('durations', [...data.durations, { duration: '', price: '', commission: '', status: 'public' }]);
+        setData('durations', [...data.durations, { duration: '', price: '', commission: '', description: '', status: 'public' }]);
     };
 
     const handleRemoveDuration = (index) => {
@@ -311,6 +311,18 @@ export default function Create({ signaturePackages = [] }) {
                                                     />
                                                 </div>
                                                 <InputError message={errors[`durations.${index}.commission`]} className="mt-1 text-xs" />
+                                            </div>
+
+                                            <div className="flex-1 w-full">
+                                                <InputLabel value="Deskripsi" className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5" />
+                                                <input
+                                                    type="text"
+                                                    className="w-full rounded-xl border-gray-300 focus:border-[#0057B8] focus:ring-[#0057B8] sm:text-sm py-2.5 shadow-sm bg-white"
+                                                    placeholder="Opsional"
+                                                    value={item.description || ''}
+                                                    onChange={(e) => handleDurationChange(index, 'description', e.target.value)}
+                                                />
+                                                <InputError message={errors[`durations.${index}.description`]} className="mt-1 text-xs" />
                                             </div>
 
                                             <div className="flex-1 w-full">

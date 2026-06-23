@@ -60,6 +60,7 @@ class PackageController extends Controller
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
             'durations.*.commission' => 'nullable|numeric|min:0',
+            'durations.*.description' => 'nullable|string',
             'durations.*.status' => 'required|in:public,private',
             'status' => 'required|in:public,private',
         ]);
@@ -83,6 +84,7 @@ class PackageController extends Controller
                     'duration' => $durationData['duration'],
                     'price' => $durationData['price'],
                     'commission' => $durationData['commission'] ?? 0,
+                    'description' => $durationData['description'] ?? null,
                     'status' => $durationData['status'] ?? 'public',
                 ]);
             }
@@ -121,6 +123,7 @@ class PackageController extends Controller
             'durations.*.duration' => 'required|string|max:255',
             'durations.*.price' => 'required|numeric|min:0',
             'durations.*.commission' => 'nullable|numeric|min:0',
+            'durations.*.description' => 'nullable|string',
             'durations.*.status' => 'required|in:public,private',
             'status' => 'required|in:public,private',
         ]);
@@ -146,6 +149,7 @@ class PackageController extends Controller
                     'duration' => $durationData['duration'],
                     'price' => $durationData['price'],
                     'commission' => $durationData['commission'] ?? 0,
+                    'description' => $durationData['description'] ?? null,
                     'status' => $durationData['status'] ?? 'public',
                 ]);
             }
