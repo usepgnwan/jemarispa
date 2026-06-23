@@ -311,7 +311,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                                                             >
                                                                 {pkg.durations.map((d, i) => (
                                                                     <option key={d.id} value={i}>
-                                                                        {formatDuration(d.duration)}
+                                                                        {formatDuration(d.duration)} {d.description ? `- ${d.description}` : ''}
                                                                     </option>
                                                                 ))}
                                                             </select>
@@ -320,9 +320,14 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                                                     ) : (
                                                         <div className="bg-zenith-orange/5 border border-zenith-orange/10 rounded-xl px-4 py-3">
                                                             <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">
-                                                                {formatDuration(currentDuration.duration)}
+                                                                {formatDuration(currentDuration.duration)} {currentDuration.description ? `- ${currentDuration.description}` : ''}
                                                             </span>
                                                         </div>
+                                                    )}
+                                                    {currentDuration.description && pkg.durations && pkg.durations.length > 1 && (
+                                                        <p className="mt-1.5 text-[9px] text-gray-500 italic leading-snug">
+                                                            * {currentDuration.description}
+                                                        </p>
                                                     )}
                                                 </div>
 
