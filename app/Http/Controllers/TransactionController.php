@@ -672,7 +672,7 @@ class TransactionController extends Controller
         $settings = Setting::first();
         $pdf = Pdf::loadView('pdf.invoice', compact('transaction', 'settings'));
         $filename = "Invoice-" . str_replace(['/', '\\'], '-', $transaction->order_number) . ".pdf";
-        return $pdf->stream($filename);
+        return $pdf->download($filename);
     }
 
     public function updateItem(Request $request, TransactionItem $item)
