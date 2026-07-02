@@ -137,7 +137,7 @@ jemarihomespa.com`;
         const d = pkg.durations[durationIndex];
 
         const packageToAdd = {
-            name: `${pkg.title_id} ${d.duration}`,
+            name: pkg.title_id,
             groupName: pkg.title_id,
             price: parseFloat(d.price),
             duration: d.duration,
@@ -147,10 +147,10 @@ jemarihomespa.com`;
         const newGuests = [...guests];
         const activeGuest = newGuests[activeGuestIndex];
 
-        // Check if already added (prevent duplicates for same person)
-        const isAlreadyAdded = activeGuest.packages.some(p => p.name === packageToAdd.name);
+        // Check if already added (prevent duplicates for same person and duration)
+        const isAlreadyAdded = activeGuest.packages.some(p => (p.groupName || p.name) === (packageToAdd.groupName || packageToAdd.name) && p.duration === packageToAdd.duration);
         if (isAlreadyAdded) {
-            showToast('Paket ini sudah ada untuk orang ini');
+            showToast('Paket dengan durasi ini sudah ada untuk orang ini');
             return;
         }
 
@@ -263,7 +263,7 @@ jemarihomespa.com`;
                         const durationData = masterPkg?.durations.find(d => d.duration === bp.duration);
 
                         newGuests[0].packages.push({
-                            name: `${bp.name} ${bp.duration}`,
+                            name: bp.name,
                             groupName: bp.name,
                             price: parseFloat(bp.price), // Restore original price to show in subtotal
                             duration: bp.duration,
@@ -1005,7 +1005,7 @@ jemarihomespa.com`;
                                         <div className="text-right sm:w-32">
                                             <p className="text-xs sm:text-sm font-bold text-zenith-orange whitespace-nowrap">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                         </div>
-                                        {activeGuestIndex !== null && guests[activeGuestIndex] && guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`) !== -1 ? (
+                                        {activeGuestIndex !== null && guests[activeGuestIndex] && guests[activeGuestIndex].packages.findIndex(p => (p.groupName || p.name) === pkg.title_id && p.duration === currentDuration.duration) !== -1 ? (
                                             <div className="flex items-center gap-2 shrink-0">
                                                 {/* Checklist Status */}
                                                 <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
@@ -1015,7 +1015,7 @@ jemarihomespa.com`;
                                                 <button
                                                     onClick={() => {
                                                         if (!guests[activeGuestIndex]) return;
-                                                        const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => p.name === `${pkg.title_id} ${currentDuration.duration}`);
+                                                        const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => (p.groupName || p.name) === pkg.title_id && p.duration === currentDuration.duration);
                                                         if (pkgIdx !== -1) removePackageFromGuest(activeGuestIndex, pkgIdx);
                                                     }}
                                                     className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"

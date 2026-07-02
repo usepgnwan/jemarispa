@@ -109,8 +109,12 @@ jemarihomespa.com`;
 
 const cleanPackageName = (name) => String(name || '').replace(/\s+\d+\s*(menit|minutes|mins|min)\b/gi, '').trim();
 const formatDurationLabel = (duration) => {
-    const minutes = String(duration || '').match(/\d+/)?.[0];
-    return minutes ? `${minutes} menit` : '';
+    let minutesVal = parseInt(String(duration || '').match(/\d+/)?.[0]);
+    if (!minutesVal) return '';
+    if (minutesVal >= 600) {
+        minutesVal = Math.round(minutesVal / 60);
+    }
+    return `${minutesVal} Menit`;
 };
 const formatPackagePrice = (price) => `Rp. ${Math.round(parseFloat(price || 0)).toLocaleString('id-ID').replace(/\./g, ' ')}`;
 
@@ -135,6 +139,117 @@ export default function Index({ transactions, filters, counts, employees, packag
     const [penaltyPercent, setPenaltyPercent] = useState(0);
     const [pendingDeleteItemId, setPendingDeleteItemId] = useState(null);
     const { patch, delete: destroy, processing } = useForm();
+
+    const getItemDurationLabel = (item) => {
+        // 1. Join langsung dari package_id & package_duration_id
+        if (item.package_id && item.package_duration_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            const dur = pkg?.durations?.find(d => d.id == item.package_duration_id);
+            if (dur && dur.duration) {
+                return formatDurationLabel(dur.duration);
+            }
+        }
+        if (item.package_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            if (pkg && pkg.durations && pkg.durations.length > 0) {
+                let dur = null;
+                if (item.price) {
+                    dur = pkg.durations.find(d => parseFloat(d.price) === parseFloat(item.price));
+                }
+                if (!dur && item.therapist_commission) {
+                    dur = pkg.durations.find(d => parseFloat(d.commission) === parseFloat(item.therapist_commission));
+                }
+                if (!dur) {
+                    dur = pkg.durations[0];
+                }
+                if (dur && dur.duration) {
+                    return formatDurationLabel(dur.duration);
+                }
+            }
+        }
+        if (item.package_duration) {
+            return formatDurationLabel(item.package_duration);
+        }
+        return '';
+    };
+
+    const getItemSelectValue = (item) => {
+        // 1. Join langsung dari package_id & package_duration_id
+        if (item.package_id && item.package_duration_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            if (pkg) {
+                const dIdx = (pkg.durations || []).findIndex(d => d.id == item.package_duration_id);
+                if (dIdx !== -1) {
+                    return `${pkg.id}|${dIdx}`;
+                }
+            }
+        }
+        if (item.package_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            if (pkg) {
+                let dIdx = -1;
+                if (item.package_duration) {
+                    dIdx = (pkg.durations || []).findIndex(d => formatDurationLabel(d.duration) === formatDurationLabel(item.package_duration));
+                }
+                if (dIdx === -1 && item.price) {
+                    dIdx = (pkg.durations || []).findIndex(d => parseFloat(d.price) === parseFloat(item.price));
+                }
+                if (dIdx === -1 && item.therapist_commission) {
+                    dIdx = (pkg.durations || []).findIndex(d => parseFloat(d.commission) === parseFloat(item.therapist_commission));
+                }
+                if (dIdx === -1 && pkg.durations && pkg.durations.length > 0) {
+                    dIdx = 0;
+                }
+                if (dIdx !== -1) {
+                    return `${pkg.id}|${dIdx}`;
+                }
+            }
+        }
+
+        // 2. Fallback untuk item lama tanpa ID
+        const cleanName = cleanPackageName(item.package_name);
+        let pkg = (packages || []).find(p => p.title_id === item.package_name || p.title_id === cleanName);
+        if (!pkg && item.package_name) {
+            pkg = [...(packages || [])].sort((a, b) => b.title_id.length - a.title_id.length).find(p => String(item.package_name || '').startsWith(p.title_id) || String(cleanName).startsWith(p.title_id));
+        }
+        if (pkg) {
+            const dIdx = (pkg.durations || []).findIndex(d => {
+                return formatDurationLabel(d.duration) === formatDurationLabel(item.package_duration);
+            });
+            if (dIdx !== -1) {
+                return `${pkg.id}|${dIdx}`;
+            }
+        }
+        return '';
+    };
+
+    const getItemSelectLabel = (item) => {
+        // 1. Join langsung dari package_id & package_duration_id
+        if (item.package_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            if (pkg) {
+                let durLabel = '';
+                if (item.package_duration_id) {
+                    const dur = pkg.durations?.find(d => d.id == item.package_duration_id);
+                    if (dur && dur.duration) {
+                        durLabel = formatDurationLabel(dur.duration);
+                    }
+                }
+                if (!durLabel) {
+                    durLabel = getItemDurationLabel(item);
+                }
+                return `${pkg.title_id} ${durLabel}`.trim();
+            }
+        }
+
+        // 2. Fallback to name and formatted duration
+        const name = item.package_name || '';
+        const durLabel = getItemDurationLabel(item);
+        if (durLabel && !String(name).toLowerCase().includes(durLabel.toLowerCase())) {
+            return `${name} ${durLabel}`.trim();
+        }
+        return name;
+    };
 
     React.useEffect(() => {
         if (flash?.message) {
@@ -253,21 +368,44 @@ export default function Index({ transactions, filters, counts, employees, packag
         const currentSelectedItems = providedSelectedItems || selectedTransaction.items;
 
         const getCommissionForItem = (item) => {
+            // 1. Try matching by package_id first
+            if (item.package_id) {
+                const pkg = packages.find(p => p.id == item.package_id);
+                if (pkg) {
+                    let duration = null;
+                    if (item.package_duration_id) {
+                        duration = (pkg.durations || []).find(d => d.id == item.package_duration_id);
+                    }
+                    if (!duration && item.package_duration) {
+                        duration = (pkg.durations || []).find(d => {
+                            return formatDurationLabel(d.duration) === formatDurationLabel(item.package_duration);
+                        });
+                    }
+                    if (!duration && item.price) {
+                        duration = (pkg.durations || []).find(d => parseFloat(d.price) === parseFloat(item.price));
+                    }
+                    if (!duration && item.therapist_commission) {
+                        duration = (pkg.durations || []).find(d => parseFloat(d.commission) === parseFloat(item.therapist_commission));
+                    }
+                    if (!duration && pkg.durations && pkg.durations.length > 0) {
+                        duration = pkg.durations[0];
+                    }
+                    if (duration) {
+                        return parseFloat(duration.commission) || 0;
+                    }
+                }
+            }
+
+            // 2. Fallback to name/duration matching
             let pkg = packages.find(p => item.package_name === p.title_id);
             if (!pkg && item.package_name) {
-                pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
+                pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => String(item.package_name || '').startsWith(p.title_id));
             }
 
             if (pkg) {
-                let cleanDuration = item.package_duration || '';
-                cleanDuration = cleanDuration.replace(/ Menit Menit/g, ' Menit');
-
-                if (cleanDuration && !cleanDuration.includes(' Menit')) {
-                    const match = cleanDuration.match(/^\d+/);
-                    if (match) cleanDuration = match[0] + ' Menit';
-                }
-
-                const duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
+                const duration = (pkg.durations || []).find(d => {
+                    return formatDurationLabel(d.duration) === formatDurationLabel(item.package_duration);
+                });
                 if (duration) {
                     return parseFloat(duration.commission) || 0;
                 }
@@ -458,18 +596,43 @@ export default function Index({ transactions, filters, counts, employees, packag
     const openDetails = (transaction) => {
         // Recalculate commissions for all items to fix any previously corrupted data
         const enrichedItems = (transaction.items || []).map(item => {
+            // 1. Try matching by package_id first
+            if (item.package_id) {
+                const pkg = packages.find(p => p.id == item.package_id);
+                if (pkg) {
+                    let duration = null;
+                    if (item.package_duration_id) {
+                        duration = (pkg.durations || []).find(d => d.id == item.package_duration_id);
+                    }
+                    if (!duration && item.package_duration) {
+                        duration = (pkg.durations || []).find(d => {
+                            return formatDurationLabel(d.duration) === formatDurationLabel(item.package_duration);
+                        });
+                    }
+                    if (!duration && item.price) {
+                        duration = (pkg.durations || []).find(d => parseFloat(d.price) === parseFloat(item.price));
+                    }
+                    if (!duration && item.therapist_commission) {
+                        duration = (pkg.durations || []).find(d => parseFloat(d.commission) === parseFloat(item.therapist_commission));
+                    }
+                    if (!duration && pkg.durations && pkg.durations.length > 0) {
+                        duration = pkg.durations[0];
+                    }
+                    if (duration) {
+                        return { ...item, therapist_commission: parseFloat(duration.commission) || 0 };
+                    }
+                }
+            }
+
+            // 2. Fallback to name/duration matching
             let pkg = packages.find(p => p.title_id === item.package_name);
             if (!pkg && item.package_name) {
-                pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
+                pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => String(item.package_name || '').startsWith(p.title_id));
             }
             if (pkg) {
-                let cleanDuration = item.package_duration || '';
-                cleanDuration = cleanDuration.replace(/ Menit Menit/g, ' Menit');
-                if (cleanDuration && !cleanDuration.includes(' Menit')) {
-                    const match = cleanDuration.match(/^\d+/);
-                    if (match) cleanDuration = match[0] + ' Menit';
-                }
-                const duration = pkg.durations.find(d => d.duration === cleanDuration || d.duration === cleanDuration + ' Menit');
+                const duration = (pkg.durations || []).find(d => {
+                    return formatDurationLabel(d.duration) === formatDurationLabel(item.package_duration);
+                });
                 if (duration) {
                     return { ...item, therapist_commission: parseFloat(duration.commission) || 0 };
                 }
@@ -760,7 +923,6 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                             </button>
                                                             <a
                                                                 href={route('admin.transaction.pdf', transaction.id)}
-                                                                target="_blank"
                                                                 className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
                                                                 title="Download PDF"
                                                             >
@@ -818,7 +980,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                                 <div className="space-y-1">
                                                                                     {items.map((it, idx) => (
                                                                                         <p key={idx} className="text-xs text-gray-600 font-medium">
-                                                                                            • {it.package_name}
+                                                                                            • {it.package_name}{(() => { const dl = getItemDurationLabel(it); return dl && !String(it.package_name || '').includes(dl) ? ` ${dl}` : ''; })()}
                                                                                         </p>
                                                                                     ))}
                                                                                     <div className="mt-2 pt-2 border-t border-gray-50">
@@ -1189,9 +1351,9 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                         placeholder="+ Tambah Paket"
                                                         options={packages.filter(p => !p.is_signature).map(pkg => ({
                                                             label: pkg.title_id,
-                                                            options: pkg.durations.map((dur, dIdx) => ({
+                                                            options: (pkg.durations || []).map((dur, dIdx) => ({
                                                                 value: `${pkg.id}|${dIdx}`,
-                                                                label: `${pkg.title_id} - ${dur.duration} (${formatCurrency(dur.price)})`
+                                                                label: `${pkg.title_id} ${formatDurationLabel(dur.duration)}`
                                                             }))
                                                         }))}
                                                         value={null}
@@ -1199,13 +1361,16 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                             if (!selectedOption) return;
                                                             const [pkgId, durIdx] = selectedOption.value.split('|');
                                                             const pkg = packages.find(p => p.id == pkgId);
-                                                            const duration = pkg.durations[durIdx];
+                                                            const duration = (pkg?.durations || [])[durIdx];
+                                                            if (!duration) return;
 
                                                             const currentTherapistId = items[0]?.employee_id || '';
 
                                                             const newItem = {
                                                                 guest_index: parseInt(guestIndex),
-                                                                package_name: pkg.title_id,
+                                                                package_id: pkg.id,
+                                                                package_duration_id: duration.id,
+                                                                package_name: `${pkg.title_id} ${formatDurationLabel(duration.duration)}`.trim(),
                                                                 package_duration: duration.duration,
                                                                 price: parseFloat(duration.price),
                                                                 therapist_commission: parseFloat(duration.commission),
@@ -1281,21 +1446,21 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                         menuPosition="fixed"
                                                                         options={packages.filter(p => !p.is_signature).map(pkg => ({
                                                                             label: pkg.title_id,
-                                                                            options: pkg.durations.map((dur, dIdx) => ({
+                                                                            options: (pkg.durations || []).map((dur, dIdx) => ({
                                                                                 value: `${pkg.id}|${dIdx}`,
-                                                                                label: `${pkg.title_id} - ${dur.duration} (${formatCurrency(dur.price)})`
+                                                                                label: `${pkg.title_id} ${formatDurationLabel(dur.duration)}`
                                                                             }))
                                                                         }))}
                                                                         value={{
-                                                                            value: `${(() => { let p = packages.find(p => p.title_id === item.package_name); if (!p && item.package_name) p = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id)); return p?.id || ''; })()}|${(() => { let p = packages.find(p => p.title_id === item.package_name); if (!p && item.package_name) p = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id)); return p?.durations.findIndex(d => { let c = item.package_duration || ''; c = c.replace(/ Menit Menit/g, ' Menit'); if (c && !c.includes(' Menit')) { const m = c.match(/^\d+/); if (m) c = m[0] + ' Menit'; } return d.duration === c; }) ?? ''; })()}`,
-                                                                            label: `${item.package_name}`
+                                                                            value: getItemSelectValue(item),
+                                                                            label: getItemSelectLabel(item)
                                                                         }}
                                                                         onChange={(selectedOption) => {
                                                                             if (!selectedOption) return;
                                                                             const [pkgId, durIdx] = selectedOption.value.split('|');
                                                                             const pkg = packages.find(p => p.id == pkgId);
-                                                                            if (!pkg) return;
-                                                                            const duration = pkg.durations[durIdx];
+                                                                            const duration = (pkg?.durations || [])[durIdx];
+                                                                            if (!duration) return;
 
                                                                             let nextNewItems = newItems;
                                                                             let nextSelectedItems = selectedTransaction.items;
@@ -1303,13 +1468,13 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                                             if (item.isNew) {
                                                                                 nextNewItems = newItems.map(ni =>
                                                                                     ni.tempId === item.tempId
-                                                                                        ? { ...ni, package_name: pkg.title_id, package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
+                                                                                        ? { ...ni, package_id: pkg.id, package_duration_id: duration.id, package_name: `${pkg.title_id} ${formatDurationLabel(duration.duration)}`.trim(), package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
                                                                                         : ni
                                                                                 );
                                                                             } else {
                                                                                 nextSelectedItems = selectedTransaction.items.map(it =>
                                                                                     it.id === item.id
-                                                                                        ? { ...it, package_name: pkg.title_id, package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
+                                                                                        ? { ...it, package_id: pkg.id, package_duration_id: duration.id, package_name: `${pkg.title_id} ${formatDurationLabel(duration.duration)}`.trim(), package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
                                                                                         : it
                                                                                 );
                                                                             }
@@ -1500,7 +1665,6 @@ export default function Index({ transactions, filters, counts, employees, packag
                             <div className="flex flex-wrap gap-2">
                                 <a
                                     href={route('admin.transaction.pdf', selectedTransaction?.id || 0)}
-                                    target="_blank"
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-900 border border-transparent rounded-full font-bold text-[10px] text-white uppercase tracking-widest transition-all"
                                 >
                                     <ArrowDownTrayIcon className="w-4 h-4" />

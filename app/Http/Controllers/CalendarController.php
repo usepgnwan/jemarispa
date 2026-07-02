@@ -16,7 +16,7 @@ class CalendarController extends Controller
         $isTerapis = $user && $user->isTerapis();
         $employeeId = $isTerapis ? $user->employee_id : null;
 
-        $query = Transaction::with(['items.employee', 'voucher'])
+        $query = Transaction::with(['items.employee', 'items.package', 'items.packageDurationRel', 'voucher'])
             ->whereNotNull('schedule_date');
 
         if ($isTerapis && $employeeId) {
