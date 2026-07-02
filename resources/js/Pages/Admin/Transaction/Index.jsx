@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import axios from 'axios';
@@ -138,6 +138,16 @@ export default function Index({ transactions, filters, counts, employees, packag
     const [deletedItems, setDeletedItems] = useState([]);
     const [penaltyPercent, setPenaltyPercent] = useState(0);
     const [pendingDeleteItemId, setPendingDeleteItemId] = useState(null);
+
+    // State for Invoice Payment Option Modal
+    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [invoiceTransaction, setInvoiceTransaction] = useState(null);
+    const [invoiceAction, setInvoiceAction] = useState('send'); // 'send' or 'copy'
+    const [invoiceLang, setInvoiceLang] = useState('id'); // 'id' or 'en'
+    const [paymentType, setPaymentType] = useState('full'); // 'full' or 'dp'
+    const [dpAmount, setDpAmount] = useState('');
+    const [previewMessage, setPreviewMessage] = useState('');
+
     const { patch, delete: destroy, processing } = useForm();
 
     const getItemDurationLabel = (item) => {
@@ -456,11 +466,11 @@ export default function Index({ transactions, filters, counts, employees, packag
         return parseFloat(transaction.voucher.discount_amount);
     };
 
-    const prepareInvoiceMessage = async (transaction, lang = 'id') => {
+    const prepareInvoiceMessage = async (transaction, lang = 'id', paymentOptions = { type: 'full', dpAmount: 0 }) => {
         if (!transaction) return '';
 
-        let message = lang === 'en' && app_settings?.template_invoice_en 
-            ? app_settings.template_invoice_en 
+        let message = lang === 'en' && app_settings?.template_invoice_en
+            ? app_settings.template_invoice_en
             : app_settings?.template_invoice || defaultInvoiceTemplate;
 
         let linkReview = '';
@@ -501,13 +511,39 @@ export default function Index({ transactions, filters, counts, employees, packag
             .replace(/&nbsp;/g, ' ')
             .replace(/<[^>]*>?/gm, '');
 
+        const hasTrailingAsterisk = message.includes('[total]*');
+        let totalReplacement = formatCurrency(transaction.total_price);
+        if (paymentOptions?.type === 'dp' && (parseFloat(paymentOptions?.dpAmount) || 0) > 0) {
+            const dpVal = parseFloat(paymentOptions.dpAmount) || 0;
+            const sisaVal = Math.max(0, (parseFloat(transaction.total_price) || 0) - dpVal);
+            if (lang === 'en') {
+                totalReplacement = hasTrailingAsterisk
+                    ? `${formatCurrency(transaction.total_price)}*\n*Payment Type : Down Payment (DP)*\n*DP Amount : ${formatCurrency(dpVal)}*\n*Remaining Balance : ${formatCurrency(sisaVal)} (Paid upon therapist arrival)`
+                    : `${formatCurrency(transaction.total_price)}\n*Payment Type : Down Payment (DP)*\n*DP Amount : ${formatCurrency(dpVal)}*\n*Remaining Balance : ${formatCurrency(sisaVal)} (Paid upon therapist arrival)*`;
+            } else {
+                totalReplacement = hasTrailingAsterisk
+                    ? `${formatCurrency(transaction.total_price)}*\n*Tipe Pembayaran : DP (Uang Muka)*\n*Nominal DP : ${formatCurrency(dpVal)}*\n*Sisa Tagihan : ${formatCurrency(sisaVal)} (Dilunasi saat terapis datang)`
+                    : `${formatCurrency(transaction.total_price)}\n*Tipe Pembayaran : DP (Uang Muka)*\n*Nominal DP : ${formatCurrency(dpVal)}*\n*Sisa Tagihan : ${formatCurrency(sisaVal)} (Dilunasi saat terapis datang)*`;
+            }
+        } else {
+            if (lang === 'en') {
+                totalReplacement = hasTrailingAsterisk
+                    ? `${formatCurrency(transaction.total_price)}*\n*Payment Type : Full Payment`
+                    : `${formatCurrency(transaction.total_price)}\n*Payment Type : Full Payment*`;
+            } else {
+                totalReplacement = hasTrailingAsterisk
+                    ? `${formatCurrency(transaction.total_price)}*\n*Tipe Pembayaran : Pembayaran Full (Lunas)`
+                    : `${formatCurrency(transaction.total_price)}\n*Tipe Pembayaran : Pembayaran Full (Lunas)*`;
+            }
+        }
+
         const data = {
             name: transaction.customer_name,
             invoice_no: transaction.order_number,
             details: detailsText,
             transport: formatCurrency(transaction.transport_fee || 0),
             discount: transaction.voucher ? `Voucher ${transaction.voucher.code} : -${formatCurrency(getVoucherNominalDiscount(transaction))}\n` : (transaction.discount_amount > 0 ? `Diskon : -${formatCurrency(transaction.discount_amount)} (${parseFloat(transaction.discount_percent)}%)\n` : ''),
-            total: formatCurrency(transaction.total_price),
+            total: totalReplacement,
             link: link,
             link_review: linkReview
         };
@@ -520,53 +556,77 @@ export default function Index({ transactions, filters, counts, employees, packag
         return message;
     };
 
-    const sendInvoice = async (transaction) => {
+    useEffect(() => {
+        if (isInvoiceModalOpen && invoiceTransaction) {
+            prepareInvoiceMessage(invoiceTransaction, invoiceLang, {
+                type: paymentType,
+                dpAmount: paymentType === 'dp' ? dpAmount : 0
+            }).then(msg => setPreviewMessage(msg));
+        }
+    }, [isInvoiceModalOpen, invoiceTransaction, invoiceLang, paymentType, dpAmount]);
+
+    const openInvoiceOptionsModal = (transaction, action = 'send', lang = 'id') => {
         if (!transaction) return;
-
-        const message = await prepareInvoiceMessage(transaction);
-        const phone = transaction.phone || app_settings?.phone || '';
-
-        if (!phone) {
-            alert('Nomor WhatsApp tidak ditemukan.');
-            return;
-        }
-
-        const encodedMessage = encodeURIComponent(message);
-        const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
-        let waPhone = cleanPhone;
-        if (cleanPhone.startsWith('0')) {
-            waPhone = '62' + cleanPhone.substring(1);
-        } else if (cleanPhone.startsWith('8')) {
-            waPhone = '62' + cleanPhone;
-        }
-
-        if (!waPhone) {
-            alert('Nomor telepon tidak valid.');
-            return;
-        }
-
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const waBaseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send';
-        const finalUrl = isMobile
-            ? `${waBaseUrl}${waPhone}?text=${encodedMessage}`
-            : `${waBaseUrl}?phone=${waPhone}&text=${encodedMessage}`;
-
-        window.open(finalUrl, '_blank');
+        setInvoiceTransaction(transaction);
+        setInvoiceAction(action);
+        setInvoiceLang(lang);
+        setPaymentType('full');
+        setDpAmount(Math.round((parseFloat(transaction.total_price) || 0) * 0.5)); // default 50%
+        setIsInvoiceModalOpen(true);
     };
 
-    const copyInvoiceText = async (transaction, lang = 'id') => {
-        if (!transaction) return;
+    const sendInvoice = (transaction) => {
+        openInvoiceOptionsModal(transaction, 'send', 'id');
+    };
 
-        const message = await prepareInvoiceMessage(transaction, lang);
+    const copyInvoiceText = (transaction, lang = 'id') => {
+        openInvoiceOptionsModal(transaction, 'copy', lang);
+    };
 
-        navigator.clipboard.writeText(message).then(() => {
-            setToastMessage(lang === 'en' ? 'Teks invoice (EN) berhasil disalin!' : 'Teks invoice berhasil disalin!');
-            setShowToast(true);
-            setTimeout(() => setShowToast(false), 3000);
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-            alert('Gagal menyalin teks.');
+    const executeInvoiceAction = async (actionType = invoiceAction) => {
+        if (!invoiceTransaction) return;
+        const message = await prepareInvoiceMessage(invoiceTransaction, invoiceLang, {
+            type: paymentType,
+            dpAmount: paymentType === 'dp' ? dpAmount : 0
         });
+
+        if (actionType === 'send') {
+            const phone = invoiceTransaction.phone || app_settings?.phone || '';
+            if (!phone) {
+                alert('Nomor WhatsApp tidak ditemukan.');
+                return;
+            }
+            const encodedMessage = encodeURIComponent(message);
+            const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
+            let waPhone = cleanPhone;
+            if (cleanPhone.startsWith('0')) {
+                waPhone = '62' + cleanPhone.substring(1);
+            } else if (cleanPhone.startsWith('8')) {
+                waPhone = '62' + cleanPhone;
+            }
+            if (!waPhone) {
+                alert('Nomor telepon tidak valid.');
+                return;
+            }
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const waBaseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send';
+            const finalUrl = isMobile
+                ? `${waBaseUrl}${waPhone}?text=${encodedMessage}`
+                : `${waBaseUrl}?phone=${waPhone}&text=${encodedMessage}`;
+
+            window.open(finalUrl, '_blank');
+            setIsInvoiceModalOpen(false);
+        } else {
+            navigator.clipboard.writeText(message).then(() => {
+                setToastMessage(invoiceLang === 'en' ? 'Teks invoice (EN) berhasil disalin!' : 'Teks invoice berhasil disalin!');
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
+                setIsInvoiceModalOpen(false);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Gagal menyalin teks.');
+            });
+        }
     };
 
     const generateReviewLink = async (transaction) => {
@@ -1709,6 +1769,189 @@ export default function Index({ transactions, filters, counts, employees, packag
                             </div>
                         </div>
                     </div>
+                </div>
+            </Modal>
+
+            {/* Modal Pilihan Pengiriman Invoice */}
+            <Modal show={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} maxWidth="lg">
+                <div className="max-h-[90vh] overflow-y-auto custom-scrollbar p-6 sm:p-8">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-green-50 rounded-2xl border border-green-100">
+                                <ChatBubbleLeftRightIcon className="w-6 h-6 text-green-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900">Opsi Pengiriman Invoice</h3>
+                                <p className="text-xs text-gray-500 font-medium">
+                                    {invoiceTransaction?.order_number} · <span className="text-gray-700 font-bold">{invoiceTransaction?.customer_name}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setIsInvoiceModalOpen(false)}
+                            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
+                        >
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {/* 1. Pilih Bahasa */}
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
+                                Bahasa Invoice / Language
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setInvoiceLang('id')}
+                                    className={`py-2.5 px-4 rounded-xl font-bold text-xs border transition-all flex items-center justify-center gap-2 ${invoiceLang === 'id'
+                                        ? 'bg-zenith-orange text-white border-zenith-orange shadow-md shadow-zenith-orange/20'
+                                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <span>🇮🇩</span> Indonesia (ID)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setInvoiceLang('en')}
+                                    className={`py-2.5 px-4 rounded-xl font-bold text-xs border transition-all flex items-center justify-center gap-2 ${invoiceLang === 'en'
+                                        ? 'bg-zenith-orange text-white border-zenith-orange shadow-md shadow-zenith-orange/20'
+                                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <span>🇬🇧</span> English (EN)
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 2. Pilih Tipe Pembayaran */}
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
+                                Tipe Pembayaran
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setPaymentType('full')}
+                                    className={`p-3 rounded-2xl font-bold text-xs border text-left transition-all ${paymentType === 'full'
+                                        ? 'bg-orange-50/80 text-zenith-orange border-zenith-orange ring-1 ring-zenith-orange'
+                                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-sm font-black">Pembayaran Full</span>
+                                        {paymentType === 'full' && <span className="w-2 h-2 rounded-full bg-zenith-orange"></span>}
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 font-normal">Tagihan penuh sejumlah total pesanan</p>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPaymentType('dp')}
+                                    className={`p-3 rounded-2xl font-bold text-xs border text-left transition-all ${paymentType === 'dp'
+                                        ? 'bg-orange-50/80 text-zenith-orange border-zenith-orange ring-1 ring-zenith-orange'
+                                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-sm font-black">Pembayaran DP</span>
+                                        {paymentType === 'dp' && <span className="w-2 h-2 rounded-full bg-zenith-orange"></span>}
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 font-normal">Tagihan uang muka dan sisa pelunasan</p>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 3. Input Nominal DP (Jika DP dipilih) */}
+                        {paymentType === 'dp' && (
+                            <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 space-y-3 animate-fade-in">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-gray-800">Nominal DP (Uang Muka)</label>
+                                    <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">
+                                        Total: {formatCurrency(invoiceTransaction?.total_price || 0)}
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-sm font-bold text-gray-400">Rp</span>
+                                    <input
+                                        type="number"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-orange-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-zenith-orange focus:border-zenith-orange"
+                                        value={dpAmount}
+                                        onChange={(e) => setDpAmount(e.target.value)}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                {/* Quick Percentage Buttons */}
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                    {[0.2, 0.3, 0.5, 0.7].map((pct) => {
+                                        const calcVal = Math.round((parseFloat(invoiceTransaction?.total_price) || 0) * pct);
+                                        const isSelected = parseFloat(dpAmount) === calcVal;
+                                        return (
+                                            <button
+                                                key={pct}
+                                                type="button"
+                                                onClick={() => setDpAmount(calcVal)}
+                                                className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-colors ${isSelected
+                                                    ? 'bg-zenith-orange text-white border-zenith-orange'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-zenith-orange hover:text-zenith-orange'
+                                                    }`}
+                                            >
+                                                {pct * 100}% ({formatCurrency(calcVal)})
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <div className="pt-2 border-t border-orange-100/80 flex justify-between items-center text-xs">
+                                    <span className="text-gray-600 font-medium">Sisa Pelunasan (Saat Terapis Datang):</span>
+                                    <span className="font-bold text-red-600">
+                                        {formatCurrency(Math.max(0, (parseFloat(invoiceTransaction?.total_price) || 0) - (parseFloat(dpAmount) || 0)))}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 4. Live Preview Teks WhatsApp */}
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                                Pratinjau Teks WhatsApp (Live Preview)
+                            </label>
+                            <div className="bg-gray-900 text-gray-100 p-4 rounded-2xl text-xs font-mono whitespace-pre-wrap max-h-52 overflow-y-auto border border-gray-800 custom-scrollbar leading-relaxed">
+                                {previewMessage || 'Memuat pratinjau...'}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                {/* Tombol Aksi Modal */}
+                <div className="px-4 sm:px-8 pb-4 sm:pb-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3 justify-end">
+                    <SecondaryButton
+                        onClick={() => setIsInvoiceModalOpen(false)}
+                        className="justify-center py-3 rounded-xl"
+                    >
+                        Batal
+                    </SecondaryButton>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setInvoiceAction('copy');
+                            executeInvoiceAction('copy');
+                        }}
+                        className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-500/20"
+                    >
+                        <ClipboardDocumentListIcon className="w-4 h-4" />
+                        Salin Teks Invoice
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setInvoiceAction('send');
+                            executeInvoiceAction('send');
+                        }}
+                        className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-green-500/20"
+                    >
+                        <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                        Kirim ke WhatsApp
+                    </button>
                 </div>
             </Modal>
 
