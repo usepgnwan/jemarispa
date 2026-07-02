@@ -70,7 +70,7 @@ jemarihomespa.com`;
     const cleanPackageName = (name) => String(name || '').replace(/\s+\d+\s*(menit|minutes|mins|min)\b/gi, '').trim();
     const formatDurationLabel = (duration) => {
         const minutes = String(duration || '').match(/\d+/)?.[0];
-        return minutes ? `${minutes} menit` : '';
+        return minutes ? `${minutes} Menit` : '';
     };
     const formatPackagePrice = (price) => `Rp. ${Math.round(parseFloat(price || 0)).toLocaleString('id-ID').replace(/\./g, ' ')}`;
 
@@ -114,6 +114,117 @@ jemarihomespa.com`;
         return `${startTime} - ${calculateEndTime(startTime, maxDuration)}`;
     };
 
+    const getItemDurationLabel = (item) => {
+        // 1. Join langsung dari package_id & package_duration_id
+        if (item.package_id && item.package_duration_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            const dur = pkg?.durations?.find(d => d.id == item.package_duration_id);
+            if (dur && dur.duration) {
+                return formatDurationLabel(dur.duration);
+            }
+        }
+        if (item.package_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            if (pkg && pkg.durations && pkg.durations.length > 0) {
+                let dur = null;
+                if (item.price) {
+                    dur = pkg.durations.find(d => parseFloat(d.price) === parseFloat(item.price));
+                }
+                if (!dur && item.therapist_commission) {
+                    dur = pkg.durations.find(d => parseFloat(d.commission) === parseFloat(item.therapist_commission));
+                }
+                if (!dur) {
+                    dur = pkg.durations[0];
+                }
+                if (dur && dur.duration) {
+                    return formatDurationLabel(dur.duration);
+                }
+            }
+        }
+        if (item.package_duration) {
+            return formatDurationLabel(item.package_duration);
+        }
+        return '';
+    };
+
+    const getItemSelectValue = (item) => {
+        // 1. Join langsung dari package_id & package_duration_id
+        if (item.package_id && item.package_duration_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            if (pkg) {
+                const dIdx = (pkg.durations || []).findIndex(d => d.id == item.package_duration_id);
+                if (dIdx !== -1) {
+                    return `${pkg.id}|${dIdx}`;
+                }
+            }
+        }
+        if (item.package_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            if (pkg) {
+                let dIdx = -1;
+                if (item.package_duration) {
+                    dIdx = (pkg.durations || []).findIndex(d => formatDurationLabel(d.duration) === formatDurationLabel(item.package_duration));
+                }
+                if (dIdx === -1 && item.price) {
+                    dIdx = (pkg.durations || []).findIndex(d => parseFloat(d.price) === parseFloat(item.price));
+                }
+                if (dIdx === -1 && item.therapist_commission) {
+                    dIdx = (pkg.durations || []).findIndex(d => parseFloat(d.commission) === parseFloat(item.therapist_commission));
+                }
+                if (dIdx === -1 && pkg.durations && pkg.durations.length > 0) {
+                    dIdx = 0;
+                }
+                if (dIdx !== -1) {
+                    return `${pkg.id}|${dIdx}`;
+                }
+            }
+        }
+
+        // 2. Fallback untuk item lama tanpa ID
+        const cleanName = cleanPackageName(item.package_name);
+        let pkg = (packages || []).find(p => p.title_id === item.package_name || p.title_id === cleanName);
+        if (!pkg && item.package_name) {
+            pkg = [...(packages || [])].sort((a, b) => b.title_id.length - a.title_id.length).find(p => String(item.package_name || '').startsWith(p.title_id) || String(cleanName).startsWith(p.title_id));
+        }
+        if (pkg) {
+            const dIdx = (pkg.durations || []).findIndex(d => {
+                return formatDurationLabel(d.duration) === formatDurationLabel(item.package_duration);
+            });
+            if (dIdx !== -1) {
+                return `${pkg.id}|${dIdx}`;
+            }
+        }
+        return '';
+    };
+
+    const getItemSelectLabel = (item) => {
+        // 1. Join langsung dari package_id & package_duration_id
+        if (item.package_id) {
+            const pkg = (packages || []).find(p => p.id == item.package_id);
+            if (pkg) {
+                let durLabel = '';
+                if (item.package_duration_id) {
+                    const dur = pkg.durations?.find(d => d.id == item.package_duration_id);
+                    if (dur && dur.duration) {
+                        durLabel = formatDurationLabel(dur.duration);
+                    }
+                }
+                if (!durLabel) {
+                    durLabel = getItemDurationLabel(item);
+                }
+                return `${pkg.title_id} ${durLabel}`.trim();
+            }
+        }
+
+        // 2. Fallback to name and formatted duration
+        const name = item.package_name || '';
+        const durLabel = getItemDurationLabel(item);
+        if (durLabel && !String(name).toLowerCase().includes(durLabel.toLowerCase())) {
+            return `${name} ${durLabel}`.trim();
+        }
+        return name;
+    };
+
     const handleEventClick = (info) => {
         const data = info.event.extendedProps;
         // Normalize schedule_time to HH:MM (MySQL returns HH:MM:SS)
@@ -121,6 +232,13 @@ jemarihomespa.com`;
         const scheduleTime = rawTime.substring(0, 5);
         // Recalculate commissions to fix any corrupted DB data
         const enrichedItems = (data.items || []).map(item => {
+            if (item.package_id && item.package_duration_id) {
+                const pkg = packages.find(p => p.id == item.package_id);
+                const duration = pkg?.durations?.find(d => d.id == item.package_duration_id);
+                if (duration) {
+                    return { ...item, therapist_commission: parseFloat(duration.commission) || 0 };
+                }
+            }
             let pkg = packages.find(p => p.title_id === item.package_name);
             if (!pkg && item.package_name) {
                 pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
@@ -200,6 +318,13 @@ jemarihomespa.com`;
         const currentSelectedItems = providedSelectedItems || selectedTransaction.items || [];
 
         const updateItemCommission = (item) => {
+            if (item.package_id && item.package_duration_id) {
+                const pkg = packages.find(p => p.id == item.package_id);
+                const duration = pkg?.durations?.find(d => d.id == item.package_duration_id);
+                if (duration) {
+                    return { ...item, therapist_commission: parseFloat(duration.commission) || 0 };
+                }
+            }
             let pkg = packages.find(p => item.package_name === p.title_id);
             if (!pkg && item.package_name) {
                 pkg = [...packages].sort((a, b) => b.title_id.length - a.title_id.length).find(p => item.package_name.startsWith(p.title_id));
@@ -1070,7 +1195,7 @@ jemarihomespa.com`;
                                                                                         label: pkg.title_id,
                                                                                         options: (pkg.durations || []).map((dur, dIdx) => ({
                                                                                             value: `${pkg.id}|${dIdx}`,
-                                                                                            label: `${pkg.title_id} - ${dur.duration} (${formatCurrency(dur.price)})`
+                                                                                            label: `${pkg.title_id} ${formatDurationLabel(dur.duration)}`
                                                                                         }))
                                                                                     }))}
                                                                                     value={null}
@@ -1078,10 +1203,13 @@ jemarihomespa.com`;
                                                                                         if (!selectedOption) return;
                                                                                         const [pkgId, durIdx] = selectedOption.value.split('|');
                                                                                         const pkg = packages.find(p => p.id == pkgId);
-                                                                                        const duration = pkg.durations[durIdx];
+                                                                                        const duration = (pkg?.durations || [])[durIdx];
+                                                                                        if (!pkg || !duration) return;
                                                                                         const newItem = {
                                                                                             guest_index: parseInt(guestIdx),
-                                                                                            package_name: pkg.title_id,
+                                                                                            package_id: pkg.id,
+                                                                                            package_duration_id: duration.id,
+                                                                                            package_name: `${pkg.title_id} ${formatDurationLabel(duration.duration)}`.trim(),
                                                                                             package_duration: duration.duration,
                                                                                             price: parseFloat(duration.price),
                                                                                             therapist_commission: parseFloat(duration.commission),
@@ -1121,7 +1249,7 @@ jemarihomespa.com`;
                                                                                     <div className="flex items-center gap-2">
                                                                                         {item.isNew && <span className="bg-green-100 text-green-600 px-1 py-0.5 rounded text-[7px] font-black uppercase shrink-0">BARU</span>}
                                                                                         {!isEditing ? (
-                                                                                            <span className="font-semibold text-gray-800">{item.package_name}</span>
+                                                                                            <span className="font-semibold text-gray-800">{item.package_name}{item.package_duration ? ` - ${String(item.package_duration).replace(/ Menit Menit/g, ' Menit')}` : ''}</span>
                                                                                         ) : (
                                                                                             <ReactSelect
                                                                                                 className="w-full min-w-[180px] sm:min-w-[220px]"
@@ -1150,19 +1278,19 @@ jemarihomespa.com`;
                                                                                                     label: pkg.title_id,
                                                                                                     options: (pkg.durations || []).map((dur, dIdx) => ({
                                                                                                         value: `${pkg.id}|${dIdx}`,
-                                                                                                        label: `${pkg.title_id} - ${dur.duration} (${formatCurrency(dur.price)})`
+                                                                                                        label: `${pkg.title_id} ${formatDurationLabel(dur.duration)}`
                                                                                                     }))
                                                                                                 }))}
                                                                                                 value={{
-                                                                                                    value: `${packages.find(p => p.title_id === item.package_name || (item.package_name && item.package_name.startsWith(p.title_id)))?.id || ''}|${packages.find(p => p.title_id === item.package_name || (item.package_name && item.package_name.startsWith(p.title_id)))?.durations.findIndex(d => { let c = item.package_duration || ''; c = c.replace(/ Menit Menit/g, ' Menit'); if (c && !c.includes(' Menit')) { const m = c.match(/^\d+/); if (m) c = m[0] + ' Menit'; } return d.duration === c; }) ?? ''}`,
-                                                                                                    label: `${item.package_name}`
+                                                                                                    value: getItemSelectValue(item),
+                                                                                                    label: getItemSelectLabel(item)
                                                                                                 }}
                                                                                                 onChange={(selectedOption) => {
                                                                                                     if (!selectedOption) return;
                                                                                                     const [pkgId, durIdx] = selectedOption.value.split('|');
                                                                                                     const pkg = packages.find(p => p.id == pkgId);
-                                                                                                    if (!pkg) return;
-                                                                                                    const duration = pkg.durations[durIdx];
+                                                                                                    const duration = (pkg?.durations || [])[durIdx];
+                                                                                                    if (!pkg || !duration) return;
                                                                                                     console.log(pkg)
                                                                                                     let nextNewItems = newItems;
                                                                                                     let nextSelectedItems = selectedTransaction.items;
@@ -1170,13 +1298,13 @@ jemarihomespa.com`;
                                                                                                     if (item.isNew) {
                                                                                                         nextNewItems = newItems.map(ni =>
                                                                                                             ni.tempId === item.tempId
-                                                                                                                ? { ...ni, package_name: pkg.title_id, package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
+                                                                                                                ? { ...ni, package_id: pkg.id, package_duration_id: duration.id, package_name: `${pkg.title_id} ${formatDurationLabel(duration.duration)}`.trim(), package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
                                                                                                                 : ni
                                                                                                         );
                                                                                                     } else {
                                                                                                         nextSelectedItems = selectedTransaction.items.map(it =>
                                                                                                             it.id === item.id
-                                                                                                                ? { ...it, package_name: pkg.title_id, package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
+                                                                                                                ? { ...it, package_id: pkg.id, package_duration_id: duration.id, package_name: `${pkg.title_id} ${formatDurationLabel(duration.duration)}`.trim(), package_duration: duration.duration, price: parseFloat(duration.price), therapist_commission: parseFloat(duration.commission) }
                                                                                                                 : it
                                                                                                         );
                                                                                                     }

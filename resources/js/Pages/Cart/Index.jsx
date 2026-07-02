@@ -317,17 +317,15 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
         const d = pkg.durations[durationIndex];
 
         const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
-        const packageNameWithDuration = `${title} ${formatDuration(d.duration)}`;
-
         const newGuests = [...guests];
         const activeGuest = newGuests[activeGuestIndex];
 
         // Check if this specific package + duration is already added
-        const isAlreadyAdded = activeGuest.packages.some(p => p.name === packageNameWithDuration);
+        const isAlreadyAdded = activeGuest.packages.some(p => (p.groupName || p.name) === title && p.duration === d.duration);
         if (isAlreadyAdded) return;
 
         const packageToAdd = {
-            name: packageNameWithDuration,
+            name: title,
             groupName: title,
             price: parseFloat(d.price),
             duration: d.duration
@@ -1051,7 +1049,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                     <p className="text-sm font-bold text-zenith-charcoal">Rp {parseFloat(currentDuration.price).toLocaleString('id-ID')}</p>
                                                 </div>
 
-                                                {guests[activeGuestIndex]?.packages.findIndex(p => p.name === `${title} ${formatDuration(currentDuration.duration)}`) !== -1 ? (
+                                                {guests[activeGuestIndex]?.packages.findIndex(p => (p.groupName || p.name) === title && p.duration === currentDuration.duration) !== -1 ? (
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         {/* Checklist Status */}
                                                         <div className="h-10 w-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
@@ -1060,7 +1058,7 @@ export default function Index({ auth, packages = [], signaturePackages = [] }) {
                                                         {/* Unchecklist Action */}
                                                         <button
                                                             onClick={() => {
-                                                                const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => p.name === `${title} ${formatDuration(currentDuration.duration)}`);
+                                                                const pkgIdx = guests[activeGuestIndex].packages.findIndex(p => (p.groupName || p.name) === title && p.duration === currentDuration.duration);
                                                                 if (pkgIdx !== -1) removePackageFromGuest(activeGuestIndex, pkgIdx);
                                                             }}
                                                             className="h-10 w-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"

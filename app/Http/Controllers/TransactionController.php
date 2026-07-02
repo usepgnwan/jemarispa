@@ -26,7 +26,7 @@ class TransactionController extends Controller
 
         $query = Transaction::with([
             'items' => function($query) {
-                $query->with('employee')->orderBy('guest_index', 'asc');
+                $query->with(['employee', 'package', 'packageDurationRel'])->orderBy('guest_index', 'asc');
             },
             'testimoni',
             'voucher',
@@ -188,16 +188,51 @@ class TransactionController extends Controller
                     $finalCommission = (!empty($guest['therapist_commission']) && $guest['therapist_commission'] > 0) ? $guest['therapist_commission'] : $guestCommission;
 
                     foreach ($guest['packages'] as $package) {
+                        $pName = $package['groupName'] ?? $package['name'];
+                        $pDuration = $package['duration'];
+                        if (is_numeric($pDuration)) {
+                            $pDuration .= ' Menit';
+                        }
+
+                        // Lookup package_id and package_duration_id dari DB
+                        $pkgRow = DB::table('packages')
+                            ->where('is_signature', false)
+                            ->where('title_id', $pName)
+                            ->first()
+                        ?? DB::table('packages')
+                            ->where('is_signature', false)
+                            ->where('title_en', $pName)
+                            ->first()
+                        ?? DB::table('packages')
+                            ->where('title_id', $pName)
+                            ->first()
+                        ?? DB::table('packages')
+                            ->where('title_en', $pName)
+                            ->first();
+                        $pkgId = $pkgRow?->id;
+
+                        $durNum = preg_match('/^\d+/', $pDuration, $m) ? $m[0] : null;
+                        $durationRow = $pkgId ? (DB::table('package_durations')
+                            ->where('package_id', $pkgId)
+                            ->where('duration', $pDuration)
+                            ->first()
+                        ?? ($durNum ? DB::table('package_durations')
+                            ->where('package_id', $pkgId)
+                            ->where('duration', 'like', $durNum . '%')
+                            ->first() : null)) : null;
+
                         TransactionItem::create([
-                            'transaction_id' => $transaction->id,
-                            'guest_index' => $index + 1,
-                            'guest_gender' => $guest['guestGender'] ?? 'wanita',
+                            'transaction_id'           => $transaction->id,
+                            'guest_index'              => $index + 1,
+                            'guest_gender'             => $guest['guestGender'] ?? 'wanita',
                             'therapist_gender_preference' => $guest['therapistGender'] ?? 'wanita',
-                            'package_name' => $package['name'],
-                            'package_duration' => $pDuration,
-                            'price' => $package['price'],
-                            'employee_id' => !empty($guest['employee_id']) ? $guest['employee_id'] : null,
-                            'therapist_commission' => $finalCommission,
+                            'package_name'             => $this->formatPackageNameWithDuration($package['name'] ?? null, $pDuration),
+                            'package_duration'         => $pDuration,
+                            'package_id'               => $pkgId,
+                            'package_duration_id'      => $durationRow?->id,
+                            'price'                    => $package['price'],
+                            'employee_id'              => !empty($guest['employee_id']) ? $guest['employee_id'] : null,
+                            'therapist_commission'     => $finalCommission,
                         ]);
                     }
                 }
@@ -303,15 +338,51 @@ class TransactionController extends Controller
                         }
 
                         foreach ($guest['packages'] as $package) {
+                            $pName = $package['groupName'] ?? $package['name'];
+                            $pDuration = $package['duration'];
+                            if (str_contains($pDuration, ' Menit')) {
+                                $pDuration = str_replace(' Menit', '', $pDuration);
+                            }
+                            $pDuration .= ' Menit';
+
+                            // Lookup package_id dan package_duration_id dari DB
+                            $pkgRow = DB::table('packages')
+                                ->where('is_signature', false)
+                                ->where('title_id', $pName)
+                                ->first()
+                            ?? DB::table('packages')
+                                ->where('is_signature', false)
+                                ->where('title_en', $pName)
+                                ->first()
+                            ?? DB::table('packages')
+                                ->where('title_id', $pName)
+                                ->first()
+                            ?? DB::table('packages')
+                                ->where('title_en', $pName)
+                                ->first();
+                            $pkgId = $pkgRow?->id;
+
+                            $durNum = preg_match('/^\d+/', $pDuration, $m) ? $m[0] : null;
+                            $durationRow = $pkgId ? (DB::table('package_durations')
+                                ->where('package_id', $pkgId)
+                                ->where('duration', $pDuration)
+                                ->first()
+                            ?? ($durNum ? DB::table('package_durations')
+                                ->where('package_id', $pkgId)
+                                ->where('duration', 'like', $durNum . '%')
+                                ->first() : null)) : null;
+
                             TransactionItem::create([
-                                'transaction_id' => $transaction->id,
-                                'guest_index' => $i + 1,
-                                'guest_gender' => $guest['guestGender'] ?? 'wanita',
+                                'transaction_id'           => $transaction->id,
+                                'guest_index'              => $i + 1,
+                                'guest_gender'             => $guest['guestGender'] ?? 'wanita',
                                 'therapist_gender_preference' => $guest['therapistGender'] ?? 'wanita',
-                                'package_name' => $package['name'],
-                                'package_duration' => (str_contains($package['duration'], ' Menit') ? $package['duration'] : $package['duration'] . ' Menit'),
-                                'price' => $package['price'],
-                                'therapist_commission' => $guestCommission,
+                                'package_name'             => $this->formatPackageNameWithDuration($package['name'] ?? null, $pDuration),
+                                'package_duration'         => $pDuration,
+                                'package_id'               => $pkgId,
+                                'package_duration_id'      => $durationRow?->id,
+                                'price'                    => $package['price'],
+                                'therapist_commission'     => $guestCommission,
                             ]);
                         }
                     }
@@ -462,6 +533,13 @@ class TransactionController extends Controller
             if (!empty($validated['items'])) {
                 foreach ($validated['items'] as $itemData) {
                     if (isset($itemData['id'])) {
+                        $pkgId = $itemData['package_id'] ?? null;
+                        $durId = $itemData['package_duration_id'] ?? null;
+                        if (!$pkgId || !$durId) {
+                            [$resPkgId, $resDurId] = $this->resolvePackageIds($itemData['package_name'] ?? null, $itemData['package_duration'] ?? null);
+                            $pkgId = $pkgId ?: $resPkgId;
+                            $durId = $durId ?: $resDurId;
+                        }
                         TransactionItem::where('id', $itemData['id'])
                             ->where('transaction_id', $transaction->id)
                             ->update([
@@ -469,8 +547,10 @@ class TransactionController extends Controller
                                 'therapist_commission' => $itemData['therapist_commission'] ?? 0,
                                 'guest_gender' => $itemData['guest_gender'] ?? 'wanita',
                                 'therapist_gender_preference' => $itemData['therapist_gender_preference'] ?? 'wanita',
-                                'package_name' => $itemData['package_name'] ?? null,
+                                'package_name' => $this->formatPackageNameWithDuration($itemData['package_name'] ?? null, $itemData['package_duration'] ?? null),
                                 'package_duration' => $itemData['package_duration'] ?? null,
+                                'package_id' => $pkgId,
+                                'package_duration_id' => $durId,
                                 'price' => $itemData['price'] ?? 0,
                             ]);
                     }
@@ -480,13 +560,22 @@ class TransactionController extends Controller
             // Handle new items
             if (!empty($validated['new_items'])) {
                 foreach ($validated['new_items'] as $item) {
+                    $pkgId = $item['package_id'] ?? null;
+                    $durId = $item['package_duration_id'] ?? null;
+                    if (!$pkgId || !$durId) {
+                        [$resPkgId, $resDurId] = $this->resolvePackageIds($item['package_name'] ?? null, $item['package_duration'] ?? null);
+                        $pkgId = $pkgId ?: $resPkgId;
+                        $durId = $durId ?: $resDurId;
+                    }
                     TransactionItem::create([
                         'transaction_id' => $transaction->id,
                         'guest_index' => $item['guest_index'],
                         'guest_gender' => $item['guest_gender'] ?? 'wanita',
                         'therapist_gender_preference' => $item['therapist_gender_preference'] ?? 'wanita',
-                        'package_name' => $item['package_name'],
+                        'package_name' => $this->formatPackageNameWithDuration($item['package_name'] ?? null, $item['package_duration'] ?? null),
                         'package_duration' => $item['package_duration'],
+                        'package_id' => $pkgId,
+                        'package_duration_id' => $durId,
                         'price' => $item['price'],
                         'therapist_commission' => $item['therapist_commission'] ?? 0,
                         'employee_id' => $item['employee_id'] ?? null,
@@ -498,13 +587,80 @@ class TransactionController extends Controller
         });
     }
 
+    private function formatPackageNameWithDuration(?string $name, ?string $duration): ?string
+    {
+        if (!$name) {
+            return null;
+        }
+        $cleanName = trim(preg_replace('/\s+\d+(?:\s*(?:menit|minutes|mins|min))?.*$/i', '', $name));
+        if (empty($cleanName)) {
+            $cleanName = trim($name);
+        }
+        $durStr = trim($duration ?? '');
+        if (!empty($durStr) && !str_contains(strtolower($cleanName), strtolower($durStr))) {
+            return trim("{$cleanName} {$durStr}");
+        }
+        return trim($cleanName ?: $name);
+    }
+
+    private function resolvePackageIds(?string $name, ?string $duration): array
+    {
+        if (!$name) {
+            return [null, null];
+        }
+        $cleanName = trim(preg_replace('/\s+\d+(?:\s*(?:menit|minutes|mins|min))?.*$/i', '', $name));
+        if (empty($cleanName)) {
+            $cleanName = trim($name);
+        }
+        $pkgRow = DB::table('packages')
+            ->where('is_signature', false)
+            ->where(function($q) use ($name, $cleanName) {
+                $q->where('title_id', $name)->orWhere('title_id', $cleanName);
+            })
+            ->first()
+        ?? DB::table('packages')
+            ->where('is_signature', false)
+            ->where(function($q) use ($name, $cleanName) {
+                $q->where('title_en', $name)->orWhere('title_en', $cleanName);
+            })
+            ->first()
+        ?? DB::table('packages')
+            ->where(function($q) use ($name, $cleanName) {
+                $q->where('title_id', $name)->orWhere('title_id', $cleanName);
+            })
+            ->first()
+        ?? DB::table('packages')
+            ->where(function($q) use ($name, $cleanName) {
+                $q->where('title_en', $name)->orWhere('title_en', $cleanName);
+            })
+            ->first();
+        $pkgId = $pkgRow?->id;
+
+        $durId = null;
+        if ($pkgId && $duration) {
+            $durNum = preg_match('/^\d+/', $duration, $m) ? $m[0] : null;
+            $durationRow = DB::table('package_durations')
+                ->where('package_id', $pkgId)
+                ->where('duration', $duration)
+                ->first()
+            ?? ($durNum ? DB::table('package_durations')
+                ->where('package_id', $pkgId)
+                ->where('duration', 'like', $durNum . '%')
+                ->first() : null);
+            $durId = $durationRow?->id;
+        }
+
+        return [$pkgId, $durId];
+    }
+
+
     public function downloadPdf(Transaction $transaction)
     {
         $transaction->load(['items.employee', 'voucher']);
         $settings = Setting::first();
         $pdf = Pdf::loadView('pdf.invoice', compact('transaction', 'settings'));
         $filename = "Invoice-" . str_replace(['/', '\\'], '-', $transaction->order_number) . ".pdf";
-        return $pdf->stream($filename);
+        return $pdf->download($filename);
     }
 
     public function publicPdf($orderNumber)
