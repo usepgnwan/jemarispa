@@ -111,6 +111,16 @@ export default function Index({ employees, filters }) {
 
         setProcessingFront(true);
         try {
+            await document.fonts.ready;
+            try {
+                await document.fonts.load('800 72px Poppins');
+                await document.fonts.load('600 36px Poppins');
+                await document.fonts.load('600 32px Poppins');
+                await document.fonts.load('400 22px Poppins');
+            } catch (e) {
+                console.warn('Font loading check:', e);
+            }
+
             const canvas = document.createElement('canvas');
             canvas.width = 1129;
             canvas.height = 1797;
@@ -124,23 +134,14 @@ export default function Index({ employees, filters }) {
             if (selectedEmployeeQr.photo) {
                 try {
                     const photoImg = await loadImage(`/storage/${selectedEmployeeQr.photo}`);
-                    const targetW = 1129;
-                    const targetH = 1280;
-                    const imgRatio = photoImg.width / photoImg.height;
-                    const targetRatio = targetW / targetH;
+                    const maxW = 1129;
+                    const maxH = 1180;
+                    const scale = Math.min(maxW / photoImg.width, maxH / photoImg.height);
+                    const drawW = photoImg.width * scale;
+                    const drawH = photoImg.height * scale;
+                    const drawX = (maxW - drawW) / 2;
+                    const drawY = maxH - drawH;
 
-                    let drawW, drawH, drawX, drawY;
-                    if (imgRatio > targetRatio) {
-                        drawH = targetH;
-                        drawW = photoImg.width * (targetH / photoImg.height);
-                        drawX = (targetW - drawW) / 2;
-                        drawY = 0;
-                    } else {
-                        drawW = targetW;
-                        drawH = photoImg.height * (targetW / photoImg.width);
-                        drawX = 0;
-                        drawY = 0;
-                    }
                     ctx.drawImage(photoImg, drawX, drawY, drawW, drawH);
                 } catch (e) {
                     console.error('Failed to load employee photo for canvas', e);
@@ -154,20 +155,26 @@ export default function Index({ employees, filters }) {
             // 4. Draw Employee Details Text
             ctx.textAlign = 'left';
 
-            // Employee Name
+            // 1) Nama Panggilan (Nickname) - Poppins Extra Bold
             ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 56px sans-serif';
-            ctx.fillText((selectedEmployeeQr.name || '').toUpperCase(), 92, 1255);
+            ctx.font = '800 72px Poppins, sans-serif';
+            ctx.fillText((selectedEmployeeQr.name || '').toUpperCase(), 92, 1265);
 
-            // Employee Title / Jabatan
+            // 2) Nama Lengkap | Jabatan - Poppins SemiBold
+            ctx.font = '600 32px Poppins, sans-serif';
+            const fullNameText = (selectedEmployeeQr.fullname || selectedEmployeeQr.name || '').toUpperCase();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(fullNameText, 92, 1325);
+
+            const fullNameWidth = ctx.measureText(fullNameText).width;
+            const titleText = `    |    ${(selectedEmployeeQr.title || 'MASSAGE THERAPIST').toUpperCase()}`;
             ctx.fillStyle = '#EAB308'; // Golden Amber
-            ctx.font = 'bold 38px sans-serif';
-            ctx.fillText((selectedEmployeeQr.title || 'MASSAGE THERAPIST').toUpperCase(), 92, 1325);
+            ctx.fillText(titleText, 92 + fullNameWidth, 1325);
 
-            // Employee ID
+            // 3) ID Karyawan - Poppins Regular
             ctx.fillStyle = '#9CA3AF';
-            ctx.font = '32px sans-serif';
-            ctx.fillText(`NO ID ${selectedEmployeeQr.nip || selectedEmployeeQr.id}`, 92, 1385);
+            ctx.font = '400 22px Poppins, sans-serif';
+            ctx.fillText(`NO ID ${selectedEmployeeQr.nip || selectedEmployeeQr.id}`, 92, 1380);
 
             // 5. Draw QR Code inside the white rounded box (92, 1479, 218, 218)
             ctx.drawImage(qrCanvas, 101, 1488, 200, 200);
@@ -176,7 +183,7 @@ export default function Index({ employees, filters }) {
             const pngUrl = canvas.toDataURL('image/png');
             const downloadLink = document.createElement('a');
             downloadLink.href = pngUrl;
-            downloadLink.download = `Kartu-Depan-${selectedEmployeeQr.nip || selectedEmployeeQr.id}-${selectedEmployeeQr.name}.png`;
+            downloadLink.download = `Kartu-Depan-${selectedEmployeeQr.nip || selectedEmployeeQr.id}-${selectedEmployeeQr.fullname || selectedEmployeeQr.name}.png`;
             document.body.appendChild(downloadLink);
             downloadLink.click();
             document.body.removeChild(downloadLink);
@@ -306,7 +313,12 @@ export default function Index({ employees, filters }) {
                                                                 <UsersIcon className="w-5 h-5" />
                                                             </div>
                                                         )}
-                                                        <span className="font-semibold text-gray-900">{employee.name}</span>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold text-gray-900">{employee.fullname || employee.name}</span>
+                                                            {employee.fullname && employee.fullname !== employee.name && (
+                                                                <span className="text-xs text-gray-500">Panggilan: {employee.name}</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -409,13 +421,12 @@ export default function Index({ employees, filters }) {
                                         <Link
                                             key={index}
                                             href={link.url || '#'}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                                link.active
-                                                    ? 'bg-[#0057B8] text-white shadow-sm'
-                                                    : link.url
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${link.active
+                                                ? 'bg-[#0057B8] text-white shadow-sm'
+                                                : link.url
                                                     ? 'text-gray-600 hover:bg-gray-100'
                                                     : 'text-gray-300 cursor-not-allowed'
-                                            }`}
+                                                }`}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
                                             preserveScroll
                                             preserveState
