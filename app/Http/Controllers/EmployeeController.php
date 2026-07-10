@@ -19,6 +19,7 @@ class EmployeeController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('fullname', 'ilike', "%{$search}%")
                   ->orWhere('nip', 'ilike', "%{$search}%")
                   ->orWhere('title', 'ilike', "%{$search}%")
                   ->orWhere('nohp', 'ilike', "%{$search}%");
@@ -46,6 +47,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'nip' => 'nullable|string|max:50|unique:employees,nip',
             'name' => 'required|string|max:255',
+            'fullname' => 'nullable|string|max:255',
             'nohp' => 'required|string|max:20',
             'title' => 'required|string|max:255',
             'work_area' => 'nullable|string|max:255',
@@ -71,6 +73,7 @@ class EmployeeController extends Controller
         $employee = Employee::create([
             'nip' => $validated['nip'] ?? null,
             'name' => $validated['name'],
+            'fullname' => !empty($validated['fullname']) ? $validated['fullname'] : $validated['name'],
             'nohp' => $validated['nohp'],
             'title' => $validated['title'],
             'work_area' => $validated['work_area'] ?? 'Jemari Home Spa - Seluruh Area Layanan',
@@ -88,6 +91,7 @@ class EmployeeController extends Controller
         \App\Models\User::create([
             'employee_id' => $employee->id,
             'name' => $employee->name,
+            'fullname' => $employee->fullname,
             'email' => $validated['email'],
             'password' => \Illuminate\Support\Facades\Hash::make('password123'),
             'role' => 'terapis',
@@ -118,6 +122,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'nip' => ['nullable', 'string', 'max:50', \Illuminate\Validation\Rule::unique('employees', 'nip')->ignore($employee->id)],
             'name' => 'required|string|max:255',
+            'fullname' => 'nullable|string|max:255',
             'nohp' => 'required|string|max:20',
             'title' => 'required|string|max:255',
             'work_area' => 'nullable|string|max:255',
@@ -145,6 +150,7 @@ class EmployeeController extends Controller
         $employee->update([
             'nip' => $validated['nip'] ?? null,
             'name' => $validated['name'],
+            'fullname' => !empty($validated['fullname']) ? $validated['fullname'] : $validated['name'],
             'nohp' => $validated['nohp'],
             'title' => $validated['title'],
             'work_area' => $validated['work_area'] ?? $employee->work_area ?? 'Jemari Home Spa - Seluruh Area Layanan',
@@ -162,6 +168,7 @@ class EmployeeController extends Controller
         if ($user) {
             $user->update([
                 'name' => $employee->name,
+                'fullname' => $employee->fullname,
                 'email' => $validated['email'],
                 'is_active' => $request->boolean('is_active', true),
             ]);
@@ -169,6 +176,7 @@ class EmployeeController extends Controller
             \App\Models\User::create([
                 'employee_id' => $employee->id,
                 'name' => $employee->name,
+                'fullname' => $employee->fullname,
                 'email' => $validated['email'],
                 'password' => \Illuminate\Support\Facades\Hash::make('password123'),
                 'role' => 'terapis',

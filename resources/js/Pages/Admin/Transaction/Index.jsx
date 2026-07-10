@@ -148,6 +148,10 @@ export default function Index({ transactions, filters, counts, employees, packag
     const [dpAmount, setDpAmount] = useState('');
     const [previewMessage, setPreviewMessage] = useState('');
 
+    // State for Profil Terapis Link Modal
+    const [isTherapistLinkModalOpen, setIsTherapistLinkModalOpen] = useState(false);
+    const [therapistModalSearch, setTherapistModalSearch] = useState('');
+
     const { patch, delete: destroy, processing } = useForm();
 
     const getItemDurationLabel = (item) => {
@@ -786,17 +790,29 @@ export default function Index({ transactions, filters, counts, employees, packag
                                     />
                                 </div>
 
-                                <div className="relative w-full sm:w-64">
+                                <div className="relative w-full sm:w-auto flex items-center gap-2">
                                     <select
                                         value={therapistId}
                                         onChange={handleTherapistChange}
-                                        className="w-full bg-gray-50 border-transparent focus:bg-white focus:border-zenith-orange focus:ring-zenith-orange rounded-full text-sm py-2.5 transition-colors cursor-pointer"
+                                        className="w-full sm:w-56 bg-gray-50 border-transparent focus:bg-white focus:border-zenith-orange focus:ring-zenith-orange rounded-full text-sm py-2.5 transition-colors cursor-pointer"
                                     >
                                         <option value="">Semua Terapis</option>
                                         {employees.map(emp => (
                                             <option key={emp.id} value={emp.id}>{emp.name}</option>
                                         ))}
                                     </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setTherapistModalSearch('');
+                                            setIsTherapistLinkModalOpen(true);
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-zenith-orange/10 text-zenith-orange hover:bg-zenith-orange hover:text-white font-bold text-xs uppercase tracking-wider transition-all border border-zenith-orange/20 shrink-0 shadow-sm"
+                                        title="Lihat & Salin Link Profil Terapis"
+                                    >
+                                        <LinkIcon className="w-4 h-4" />
+                                        <span>Profil Terapis</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1952,6 +1968,111 @@ export default function Index({ transactions, filters, counts, employees, packag
                         <ChatBubbleLeftRightIcon className="w-4 h-4" />
                         Kirim ke WhatsApp
                     </button>
+                </div>
+            </Modal>
+
+            {/* Modal Link Profil Terapis */}
+            <Modal show={isTherapistLinkModalOpen} onClose={() => setIsTherapistLinkModalOpen(false)} maxWidth="2xl">
+                <div className="p-6">
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-10 h-10 rounded-xl bg-zenith-orange/10 flex items-center justify-center text-zenith-orange">
+                                <LinkIcon className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg text-gray-900">Link Profil Terapis</h3>
+                                <p className="text-xs text-gray-500">Salin tautan kartu identitas digital terapis untuk dikirim ke pelanggan</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setIsTherapistLinkModalOpen(false)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <XMarkIcon className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <div className="mt-4">
+                        <div className="relative mb-4">
+                            <input
+                                type="text"
+                                placeholder="Cari nama terapis..."
+                                value={therapistModalSearch}
+                                onChange={(e) => setTherapistModalSearch(e.target.value)}
+                                className="w-full bg-gray-50 border-gray-200 focus:bg-white focus:border-zenith-orange focus:ring-zenith-orange rounded-xl text-sm py-2 px-3 transition-colors"
+                            />
+                        </div>
+
+                        <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-2.5">
+                            {employees
+                                .filter(emp => {
+                                    const q = therapistModalSearch.toLowerCase();
+                                    return (
+                                        (emp.name && emp.name.toLowerCase().includes(q)) ||
+                                        (emp.fullname && emp.fullname.toLowerCase().includes(q)) ||
+                                        (emp.nip && emp.nip.toLowerCase().includes(q))
+                                    );
+                                })
+                                .map((emp) => {
+                                    const publicUrl = `${window.location.origin}/kartu/karyawan/${emp.nip || emp.id}`;
+                                    return (
+                                        <div
+                                            key={emp.id}
+                                            className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 hover:border-zenith-orange/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {emp.photo ? (
+                                                    <img
+                                                        src={`/storage/${emp.photo}`}
+                                                        alt={emp.name}
+                                                        className="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0"
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-zenith-orange/10 flex items-center justify-center text-zenith-orange shrink-0 font-bold text-sm">
+                                                        {emp.name?.charAt(0)}
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <div className="font-bold text-sm text-gray-900">
+                                                        {emp.fullname || emp.name}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 flex items-center gap-1.5">
+                                                        <span>Panggilan: <strong className="text-gray-700">{emp.name}</strong></span>
+                                                        <span>•</span>
+                                                        <span>ID: #{emp.nip || emp.id}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 self-end sm:self-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(publicUrl);
+                                                        setToastMessage(`✅ Link profil ${emp.name} berhasil disalin!`);
+                                                        setShowToast(true);
+                                                        setTimeout(() => setShowToast(false), 2500);
+                                                    }}
+                                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:border-zenith-orange hover:text-zenith-orange font-bold text-xs transition-all shadow-sm"
+                                                >
+                                                    <LinkIcon className="w-3.5 h-3.5" />
+                                                    <span>Salin Link</span>
+                                                </button>
+                                                <a
+                                                    href={publicUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zenith-orange/10 text-zenith-orange hover:bg-zenith-orange hover:text-white font-bold text-xs transition-all"
+                                                    title="Buka Profil"
+                                                >
+                                                    <EyeIcon className="w-3.5 h-3.5" />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    </div>
                 </div>
             </Modal>
 

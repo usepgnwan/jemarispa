@@ -61,12 +61,12 @@ export default function EmployeeCard({ employee }) {
 
             {/* Header bergaya Home dengan Logo Jemari */}
             <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/60 shadow-sm">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-3 group">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-2">
+                    <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
                         <img
                             src="/images/Jemari Logo - 1.png"
                             alt="Jemari Home Spa"
-                            className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105"
+                            className="h-8 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105 shrink-0"
                         />
                         <div className="hidden sm:block border-l border-gray-200 pl-3">
                             <span className="block text-xs font-bold text-zenith-orange uppercase tracking-wider">
@@ -78,19 +78,11 @@ export default function EmployeeCard({ employee }) {
                         </div>
                     </Link>
 
-                    <div className="flex items-center gap-2.5">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
-                            <ShieldCheckIcon className="w-4 h-4 text-emerald-600" />
-                            Terverifikasi Digital
+                    <div className="flex items-center shrink-0">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm shrink-0">
+                            <ShieldCheckIcon className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Terverifikasi Digital</span>
                         </span>
-                        <button
-                            onClick={handleCopyUrl}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold shadow-sm transition-all"
-                            title="Bagikan Kartu Staf"
-                        >
-                            <ShareIcon className="w-4 h-4 text-gray-500" />
-                            <span>{copied ? 'Tersalin!' : 'Bagikan'}</span>
-                        </button>
                     </div>
                 </div>
             </header>
@@ -148,8 +140,10 @@ export default function EmployeeCard({ employee }) {
                                     <span>{employee.name}</span>
                                     <CheckBadgeIcon className="w-7 h-7 text-zenith-orange shrink-0" title="Staf Terverifikasi" />
                                 </h1>
-                                <p className="text-sm font-semibold text-gray-600 mt-1">
-                                    {employee.title || 'Terapis Spa Profesional'}
+                                <p className="text-sm font-semibold text-gray-700 mt-6 flex items-center justify-center flex-wrap">
+                                    <span>{employee.fullname || employee.name}</span>
+                                    <span className="mx-3 sm:mx-4 text-gray-300 font-light">|</span>
+                                    <span className="text-zenith-orange">{employee.title || 'Terapis Spa Profesional'}</span>
                                 </p>
                             </div>
 
@@ -167,23 +161,7 @@ export default function EmployeeCard({ employee }) {
                                             Kartu digital resmi dari sistem Jemari Home Spa.
                                         </div>
 
-                                        {/* HIGHLIGHT STATUS KARYAWAN */}
-                                        <div className="mt-3 pt-3 border-t border-gray-200/80 flex items-center justify-between">
-                                            <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                                                Status Karyawan:
-                                            </span>
-                                            {employee.status === 'tidak_aktif' ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 border border-red-300 text-red-700 text-xs font-extrabold shadow-sm">
-                                                    <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-                                                    TIDAK AKTIF
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-700 text-xs font-extrabold shadow-sm">
-                                                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                                                    STAFF AKTIF
-                                                </span>
-                                            )}
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -355,11 +333,10 @@ export default function EmployeeCard({ employee }) {
                                                         <button
                                                             key={idx}
                                                             onClick={() => setCurrentCertIndex(idx)}
-                                                            className={`h-2 rounded-full transition-all duration-300 ${
-                                                                idx === currentCertIndex
-                                                                    ? 'w-8 bg-zenith-orange'
-                                                                    : 'w-2 bg-gray-200 hover:bg-gray-300'
-                                                            }`}
+                                                            className={`h-2 rounded-full transition-all duration-300 ${idx === currentCertIndex
+                                                                ? 'w-8 bg-zenith-orange'
+                                                                : 'w-2 bg-gray-200 hover:bg-gray-300'
+                                                                }`}
                                                         />
                                                     ))}
                                                 </div>

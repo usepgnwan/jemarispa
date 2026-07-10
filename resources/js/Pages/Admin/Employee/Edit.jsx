@@ -13,6 +13,7 @@ export default function Edit({ employee, skills = [], certifications = [] }) {
         _method: 'PUT',
         nip: employee.nip || '',
         name: employee.name || '',
+        fullname: employee.fullname || employee.name || '',
         nohp: employee.nohp || '',
         title: employee.title || '',
         status: employee.status || 'aktif',
@@ -143,7 +144,7 @@ export default function Edit({ employee, skills = [], certifications = [] }) {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
                                         <InputLabel htmlFor="nip" value="Nomor Induk Pegawai (NIP)" />
                                         <TextInput
@@ -159,7 +160,7 @@ export default function Edit({ employee, skills = [], certifications = [] }) {
                                     </div>
 
                                     <div>
-                                        <InputLabel htmlFor="name" value="Nama Lengkap Karyawan" />
+                                        <InputLabel htmlFor="name" value="Nama Pendek / Nickname" />
                                         <TextInput
                                             id="name"
                                             type="text"
@@ -168,9 +169,24 @@ export default function Edit({ employee, skills = [], certifications = [] }) {
                                             className="mt-1 block w-full"
                                             onChange={(e) => setData('name', e.target.value)}
                                             required
-                                            placeholder="Contoh: Budi Santoso"
+                                            placeholder="Contoh: Ina"
                                         />
                                         <InputError message={errors.name} className="mt-2" />
+                                    </div>
+
+                                    <div>
+                                        <InputLabel htmlFor="fullname" value="Nama Lengkap Karyawan" />
+                                        <TextInput
+                                            id="fullname"
+                                            type="text"
+                                            name="fullname"
+                                            value={data.fullname}
+                                            className="mt-1 block w-full"
+                                            onChange={(e) => setData('fullname', e.target.value)}
+                                            required
+                                            placeholder="Contoh: Ina Nurhayati"
+                                        />
+                                        <InputError message={errors.fullname} className="mt-2" />
                                     </div>
                                 </div>
 
