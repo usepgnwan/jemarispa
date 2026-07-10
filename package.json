@@ -30,6 +30,7 @@
         "@heroicons/react": "^2.2.0",
         "driver.js": "^1.4.0",
         "preact": "^10.29.1",
+        "qrcode.react": "^4.2.0",
         "quill": "^2.0.3",
         "quill-table-better": "^1.2.3",
         "react-is": "^19.2.6",

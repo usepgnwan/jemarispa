@@ -17,7 +17,9 @@ import {
     CalendarDaysIcon,
     ChartBarSquareIcon,
     CalendarIcon,
-    BanknotesIcon
+    BanknotesIcon,
+    AcademicCapIcon,
+    CheckBadgeIcon
 } from '@heroicons/react/24/outline';
 
 function classNames(...classes) {
@@ -58,6 +60,8 @@ export default function Sidebar({ collapsed }) {
             section: 'MASTER',
             items: [
                 { name: 'Data Karyawan', href: route('admin.employee.index'), icon: UsersIcon, current: route().current('admin.employee.*'), roles: ['admin'] },
+                { name: 'Bidang Keahlian', href: route('admin.skill.index'), icon: AcademicCapIcon, current: route().current('admin.skill.*'), roles: ['admin'] },
+                { name: 'Status Sertifikasi', href: route('admin.certification.index'), icon: CheckBadgeIcon, current: route().current('admin.certification.*'), roles: ['admin'] },
                 { name: 'Data User', href: route('admin.user.index'), icon: UsersIcon, current: route().current('admin.user.*'), roles: ['admin'] },
                 { name: 'Platform', href: route('platform.index'), icon: GlobeAltIcon, current: route().current('platform.*'), roles: ['admin'] },
             ]

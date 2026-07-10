@@ -19,10 +19,13 @@ Route::get('/', function () {
         'meta' => [
             'title' => 'Pijat Panggilan Bandung & Cimahi 24 Jam - Jemari Home Spa',
             'description' => 'Layanan pijat panggilan Bandung 24 jam terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi. Terapis pria & wanita profesional.'
-            // static_content not specified here, so app.blade.php will use the default static HTML block
         ]
     ]);
 });
+
+// Kartu Verifikasi Digital Staf Karyawan (Public ID Card)
+Route::get('/kartu/karyawan/{nip}', [\App\Http\Controllers\PublicEmployeeCardController::class, 'show'])->name('public.employee.card');
+Route::get('/kartu/karywan/{nip}', [\App\Http\Controllers\PublicEmployeeCardController::class, 'show'])->name('public.employee.card.alias');
 
 Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
     if (auth()->check() && auth()->user()->isTerapis()) {
@@ -194,6 +197,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\VoucherController;
+use App\Http\Controllers\SkillController;
+use App\Http\Controllers\CertificationController;
 
 Route::post('api/analytics', [AnalyticController::class, 'store'])->name('api.analytics.store');
 
@@ -246,6 +251,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('admin/signature-ritual', \App\Http\Controllers\SignatureRitualController::class)->names('admin.signature-ritual')->except(['show']);
         Route::resource('admin/employee', EmployeeController::class)->names('admin.employee')->except(['show']);
         Route::resource('admin/user', UserController::class)->names('admin.user')->except(['show']);
+        Route::resource('admin/skill', SkillController::class)->names('admin.skill')->except(['show', 'create', 'edit']);
+        Route::resource('admin/certification', CertificationController::class)->names('admin.certification')->except(['show', 'create', 'edit']);
         
         // Settings routes
         Route::get('admin/settings', [SettingController::class, 'index'])->name('admin.settings.index');
