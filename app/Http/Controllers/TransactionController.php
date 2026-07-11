@@ -52,7 +52,13 @@ class TransactionController extends Controller
 
         // Therapist Filtering
         $therapistId = $request->input('therapist_id');
-        if ($therapistId) {
+        if (in_array($therapistId, ['unassigned', 'null', 'belum_ada'], true)) {
+            $query->where(function($q) {
+                $q->whereHas('items', function($sub) {
+                    $sub->whereNull('employee_id');
+                })->orWhereDoesntHave('items');
+            });
+        } elseif ($therapistId) {
             $query->whereHas('items', function($q) use ($therapistId) {
                 $q->where('employee_id', $therapistId);
             });
@@ -96,6 +102,9 @@ class TransactionController extends Controller
                 'search' => $search,
                 'limit' => $limit,
                 'tab' => $tab,
+                'therapist_id' => $therapistId,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
             ],
             'counts' => $counts
         ]);

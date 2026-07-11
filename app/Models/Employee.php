@@ -34,4 +34,10 @@ class Employee extends Model
                     ->withPivot(['certificate_file', 'certificate_number', 'valid_until'])
                     ->withTimestamps();
     }
+
+    public function serviceAreas()
+    {
+        return $this->belongsToMany(ServiceArea::class, 'employee_service_area')
+                    ->withTimestamps();
+    }
 }

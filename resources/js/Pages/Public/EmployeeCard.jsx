@@ -23,6 +23,7 @@ export default function EmployeeCard({ employee }) {
 
     const skills = employee.skills || [];
     const certifications = employee.certifications || [];
+    const serviceAreas = employee.service_areas || employee.serviceAreas || [];
 
     const handleCopyUrl = () => {
         navigator.clipboard.writeText(window.location.href);
@@ -177,7 +178,7 @@ export default function EmployeeCard({ employee }) {
                                     <BriefcaseIcon className="w-4 h-4 text-zenith-orange" />
                                     Informasi Staf
                                 </h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100">
                                         <div className="text-xs text-gray-500 flex items-center gap-1.5 font-semibold">
                                             <BriefcaseIcon className="w-4 h-4 text-zenith-orange" />
@@ -198,15 +199,7 @@ export default function EmployeeCard({ employee }) {
                                         </div>
                                     </div>
 
-                                    <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100">
-                                        <div className="text-xs text-gray-500 flex items-center gap-1.5 font-semibold">
-                                            <MapPinIcon className="w-4 h-4 text-zenith-orange" />
-                                            Area Kerja
-                                        </div>
-                                        <div className="mt-1.5 text-base font-bold text-gray-900 line-clamp-1">
-                                            {employee.work_area || 'Jemari Home Spa'}
-                                        </div>
-                                    </div>
+
                                 </div>
                             </div>
 
@@ -240,6 +233,40 @@ export default function EmployeeCard({ employee }) {
                                 ) : (
                                     <div className="p-6 rounded-2xl bg-gray-50 border border-dashed border-gray-200 text-center text-sm text-gray-500">
                                         Belum ada data keahlian treatment terdaftar.
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Cakupan Area Layanan (1 ke N) */}
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                                        <MapPinIcon className="w-4 h-4 text-zenith-orange" />
+                                        Cakupan Area Layanan
+                                    </h2>
+                                    <span className="text-xs font-semibold text-gray-500">
+                                        {serviceAreas.length} Wilayah Operasional
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-500 mb-4">
+                                    Wilayah pelayanan home service yang dicakup oleh terapis:
+                                </p>
+
+                                {serviceAreas.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {serviceAreas.map((area) => (
+                                            <div
+                                                key={area.id}
+                                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 text-gray-800 text-xs font-semibold shadow-sm"
+                                            >
+                                                <MapPinIcon className="w-3.5 h-3.5 text-[#0057B8] shrink-0" />
+                                                <span>{area.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-4 rounded-2xl bg-gray-50 border border-dashed border-gray-200 text-center text-xs text-gray-500">
+                                        Seluruh wilayah operasional Jemari Home Spa ({employee.work_area || 'Bandung & Sekitarnya'})
                                     </div>
                                 )}
                             </div>

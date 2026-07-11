@@ -94,7 +94,7 @@ jemarihomespa.com`;
         const minutes = String(duration || '').match(/\d+/)?.[0];
         return minutes ? `${minutes} menit` : '';
     };
-    const formatPackagePrice = (price) => `Rp. ${Math.round(parseFloat(price || 0)).toLocaleString('id-ID').replace(/\./g, ' ')}`;
+    const formatPackagePrice = (price) => `Rp ${Math.round(parseFloat(price || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 
     const handlePaxChange = (newPax) => {
         const count = parseInt(newPax);
@@ -379,7 +379,7 @@ jemarihomespa.com`;
 
     const getInvoiceMessageAsync = async (transaction) => {
         const rawTemplate = app_settings?.template_invoice || defaultInvoiceTemplate;
-        const formatCurrency = (val) => `Rp ${parseFloat(val).toLocaleString('id-ID')}`;
+        const formatCurrency = (val) => `Rp ${Math.round(parseFloat(val || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 
         const grouped = (transaction.items || []).reduce((acc, item) => {
             const idx = item.guest_index || 1;

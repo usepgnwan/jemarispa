@@ -8,7 +8,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { ArrowLeftIcon, PhotoIcon, PlusIcon, TrashIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline';
 
-export default function Create({ skills = [], certifications = [] }) {
+export default function Create({ skills = [], certifications = [], serviceAreas = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         nip: '',
         name: '',
@@ -22,12 +22,24 @@ export default function Create({ skills = [], certifications = [] }) {
         join_date: '',
         photo: null,
         skills: [],
+        service_areas: [],
         certifications: [{ certification_id: '', certificate_number: '', valid_until: '', file: null }]
     });
 
     const toggleSkill = (id) => {
         const current = data.skills || [];
         setData('skills', current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+    };
+
+    const toggleServiceArea = (id) => {
+        const current = data.service_areas || [];
+        const updated = current.includes(id) ? current.filter(item => item !== id) : [...current, id];
+        const areaNames = serviceAreas.filter(a => updated.includes(a.id)).map(a => a.name);
+        setData(prev => ({
+            ...prev,
+            service_areas: updated,
+            work_area: areaNames.length > 0 ? areaNames.join(', ') : 'Jemari Home Spa - Seluruh Area Layanan'
+        }));
     };
 
     const addCertificationRow = () => {
@@ -272,17 +284,57 @@ export default function Create({ skills = [], certifications = [] }) {
                                 </div>
 
                                 <div>
-                                    <InputLabel htmlFor="work_area" value="Area Kerja / Cakupan Wilayah" />
+                                    <InputLabel htmlFor="work_area" value="Catatan Ringkasan Area Kerja / Cakupan Wilayah" />
                                     <TextInput
                                         id="work_area"
                                         type="text"
                                         name="work_area"
                                         value={data.work_area}
-                                        className="mt-1 block w-full"
+                                        className="mt-1 block w-full text-sm"
                                         onChange={(e) => setData('work_area', e.target.value)}
-                                        placeholder="Contoh: Jemari Home Spa - Seluruh Area Layanan"
+                                        placeholder="Otomatis terisi saat memilih Service Area di bawah..."
                                     />
                                     <InputError message={errors.work_area} className="mt-2" />
+                                </div>
+
+                                {/* Service Areas (1 ke N) */}
+                                <div className="pt-4 border-t border-gray-100">
+                                    <InputLabel value="Cakupan Area Layanan / Service Areas (1 ke N)" />
+                                    <p className="text-xs text-gray-500 mt-1 mb-3">
+                                        Pilih 1 atau lebih wilayah layanan di mana terapis ini dapat melayani reservasi:
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {serviceAreas.map((area) => {
+                                            const isSelected = (data.service_areas || []).includes(area.id);
+                                            return (
+                                                <div
+                                                    key={area.id}
+                                                    onClick={() => toggleServiceArea(area.id)}
+                                                    className={`cursor-pointer border rounded-2xl p-3.5 flex items-center justify-between transition-all select-none ${
+                                                        isSelected
+                                                            ? 'bg-blue-50/70 border-[#0057B8] shadow-sm'
+                                                            : 'bg-white border-gray-200 hover:border-gray-300'
+                                                    }`}
+                                                >
+                                                    <div>
+                                                        <p className={`text-sm font-semibold ${isSelected ? 'text-[#0057B8]' : 'text-gray-800'}`}>
+                                                            {area.name}
+                                                        </p>
+                                                    </div>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => {}}
+                                                        className="rounded text-[#0057B8] focus:ring-[#0057B8] w-4 h-4 pointer-events-none"
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                        {serviceAreas.length === 0 && (
+                                            <p className="text-xs text-gray-400 italic">Belum ada data Service Areas di menu Pengaturan.</p>
+                                        )}
+                                    </div>
+                                    <InputError message={errors.service_areas} className="mt-2" />
                                 </div>
 
                                 {/* Bidang Keahlian (1 ke N) */}

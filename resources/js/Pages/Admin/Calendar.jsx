@@ -72,14 +72,11 @@ jemarihomespa.com`;
         const minutes = String(duration || '').match(/\d+/)?.[0];
         return minutes ? `${minutes} Menit` : '';
     };
-    const formatPackagePrice = (price) => `Rp. ${Math.round(parseFloat(price || 0)).toLocaleString('id-ID').replace(/\./g, ' ')}`;
+    const formatPackagePrice = (price) => `Rp ${Math.round(parseFloat(price || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0
-        }).format(amount);
+        const num = Math.round(parseFloat(amount || 0));
+        return `Rp ${num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
     };
 
     const getVoucherNominalDiscount = (transaction) => {
