@@ -10,7 +10,7 @@ class PublicEmployeeCardController extends Controller
 {
     public function show($nip)
     {
-        $employee = Employee::with(['skills', 'certifications'])
+        $employee = Employee::with(['skills', 'certifications', 'serviceAreas'])
             ->where('nip', $nip)
             ->orWhere('id', $nip)
             ->firstOrFail();

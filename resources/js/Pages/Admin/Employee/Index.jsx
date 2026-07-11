@@ -155,26 +155,34 @@ export default function Index({ employees, filters }) {
             // 4. Draw Employee Details Text
             ctx.textAlign = 'left';
 
-            // 1) Nama Panggilan (Nickname) - Poppins Extra Bold
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = '800 72px Poppins, sans-serif';
-            ctx.fillText((selectedEmployeeQr.name || '').toUpperCase(), 92, 1265);
-
-            // 2) Nama Lengkap | Jabatan - Poppins SemiBold
-            ctx.font = '600 32px Poppins, sans-serif';
+            // 1) Fullname (Sejajar dengan atas teks logo JEMARI di y = 1246)
             const fullNameText = (selectedEmployeeQr.fullname || selectedEmployeeQr.name || '').toUpperCase();
+            let fontSize = 68;
+            ctx.font = `800 ${fontSize}px Poppins, sans-serif`;
+            while (ctx.measureText(fullNameText).width > 750 && fontSize > 36) {
+                fontSize -= 2;
+                ctx.font = `800 ${fontSize}px Poppins, sans-serif`;
+            }
+            const capHeight = fontSize * 0.72;
+            const fullNameBaselineY = 1246 + capHeight;
             ctx.fillStyle = '#FFFFFF';
-            ctx.fillText(fullNameText, 92, 1325);
+            ctx.fillText(fullNameText, 92, fullNameBaselineY);
 
-            const fullNameWidth = ctx.measureText(fullNameText).width;
+            // 2) Nickname | Jabatan
+            ctx.font = '600 32px Poppins, sans-serif';
+            const nickNameText = (selectedEmployeeQr.name || '').toUpperCase();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(nickNameText, 92, 1355);
+
+            const nickNameWidth = ctx.measureText(nickNameText).width;
             const titleText = `    |    ${(selectedEmployeeQr.title || 'MASSAGE THERAPIST').toUpperCase()}`;
             ctx.fillStyle = '#EAB308'; // Golden Amber
-            ctx.fillText(titleText, 92 + fullNameWidth, 1325);
+            ctx.fillText(titleText, 92 + nickNameWidth, 1355);
 
-            // 3) ID Karyawan - Poppins Regular
+            // 3) ID Karyawan
             ctx.fillStyle = '#9CA3AF';
             ctx.font = '400 22px Poppins, sans-serif';
-            ctx.fillText(`NO ID ${selectedEmployeeQr.nip || selectedEmployeeQr.id}`, 92, 1380);
+            ctx.fillText(`NO ID ${selectedEmployeeQr.nip || selectedEmployeeQr.id}`, 92, 1405);
 
             // 5. Draw QR Code inside the white rounded box (92, 1479, 218, 218)
             ctx.drawImage(qrCanvas, 101, 1488, 200, 200);
@@ -317,6 +325,15 @@ export default function Index({ employees, filters }) {
                                                             <span className="font-semibold text-gray-900">{employee.fullname || employee.name}</span>
                                                             {employee.fullname && employee.fullname !== employee.name && (
                                                                 <span className="text-xs text-gray-500">Panggilan: {employee.name}</span>
+                                                            )}
+                                                            {(employee.service_areas || employee.serviceAreas || []).length > 0 && (
+                                                                <div className="flex flex-wrap gap-1 mt-1 max-w-xs">
+                                                                    {(employee.service_areas || employee.serviceAreas || []).map((area) => (
+                                                                        <span key={area.id} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                                                            {area.name}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>

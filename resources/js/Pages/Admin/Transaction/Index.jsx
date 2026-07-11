@@ -116,7 +116,7 @@ const formatDurationLabel = (duration) => {
     }
     return `${minutesVal} Menit`;
 };
-const formatPackagePrice = (price) => `Rp. ${Math.round(parseFloat(price || 0)).toLocaleString('id-ID').replace(/\./g, ' ')}`;
+const formatPackagePrice = (price) => `Rp ${Math.round(parseFloat(price || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 
 export default function Index({ transactions, filters, counts, employees, packages }) {
     const { flash, app_settings } = usePage().props;
@@ -323,9 +323,10 @@ export default function Index({ transactions, filters, counts, employees, packag
         fetchFilteredData(search, limit, activeTab, '', '', therapistId);
     };
 
-    const handleTherapistChange = (e) => {
-        setTherapistId(e.target.value);
-        fetchFilteredData(search, limit, activeTab, dateFrom, dateTo, e.target.value);
+    const handleTherapistChange = (selectedOption) => {
+        const newId = selectedOption && selectedOption.target ? selectedOption.target.value : (selectedOption ? selectedOption.value : '');
+        setTherapistId(newId);
+        fetchFilteredData(search, limit, activeTab, dateFrom, dateTo, newId);
     };
 
     const saveTransaction = () => {
@@ -454,11 +455,8 @@ export default function Index({ transactions, filters, counts, employees, packag
     };
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0
-        }).format(amount);
+        const num = Math.round(parseFloat(amount || 0));
+        return `Rp ${num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
     };
 
     const getVoucherNominalDiscount = (transaction) => {
@@ -791,16 +789,44 @@ export default function Index({ transactions, filters, counts, employees, packag
                                 </div>
 
                                 <div className="relative w-full sm:w-auto flex items-center gap-2">
-                                    <select
-                                        value={therapistId}
-                                        onChange={handleTherapistChange}
-                                        className="w-full sm:w-56 bg-gray-50 border-transparent focus:bg-white focus:border-zenith-orange focus:ring-zenith-orange rounded-full text-sm py-2.5 transition-colors cursor-pointer"
-                                    >
-                                        <option value="">Semua Terapis</option>
-                                        {employees.map(emp => (
-                                            <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                        ))}
-                                    </select>
+                                    <div className="w-full sm:w-64">
+                                        <ReactSelect
+                                            className="text-xs font-semibold text-gray-700 w-full [&_input:focus]:!ring-0 [&_input:focus]:!border-none [&_input]:!border-none [&_input]:!shadow-none"
+                                            styles={{
+                                                control: (base) => ({
+                                                    ...base,
+                                                    borderRadius: '9999px',
+                                                    borderColor: '#E5E7EB',
+                                                    backgroundColor: '#F9FAFB',
+                                                    minHeight: '40px',
+                                                    boxShadow: 'none',
+                                                    '&:hover': { borderColor: '#F97316' }
+                                                }),
+                                                option: (base, state) => ({
+                                                    ...base,
+                                                    fontSize: '12px',
+                                                    backgroundColor: state.isSelected ? '#F97316' : state.isFocused ? '#FFF7ED' : 'white',
+                                                    color: state.isSelected ? 'white' : '#374151'
+                                                }),
+                                                menuPortal: (base) => ({ ...base, zIndex: 9999 })
+                                            }}
+                                            menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                                            menuPosition="fixed"
+                                            placeholder="Cari Terapis..."
+                                            isClearable
+                                            options={[
+                                                { value: '', label: 'Semua Terapis' },
+                                                { value: 'unassigned', label: '⚠️ Belum Ada Terapis' },
+                                                ...employees.map(emp => ({ value: emp.id, label: emp.name }))
+                                            ]}
+                                            value={[
+                                                { value: '', label: 'Semua Terapis' },
+                                                { value: 'unassigned', label: '⚠️ Belum Ada Terapis' },
+                                                ...employees.map(emp => ({ value: emp.id, label: emp.name }))
+                                            ].find(opt => String(opt.value) === String(therapistId || '')) || { value: '', label: 'Semua Terapis' }}
+                                            onChange={handleTherapistChange}
+                                        />
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\Skill;
 use App\Models\Certification;
+use App\Models\ServiceArea;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,7 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Employee::with(['user', 'skills', 'certifications']);
+        $query = Employee::with(['user', 'skills', 'certifications', 'serviceAreas']);
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -22,7 +23,10 @@ class EmployeeController extends Controller
                   ->orWhere('fullname', 'ilike', "%{$search}%")
                   ->orWhere('nip', 'ilike', "%{$search}%")
                   ->orWhere('title', 'ilike', "%{$search}%")
-                  ->orWhere('nohp', 'ilike', "%{$search}%");
+                  ->orWhere('nohp', 'ilike', "%{$search}%")
+                  ->orWhereHas('serviceAreas', function ($areaQ) use ($search) {
+                      $areaQ->where('name', 'ilike', "%{$search}%");
+                  });
             });
         }
 
@@ -39,6 +43,7 @@ class EmployeeController extends Controller
         return Inertia::render('Admin/Employee/Create', [
             'skills' => Skill::orderBy('name')->get(),
             'certifications' => Certification::orderBy('name')->get(),
+            'serviceAreas' => ServiceArea::orderBy('name')->get(),
         ]);
     }
 
@@ -58,6 +63,8 @@ class EmployeeController extends Controller
             'photo' => 'nullable|image|max:5120',
             'skills' => 'nullable|array',
             'skills.*' => 'exists:skills,id',
+            'service_areas' => 'nullable|array',
+            'service_areas.*' => 'exists:service_areas,id',
             'certifications' => 'nullable|array',
             'certifications.*.certification_id' => 'nullable|exists:certifications,id',
             'certifications.*.certificate_number' => 'nullable|string|max:255',
@@ -86,6 +93,17 @@ class EmployeeController extends Controller
             $employee->skills()->sync($request->input('skills', []));
         }
 
+        if ($request->has('service_areas')) {
+            $serviceAreaIds = $request->input('service_areas', []);
+            $employee->serviceAreas()->sync($serviceAreaIds);
+            if (!empty($serviceAreaIds)) {
+                $areaNames = ServiceArea::whereIn('id', $serviceAreaIds)->pluck('name')->toArray();
+                if (!empty($areaNames)) {
+                    $employee->update(['work_area' => implode(', ', $areaNames)]);
+                }
+            }
+        }
+
         $this->syncEmployeeCertifications($employee, $request);
 
         \App\Models\User::create([
@@ -106,12 +124,13 @@ class EmployeeController extends Controller
         $user = \App\Models\User::where('employee_id', $employee->id)->first();
         $employee->email = $user ? $user->email : '';
         $employee->is_active = $user ? (bool)$user->is_active : true;
-        $employee->load(['skills', 'certifications']);
+        $employee->load(['skills', 'certifications', 'serviceAreas']);
 
         return Inertia::render('Admin/Employee/Edit', [
             'employee' => $employee,
             'skills' => Skill::orderBy('name')->get(),
             'certifications' => Certification::orderBy('name')->get(),
+            'serviceAreas' => ServiceArea::orderBy('name')->get(),
         ]);
     }
 
@@ -133,6 +152,8 @@ class EmployeeController extends Controller
             'photo' => 'nullable|image|max:5120',
             'skills' => 'nullable|array',
             'skills.*' => 'exists:skills,id',
+            'service_areas' => 'nullable|array',
+            'service_areas.*' => 'exists:service_areas,id',
             'certifications' => 'nullable|array',
             'certifications.*.certification_id' => 'nullable|exists:certifications,id',
             'certifications.*.certificate_number' => 'nullable|string|max:255',
@@ -161,6 +182,17 @@ class EmployeeController extends Controller
 
         if ($request->has('skills')) {
             $employee->skills()->sync($request->input('skills', []));
+        }
+
+        if ($request->has('service_areas')) {
+            $serviceAreaIds = $request->input('service_areas', []);
+            $employee->serviceAreas()->sync($serviceAreaIds);
+            if (!empty($serviceAreaIds)) {
+                $areaNames = ServiceArea::whereIn('id', $serviceAreaIds)->pluck('name')->toArray();
+                if (!empty($areaNames)) {
+                    $employee->update(['work_area' => implode(', ', $areaNames)]);
+                }
+            }
         }
 
         $this->syncEmployeeCertifications($employee, $request);
