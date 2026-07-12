@@ -54,7 +54,7 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                 <meta name="description" content={metaDesc} />
                 <meta property="og:title" content={blog.title} />
                 <meta property="og:description" content={metaDesc} />
-                <meta property="og:image" content={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/logo-jemari.jpg'} />
+                <meta property="og:image" content={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/og-share.jpg'} />
                 <meta property="og:type" content="article" />
                 <meta name="keywords" content={`${blog.tag || ''}, jemari spa blog, tips kesehatan bandung`} />
             </Head>

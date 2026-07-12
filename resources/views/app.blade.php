@@ -27,14 +27,17 @@
         <meta property="og:url" content="{{ url()->current() }}">
         <meta property="og:title" inertia content="{{ $meta['title'] ?? 'Pijat Panggilan Bandung - Jemari Home Spa' }}">
         <meta property="og:description" inertia content="{{ $meta['description'] ?? 'Layanan pijat panggilan Bandung terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi. Terapis profesional.' }}">
-        <meta property="og:image" inertia content="{{ asset('images/logo-pwa-192.png') }}">
+        <meta property="og:image" inertia content="{{ $meta['image'] ?? asset('images/og-share.jpg') }}">
+        <meta property="og:image:width" content="1024">
+        <meta property="og:image:height" content="576">
+        <meta property="og:image:type" content="image/jpeg">
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image">
         <meta property="twitter:url" content="{{ url()->current() }}">
         <meta property="twitter:title" inertia content="{{ $meta['title'] ?? 'Pijat Panggilan Bandung - Jemari Home Spa' }}">
         <meta property="twitter:description" inertia content="{{ $meta['description'] ?? 'Layanan pijat panggilan Bandung terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi.' }}">
-        <meta property="twitter:image" inertia content="{{ asset('images/logo-pwa-192.png') }}">
+        <meta property="twitter:image" inertia content="{{ $meta['image'] ?? asset('images/og-share.jpg') }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
