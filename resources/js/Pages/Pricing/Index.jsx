@@ -212,7 +212,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                 <meta name="description" content={t.metaDesc} />
                 <meta property="og:title" content={t.metaTitle} />
                 <meta property="og:description" content={t.metaDesc} />
-                <meta name="keywords" content="harga pijat panggilan bandung, pricelist jemari spa, biaya bekam bandung, paket spa rumah bandung" />
+                <meta name="keywords" content="harga pijat panggilan bandung, pricelist jemari home spa, biaya bekam bandung, paket spa rumah bandung" />
             </Head>
 
             <Navbar

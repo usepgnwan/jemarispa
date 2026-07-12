@@ -89,7 +89,7 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                 <title>{t.metaTitle}</title>
                 <meta name="description" content={t.metaDesc} />
                 <meta property="og:title" content={t.metaTitle} />
-                <meta name="keywords" content="blog kesehatan, tips wellness, manfaat pijat, gaya hidup sehat, jemari spa articles" />
+                <meta name="keywords" content="blog kesehatan, tips wellness, manfaat pijat, gaya hidup sehat, jemari home spa articles" />
             </Head>
 
             <Navbar
