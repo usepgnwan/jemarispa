@@ -182,8 +182,9 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                 <meta name="description" content={meta.desc} />
                 <meta property="og:title" content={meta.title} />
                 <meta property="og:description" content={meta.desc} />
-                <meta property="og:image" content="/images/logo-jemari.jpg" />
+                <meta property="og:image" content="/images/og-share.jpg" />
                 <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:image" content="/images/og-share.jpg" />
                 <meta name="keywords" content="pijat panggilan bandung, home service massage bandung, spa bandung, bekam bandung, pijat tradisional bandung, massage cimahi, jemari spa" />
             </Head>
 
