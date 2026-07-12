@@ -17,8 +17,8 @@ Route::get('/', function () {
         'platforms' => \App\Models\Platform::latest()->get()
     ])->withViewData([
         'meta' => [
-            'title' => 'Pijat Panggilan Bandung & Cimahi 24 Jam - Jemari Home Spa',
-            'description' => 'Layanan pijat panggilan Bandung 24 jam terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi. Terapis pria & wanita profesional.'
+            'title' => 'Pijat Panggilan Bandung & Cimahi - Jemari Home Spa',
+            'description' => 'Layanan pijat panggilan Bandung terpercaya. Jemari Home Spa melayani pijat panggilan ke rumah, hotel, dan apartemen di area Bandung & Cimahi. Terapis pria & wanita profesional.'
         ]
     ]);
 });
