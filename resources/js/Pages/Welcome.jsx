@@ -31,7 +31,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
             const currentHours = now.getHours();
             const currentMinutes = now.getMinutes();
             const currentTime = `${currentHours.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
-            
+
             const start = app_settings.operational_start.substring(0, 5);
             const end = app_settings.operational_end.substring(0, 5);
 
@@ -95,7 +95,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
             setActiveService(pending);
             localStorage.removeItem('pending_service');
         }
-        
+
         // Expose setter for child components like Pricing
         window.setActiveServiceGlobal = setActiveService;
         return () => {
@@ -185,7 +185,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
                 <meta property="og:image" content="/images/og-share.jpg" />
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:image" content="/images/og-share.jpg" />
-                <meta name="keywords" content="pijat panggilan bandung, home service massage bandung, spa bandung, bekam bandung, pijat tradisional bandung, massage cimahi, jemari spa" />
+                <meta name="keywords" content="pijat panggilan bandung, home service massage bandung, spa bandung, bekam bandung, pijat tradisional bandung, massage cimahi, jemari home spa" />
             </Head>
 
             <Navbar

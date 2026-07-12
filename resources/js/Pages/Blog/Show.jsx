@@ -56,22 +56,22 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                 <meta property="og:description" content={metaDesc} />
                 <meta property="og:image" content={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/og-share.jpg'} />
                 <meta property="og:type" content="article" />
-                <meta name="keywords" content={`${blog.tag || ''}, jemari spa blog, tips kesehatan bandung`} />
+                <meta name="keywords" content={`${blog.tag || ''}, jemari home spa blog, tips kesehatan bandung`} />
             </Head>
 
-            <Navbar 
-                auth={auth} 
-                lang={lang} 
-                setLang={setLang} 
+            <Navbar
+                auth={auth}
+                lang={lang}
+                setLang={setLang}
                 activeService="Blog"
-                setActiveService={() => {}}
+                setActiveService={() => { }}
                 signaturePackages={signaturePackages}
             />
 
             <main className="pt-32 pb-20 px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex flex-col lg:flex-row gap-12">
-                        
+
                         {/* Sidebar Left: Suggestions */}
                         <aside className="w-full lg:w-1/4 order-2 lg:order-1">
                             <div className="sticky top-32">
