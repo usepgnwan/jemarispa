@@ -107,7 +107,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
         const config = {
             'ID': {
                 'Default': {
-                    title: 'Jemari Spa - Home Service Massage Bandung Cimahi',
+                    title: 'Jemari Home Spa Home Service Massage Bandung Cimahi',
                     desc: 'Jemari Spa menghadirkan layanan massage & spa profesional ke rumah, hotel, atau kantor di Bandung dan Cimahi. Terapis terlatih, peralatan higienis, dan pengalaman relaksasi premium.'
                 },
                 'Pijat Tradisional': {
@@ -137,7 +137,7 @@ export default function Welcome({ auth, packages = [], signaturePackages = [], t
             },
             'EN': {
                 'Default': {
-                    title: 'Jemari Spa - Professional Home Service Massage Bandung Cimahi',
+                    title: 'Jemari Home Spa Professional Home Service Massage Bandung Cimahi',
                     desc: 'Jemari Spa provides professional massage & spa services to your home, hotel, or office in Bandung and Cimahi. Well-trained therapists and premium relaxation experience.'
                 },
                 'Pijat Tradisional': {
