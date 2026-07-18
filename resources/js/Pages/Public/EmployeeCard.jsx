@@ -57,7 +57,7 @@ export default function EmployeeCard({ employee }) {
     };
 
     return (
-        <div className="min-h-screen bg-zenith-surface text-zenith-charcoal font-sans selection:bg-zenith-orange/20 selection:text-zenith-orange antialiased">
+        <div className="min-h-screen bg-zenith-surface text-zenith-charcoal font-sans selection:bg-zenith-orange/20 selection:text-zenith-orange antialiased overflow-x-hidden">
             <Head title={`Kartu Identitas Staf - ${employee.name} | Jemari Home Spa`} />
 
             {/* Header bergaya Home dengan Logo Jemari */}

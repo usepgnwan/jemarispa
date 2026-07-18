@@ -487,19 +487,33 @@ export default function Index({ transactions, filters, counts, employees, packag
             }
         }
 
-        const grouped = transaction.items?.reduce((acc, item) => {
-            if (!acc[item.guest_index]) acc[item.guest_index] = [];
-            acc[item.guest_index].push(item);
-            return acc;
-        }, {}) || {};
+        const totalGuests = new Set(transaction.items?.map(item => item.guest_index) || []).size;
+        const guestText = lang === 'en'
+            ? `Total Guests: ${totalGuests} Person(s)`
+            : `Total Pelanggan: ${totalGuests} Orang`;
 
-        const detailsText = Object.entries(grouped).map(([index, items]) => {
-            const personDetails = items.map(item => {
-                const duration = formatDurationLabel(item.package_duration);
-                return `  - ${cleanPackageName(item.package_name)}${duration ? ` ${duration}` : ''} : ${formatPackagePrice(item.price)}`;
-            }).join('\n');
-            return `Person ${index}:\n${personDetails}`;
-        }).join('\n\n');
+        const groupedItems = {};
+        transaction.items?.forEach(item => {
+            const cleanName = cleanPackageName(item.package_name);
+            const duration = formatDurationLabel(item.package_duration);
+            const key = `${cleanName}___${duration}___${item.price}`;
+            if (!groupedItems[key]) {
+                groupedItems[key] = {
+                    name: cleanName,
+                    duration: duration,
+                    price: parseFloat(item.price),
+                    qty: 0
+                };
+            }
+            groupedItems[key].qty += 1;
+        });
+
+        const itemsText = Object.values(groupedItems).map(item => {
+            const totalPrice = item.price * item.qty;
+            return `  - ${item.name}${item.duration ? ` ${item.duration}` : ''} x ${item.qty} : ${formatPackagePrice(totalPrice)} (@${formatPackagePrice(item.price)})`;
+        }).join('\n');
+
+        const detailsText = `${guestText}\nDetail Layanan:\n${itemsText}`;
 
         const safeOrderNumber = transaction.order_number.replace(/\//g, '-');
         const link = `${window.location.origin}/invoice/${safeOrderNumber}`;

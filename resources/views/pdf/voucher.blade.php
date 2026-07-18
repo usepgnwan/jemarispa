@@ -2,47 +2,55 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    @php
+        $logoPath = public_path('images/Jemari Logo - 2.png');
+        $logoSrc = '';
+        if (file_exists($logoPath)) {
+            $logoData = base64_encode(file_get_contents($logoPath));
+            $logoSrc = 'data:image/png;base64,' . $logoData;
+        }
+
+        $ogSharePath = public_path('images/og-share.jpg');
+        $ogShareSrc = '';
+        if (file_exists($ogSharePath)) {
+            $ogShareData = base64_encode(file_get_contents($ogSharePath));
+            $ogShareSrc = 'data:image/jpeg;base64,' . $ogShareData;
+        }
+
+    @endphp
     <style>
-        @page {
-            margin: 0;
-        }
-        body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            margin: 0;
-            padding: 40px;
-            color: #333;
-            background-color: #fff;
-        }
-        .header {
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
+        @page { margin: 0; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; margin: 0; padding: 25px 40px; color: #333; background-color: #fff; }
+        
+        .header-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
         .voucher-title-box {
-            float: left;
-            background: linear-gradient(to right, #fdbb2d, #f97316);
-            padding: 10px 40px;
+            background-color: #f97316;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAABCAIAAAC+O+cgAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAW0lEQVQokZ2RsRGAMAwD9UuwKNPTUZCCBGQZmhTO++yXOfZNkkDi/YUGgJD/qgCmokxvH7gNqnYeDAkopUwsHwBYBv20VvC9YnkUSUDrytHa62ClYiyNK6dYgBO9cQL/wEyeUgAAAABJRU5ErkJggg==');
+            background-repeat: repeat-y;
+            background-size: 100% 100%;
+            padding: 8px 30px;
             border-radius: 10px;
+            border : none;
             color: #fff;
+            display: inline-block;
         }
-        .voucher-title-box h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: normal;
+        .voucher-title-box h1 { margin: 0; font-size: 32px; font-weight: bold; }
+        .sub-header { margin-top: 5px; font-size: 11px; color: #666; margin-left: 5px; }
+        
+        .logo-wrapper {
+            background-color: #555555;
+            padding: 10px;
+            border-radius: 12px;
+            width: 50px;
+            height: 50px;
+            display: inline-block;
         }
-        .header-logo {
-            float: right;
-            width: 80px;
-        }
-        .sub-header {
-            clear: both;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #666;
-        }
+        .logo-wrapper img { width: 100%; height: auto; display: block; }
+        
         .voucher-card {
-            margin-top: 30px;
+            margin-top: 15px;
             position: relative;
-            height: 350px;
+            height: 310px;
             background-color: #444;
             border-radius: 20px;
             overflow: hidden;
@@ -50,197 +58,101 @@
         }
         .voucher-card-image {
             position: absolute;
-            left: 0;
-            top: 0;
-            width: 45%;
-            height: 100%;
-            background-image: url('{{ public_path('images/pijat tradisional.jpg') }}');
+            left: 0; top: 0;
+            width: 45%; height: 100%;
+            @if($ogShareSrc)
+                background-image: url('{{ $ogShareSrc }}');
+            @else
+                background-color: #444;
+            @endif
             background-size: cover;
             background-position: center;
         }
         .voucher-card-content {
             position: absolute;
-            right: 0;
-            top: 0;
-            width: 55%;
-            height: 100%;
-            padding: 40px;
+            right: 0; top: 0;
+            width: 55%; height: 100%;
+            padding: 25px 35px;
             background-color: #3f3f3f;
             box-sizing: border-box;
         }
         .voucher-card-content .logo-small {
-            width: 60px;
-            margin-bottom: 20px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            width: 55px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;
         }
         .voucher-card-content h2 {
-            font-size: 48px;
-            text-align: center;
-            margin: 0;
-            letter-spacing: 5px;
-            font-weight: bold;
-            font-family: 'Times New Roman', serif;
+            font-size: 40px; text-align: center; margin: 0; letter-spacing: 5px; font-weight: bold; font-family: 'Times New Roman', serif;
         }
         .voucher-card-content h3 {
-            font-size: 38px;
-            text-align: center;
-            margin: 0;
-            letter-spacing: 5px;
-            font-weight: bold;
-            font-family: 'Times New Roman', serif;
+            font-size: 30px; text-align: center; margin: 0; letter-spacing: 5px; font-weight: bold; font-family: 'Times New Roman', serif;
         }
         .package-badge {
             background-color: #f97316;
-            color: #fff;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
-            margin-top: 20px;
+            color: #fff; padding: 8px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: bold; margin-top: 15px;
         }
         .valid-until {
-            text-align: center;
-            margin-top: 40px;
-            font-size: 10px;
-            color: #ccc;
+            text-align: center; margin-top: 30px; font-size: 9px; color: #ccc;
         }
         .valid-until .date {
-            display: block;
-            font-size: 14px;
-            color: #fff;
-            margin-top: 5px;
+            display: block; font-size: 12px; color: #fff; margin-top: 3px;
         }
         .social-info {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
-            font-size: 9px;
-            color: #ccc;
+            position: absolute; bottom: 15px; width: 100%; text-align: center; font-size: 8px; color: #ccc;
         }
-        .social-info span {
-            margin: 0 10px;
-        }
+        .social-info span { margin: 0 10px; }
 
-        .details-section {
-            margin-top: 40px;
-        }
-        .details-section h3 {
-            font-size: 20px;
-            margin-bottom: 15px;
-        }
-        .details-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .details-table td {
-            padding: 12px 15px;
-            font-size: 14px;
-        }
-        .details-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        .label {
-            width: 30%;
-            color: #555;
-        }
-        .value {
-            font-weight: bold;
-        }
+        .details-section { margin-top: 25px; }
+        .details-section h3 { font-size: 18px; margin-bottom: 10px; }
+        .details-table { width: 100%; border-collapse: collapse; }
+        .details-table td { padding: 8px 15px; font-size: 13px; }
+        .details-table tr:nth-child(even) { background-color: #f8f9fa; }
+        .label { width: 30%; color: #555; }
+        .value { font-weight: bold; }
 
-        .instructions {
-            margin-top: 30px;
-            font-size: 11px;
-            line-height: 1.6;
-        }
-        .instructions h4 {
-            font-size: 13px;
-            margin-bottom: 5px;
-            margin-top: 15px;
-        }
-        .instructions ul {
-            padding-left: 0;
-            list-style: none;
-            margin: 0;
-        }
-        .instructions li {
-            position: relative;
-            padding-left: 15px;
-            margin-bottom: 3px;
-        }
-        .instructions li::before {
-            content: "-";
-            position: absolute;
-            left: 0;
-        }
+        .instructions { margin-top: 20px; font-size: 11px; line-height: 1.5; }
+        .instructions h4 { font-size: 12px; margin-bottom: 5px; margin-top: 10px; }
+        .instructions ul { padding-left: 0; list-style: none; margin: 0; }
+        .instructions li { position: relative; padding-left: 15px; margin-bottom: 3px; }
+        .instructions li::before { content: "-"; position: absolute; left: 0; }
 
-        .footer {
-            margin-top: 50px;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-            overflow: hidden;
-        }
-        .footer-left {
-            float: left;
-            font-size: 10px;
-            color: #999;
-        }
-        .footer-left .wa {
-            display: block;
-            color: #f97316;
-            font-weight: bold;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        .footer-right {
-            float: right;
-            text-align: right;
-            font-size: 10px;
-            color: #999;
-        }
-        .footer-right .inv {
-            display: block;
-            color: #fdbb2d;
-            font-weight: bold;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
-        /* Tear effect simulation */
-        .tear {
-            position: absolute;
-            left: 45%;
-            top: 0;
-            width: 15px;
-            height: 100%;
-            background-image: radial-gradient(circle at 0px 10px, transparent 10px, #3f3f3f 10px);
-            background-size: 15px 20px;
-            z-index: 10;
-            transform: translateX(-50%);
-        }
+        .footer { margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; overflow: hidden; }
+        .footer-left { float: left; font-size: 10px; color: #999; }
+        .footer-left .wa { display: block; color: #f97316; font-weight: bold; font-size: 12px; margin-top: 5px; }
+        .footer-right { float: right; text-align: right; font-size: 10px; color: #999; }
+        .footer-right .inv { display: block; color: #fdbb2d; font-weight: bold; font-size: 12px; margin-top: 5px; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="voucher-title-box">
-            <h1>Voucher Paperless</h1>
-        </div>
-        <img src="{{ public_path('images/Jemari Logo - 2.png') }}" class="header-logo">
-    </div>
-
-    <div class="sub-header">
-        Dipesan dan dibeli melalui <strong>Jemari Home Spa</strong>
-    </div>
+    <table class="header-table">
+        <tr>
+            <td style="vertical-align: top; text-align: left;">
+                <div class="voucher-title-box">
+                    <h1>Voucher Paperless</h1>
+                </div>
+                <div class="sub-header">
+                    Dipesan dan dibeli melalui <strong>Jemari Home Spa</strong>
+                </div>
+            </td>
+            <td style="vertical-align: top; text-align: right; width: 100px;">
+                @if($logoSrc)
+                    <div class="logo-wrapper">
+                        <img src="{{ $logoSrc }}" alt="Logo">
+                    </div>
+                @else
+                    <div style="font-weight: bold; font-size: 14px; color: #f97316; float: right;">JEMARI</div>
+                @endif
+            </td>
+        </tr>
+    </table>
 
     <div class="voucher-card">
         <div class="voucher-card-image"></div>
-        <div class="tear"></div>
         <div class="voucher-card-content">
-            <img src="{{ public_path('images/Jemari Logo - 2.png') }}" class="logo-small" style="filter: brightness(0) invert(1);">
-            <h2> VOUCHER</h2>
+            @if($logoSrc)
+                <img src="{{ $logoSrc }}" class="logo-small" />
+            @else
+                <div style="text-align: center; font-weight: bold; margin-bottom: 20px;">JEMARI</div>
+            @endif
+            <h2>VOUCHER</h2>
             <div class="package-badge">
                 @if($voucher->category === 'bundle')
                     @foreach($voucher->bundle_packages as $pkg)
@@ -263,6 +175,7 @@
             </div>
         </div>
     </div>
+
     <div class="details-section">
         <h3>Rincian Pembelian :</h3>
         <table class="details-table">

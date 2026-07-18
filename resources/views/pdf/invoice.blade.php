@@ -316,6 +316,11 @@
                         </td>
                     </tr> -->
                     <tr>
+                        <td class="meta-label">Total Pelanggan</td>
+                        <td class="meta-separator">:</td>
+                        <td>{{ $transaction->items->pluck('guest_index')->unique()->count() }} Orang</td>
+                    </tr>
+                    <tr>
                         <td class="meta-label">Terapis</td>
                         <td class="meta-separator">:</td>
                         <td>{{ $transaction->items->pluck('employee.name')->filter()->unique()->join(', ') ?: '-' }}</td>
@@ -348,26 +353,29 @@
         </thead>
         <tbody>
             @php
-                $groupedItems = $transaction->items->groupBy('guest_index');
+                $groupedItems = $transaction->items->groupBy(function($item) {
+                    return $item->package_name . '___' . $item->package_duration . '___' . $item->price;
+                });
             @endphp
-            @foreach($groupedItems as $guestIndex => $items)
+            @foreach($groupedItems as $key => $items)
+                @php
+                    $firstItem = $items->first();
+                    $qty = $items->count();
+                    $price = $firstItem->price;
+                    $subtotal = $price * $qty;
+                @endphp
                 <tr>
-                    <td colspan="7" style="background-color: #f9f9f9; font-weight: bold; font-size: 9px; padding: 5px 10px; border-bottom: 1px solid #eee; text-transform: uppercase;">Person {{ $guestIndex }}</td>
-                </tr>
-                @foreach($items as $item)
-                <tr>
-                    <td style="padding-left: 15px;">
-                        <span class="item-name">{{ $cleanPackageName($item->package_name) }}</span>
-                        <div style="font-size: 9px; color: #888; margin-top: 2px;">{{ $item->package_duration }} | {{ ucfirst($item->guest_gender) }}</div>
+                    <td>
+                        <span class="item-name">{{ $cleanPackageName($firstItem->package_name) }}</span>
+                        <div style="font-size: 9px; color: #888; margin-top: 2px;">{{ $firstItem->package_duration }}</div>
                     </td>
-                    <td class="text-center">1 Pax</td>
-                    <td class="text-right">{{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-center">{{ $qty }} Pax</td>
+                    <td class="text-right">{{ number_format($price, 0, ',', '.') }}</td>
                     <td class="text-center">0%</td>
-                    <td class="text-right">{{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($subtotal, 0, ',', '.') }}</td>
                     <td class="text-center">-</td>
-                    <td class="text-right">{{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($subtotal, 0, ',', '.') }}</td>
                 </tr>
-                @endforeach
             @endforeach
         </tbody>
     </table>
