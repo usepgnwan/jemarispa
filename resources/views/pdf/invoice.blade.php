@@ -248,10 +248,16 @@
             </div>
         </div>
         <div class="status-container">
-            @if($transaction->status === 'success')
-                <div class="status-badge" style="background-color: #10b981;">Sudah Dibayar</div>
+            @php
+                $isLunas = $transaction->status === 'success' || 
+                           ($transaction->payment_type === 'dp' && $transaction->is_pelunasan_paid);
+            @endphp
+            @if($isLunas)
+                <div class="status-badge" style="background-color: #10b981;">Sudah Dibayar (LUNAS)</div>
             @elseif($transaction->status === 'failed')
                 <div class="status-badge" style="background-color: #6b7280;">Dibatalkan</div>
+            @elseif($transaction->payment_type === 'dp' && !$transaction->is_pelunasan_paid)
+                <div class="status-badge" style="background-color: #f97316;">DP Dibayar (Sisa Belum Lunas)</div>
             @else
                 <div class="status-badge" style="background-color: #ef4444;">Belum Dibayar</div>
             @endif
@@ -416,9 +422,28 @@
                     <td colspan="2" class="summary-divider"></td>
                 </tr>
                 <tr class="summary-total">
-                    <td class="summary-label" style="color: #3b82f6; font-weight: bold;">TOTAL</td>
+                    <td class="summary-label" style="color: #3b82f6; font-weight: bold;">TOTAL KESELURUHAN</td>
                     <td class="summary-value" style="color: #3b82f6; font-size: 14px;">Rp {{ number_format($transaction->total_price, 0, ',', '.') }}</td>
                 </tr>
+                @if($transaction->payment_type === 'dp' && $transaction->dp_amount > 0)
+                <tr>
+                    <td colspan="2" class="summary-divider"></td>
+                </tr>
+                <tr>
+                    <td class="summary-label" style="color: #f97316; font-weight: bold;">Down Payment (DP) Dibayar</td>
+                    <td class="summary-value" style="color: #f97316; font-weight: bold;">- Rp {{ number_format($transaction->dp_amount, 0, ',', '.') }}</td>
+                </tr>
+                <tr class="summary-total">
+                    <td class="summary-label" style="color: {{ $transaction->is_pelunasan_paid ? '#10b981' : '#ef4444' }}; font-weight: bold;">SISA PELUNASAN</td>
+                    <td class="summary-value" style="color: {{ $transaction->is_pelunasan_paid ? '#10b981' : '#ef4444' }}; font-size: 14px;">
+                        @if($transaction->is_pelunasan_paid)
+                            Rp {{ number_format($transaction->total_price - $transaction->dp_amount, 0, ',', '.') }} (LUNAS)
+                        @else
+                            Rp {{ number_format($transaction->total_price - $transaction->dp_amount, 0, ',', '.') }}
+                        @endif
+                    </td>
+                </tr>
+                @endif
             </table>
         </div>
         <div class="clear"></div>

@@ -146,6 +146,7 @@ export default function Index({ transactions, filters, counts, employees, packag
     const [invoiceLang, setInvoiceLang] = useState('id'); // 'id' or 'en'
     const [paymentType, setPaymentType] = useState('full'); // 'full' or 'dp'
     const [dpAmount, setDpAmount] = useState('');
+    const [invoicePelunasanPaid, setInvoicePelunasanPaid] = useState(false);
     const [previewMessage, setPreviewMessage] = useState('');
 
     // State for Profil Terapis Link Modal
@@ -446,6 +447,22 @@ export default function Index({ transactions, filters, counts, employees, packag
 
 
 
+    const quickMarkPelunasan = (transaction) => {
+        if (confirm('Tandai sisa pelunasan untuk transaksi ini sudah dibayar?')) {
+            router.patch(route('admin.transaction.update', transaction.id), {
+                is_pelunasan_paid: true
+            }, {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setToastMessage('Sisa pelunasan berhasil ditandai lunas!');
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 1500);
+                }
+            });
+        }
+    };
+
     const confirmDelete = (id) => {
         if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
             destroy(route('admin.transaction.destroy', id), {
@@ -532,14 +549,22 @@ export default function Index({ transactions, filters, counts, employees, packag
         if (paymentOptions?.type === 'dp' && (parseFloat(paymentOptions?.dpAmount) || 0) > 0) {
             const dpVal = parseFloat(paymentOptions.dpAmount) || 0;
             const sisaVal = Math.max(0, (parseFloat(transaction.total_price) || 0) - dpVal);
+            
+            const sisaTextId = paymentOptions.isPelunasanPaid 
+                ? `LUNAS` 
+                : `${formatCurrency(sisaVal)} (Dilunasi saat terapis datang)`;
+            const sisaTextEn = paymentOptions.isPelunasanPaid
+                ? `PAID`
+                : `${formatCurrency(sisaVal)} (Paid upon therapist arrival)`;
+
             if (lang === 'en') {
                 totalReplacement = hasTrailingAsterisk
-                    ? `${formatCurrency(transaction.total_price)}*\n*Payment Type : Down Payment (DP)*\n*DP Amount : ${formatCurrency(dpVal)}*\n*Remaining Balance : ${formatCurrency(sisaVal)} (Paid upon therapist arrival)`
-                    : `${formatCurrency(transaction.total_price)}\n*Payment Type : Down Payment (DP)*\n*DP Amount : ${formatCurrency(dpVal)}*\n*Remaining Balance : ${formatCurrency(sisaVal)} (Paid upon therapist arrival)*`;
+                    ? `${formatCurrency(transaction.total_price)}*\n*Payment Type : Down Payment (DP)*\n*DP Amount : ${formatCurrency(dpVal)}*\n*Remaining Balance : ${sisaTextEn}`
+                    : `${formatCurrency(transaction.total_price)}\n*Payment Type : Down Payment (DP)*\n*DP Amount : ${formatCurrency(dpVal)}*\n*Remaining Balance : ${sisaTextEn}*`;
             } else {
                 totalReplacement = hasTrailingAsterisk
-                    ? `${formatCurrency(transaction.total_price)}*\n*Tipe Pembayaran : DP (Uang Muka)*\n*Nominal DP : ${formatCurrency(dpVal)}*\n*Sisa Tagihan : ${formatCurrency(sisaVal)} (Dilunasi saat terapis datang)`
-                    : `${formatCurrency(transaction.total_price)}\n*Tipe Pembayaran : DP (Uang Muka)*\n*Nominal DP : ${formatCurrency(dpVal)}*\n*Sisa Tagihan : ${formatCurrency(sisaVal)} (Dilunasi saat terapis datang)*`;
+                    ? `${formatCurrency(transaction.total_price)}*\n*Tipe Pembayaran : DP (Uang Muka)*\n*Nominal DP : ${formatCurrency(dpVal)}*\n*Sisa Tagihan : ${sisaTextId}`
+                    : `${formatCurrency(transaction.total_price)}\n*Tipe Pembayaran : DP (Uang Muka)*\n*Nominal DP : ${formatCurrency(dpVal)}*\n*Sisa Tagihan : ${sisaTextId}*`;
             }
         } else {
             if (lang === 'en') {
@@ -576,18 +601,20 @@ export default function Index({ transactions, filters, counts, employees, packag
         if (isInvoiceModalOpen && invoiceTransaction) {
             prepareInvoiceMessage(invoiceTransaction, invoiceLang, {
                 type: paymentType,
-                dpAmount: paymentType === 'dp' ? dpAmount : 0
+                dpAmount: paymentType === 'dp' ? dpAmount : 0,
+                isPelunasanPaid: invoicePelunasanPaid
             }).then(msg => setPreviewMessage(msg));
         }
-    }, [isInvoiceModalOpen, invoiceTransaction, invoiceLang, paymentType, dpAmount]);
+    }, [isInvoiceModalOpen, invoiceTransaction, invoiceLang, paymentType, dpAmount, invoicePelunasanPaid]);
 
     const openInvoiceOptionsModal = (transaction, action = 'send', lang = 'id') => {
         if (!transaction) return;
         setInvoiceTransaction(transaction);
         setInvoiceAction(action);
         setInvoiceLang(lang);
-        setPaymentType('full');
-        setDpAmount(Math.round((parseFloat(transaction.total_price) || 0) * 0.5)); // default 50%
+        setPaymentType(transaction.payment_type || 'full');
+        setDpAmount(transaction.dp_amount || Math.round((parseFloat(transaction.total_price) || 0) * 0.5)); // default 50%
+        setInvoicePelunasanPaid(transaction.is_pelunasan_paid || false);
         setIsInvoiceModalOpen(true);
     };
 
@@ -606,43 +633,60 @@ export default function Index({ transactions, filters, counts, employees, packag
             dpAmount: paymentType === 'dp' ? dpAmount : 0
         });
 
-        if (actionType === 'send') {
-            const phone = invoiceTransaction.phone || app_settings?.phone || '';
-            if (!phone) {
-                alert('Nomor WhatsApp tidak ditemukan.');
-                return;
-            }
-            const encodedMessage = encodeURIComponent(message);
-            const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
-            let waPhone = cleanPhone;
-            if (cleanPhone.startsWith('0')) {
-                waPhone = '62' + cleanPhone.substring(1);
-            } else if (cleanPhone.startsWith('8')) {
-                waPhone = '62' + cleanPhone;
-            }
-            if (!waPhone) {
-                alert('Nomor telepon tidak valid.');
-                return;
-            }
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const waBaseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send';
-            const finalUrl = isMobile
-                ? `${waBaseUrl}${waPhone}?text=${encodedMessage}`
-                : `${waBaseUrl}?phone=${waPhone}&text=${encodedMessage}`;
+        const performAction = () => {
+            if (actionType === 'send') {
+                const phone = invoiceTransaction.phone || app_settings?.phone || '';
+                if (!phone) {
+                    alert('Nomor WhatsApp tidak ditemukan.');
+                    return;
+                }
+                const encodedMessage = encodeURIComponent(message);
+                const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
+                let waPhone = cleanPhone;
+                if (cleanPhone.startsWith('0')) {
+                    waPhone = '62' + cleanPhone.substring(1);
+                } else if (cleanPhone.startsWith('8')) {
+                    waPhone = '62' + cleanPhone;
+                }
+                if (!waPhone) {
+                    alert('Nomor telepon tidak valid.');
+                    return;
+                }
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const waBaseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send';
+                const finalUrl = isMobile
+                    ? `${waBaseUrl}${waPhone}?text=${encodedMessage}`
+                    : `${waBaseUrl}?phone=${waPhone}&text=${encodedMessage}`;
 
-            window.open(finalUrl, '_blank');
-            setIsInvoiceModalOpen(false);
-        } else {
-            navigator.clipboard.writeText(message).then(() => {
-                setToastMessage(invoiceLang === 'en' ? 'Teks invoice (EN) berhasil disalin!' : 'Teks invoice berhasil disalin!');
-                setShowToast(true);
-                setTimeout(() => setShowToast(false), 3000);
+                window.open(finalUrl, '_blank');
                 setIsInvoiceModalOpen(false);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-                alert('Gagal menyalin teks.');
-            });
-        }
+            } else {
+                navigator.clipboard.writeText(message).then(() => {
+                    setToastMessage(invoiceLang === 'en' ? 'Teks invoice (EN) berhasil disalin!' : 'Teks invoice berhasil disalin!');
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                    setIsInvoiceModalOpen(false);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    alert('Gagal menyalin teks.');
+                });
+            }
+        };
+
+        // Execute immediately to prevent popup blocking
+        performAction();
+
+        // Save DP options to DB asynchronously without waiting
+        axios.patch(route('admin.transaction.update', invoiceTransaction.id), {
+            payment_type: paymentType,
+            dp_amount: paymentType === 'dp' ? dpAmount : null,
+            is_pelunasan_paid: paymentType === 'dp' ? invoicePelunasanPaid : false
+        }).then(() => {
+            // Trigger an inertia reload so table UI updates with the new DP values
+            router.reload({ only: ['transactions'] });
+        }).catch(err => {
+            console.error("Gagal menyimpan opsi pembayaran invoice", err);
+        });
     };
 
     const generateReviewLink = async (transaction) => {
@@ -1001,9 +1045,31 @@ export default function Index({ transactions, filters, counts, employees, packag
                                                     </td>
                                                     <td className="px-6 py-5 text-center">
                                                         <span className="text-xs font-bold text-gray-700 uppercase block">{transaction.payment_method || '-'}</span>
+                                                        {transaction.payment_type && (
+                                                            <span className={`text-[9px] font-bold mt-1 inline-block px-2 py-0.5 rounded-full ${transaction.payment_type === 'dp' ? 'bg-zenith-orange/10 text-zenith-orange' : 'bg-green-50 text-green-600'}`}>
+                                                                {transaction.payment_type === 'dp' ? 'DP (UANG MUKA)' : 'LUNAS (FULL)'}
+                                                            </span>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-5">
                                                         <span className="text-sm font-bold text-gray-900">{formatCurrency(transaction.total_price)}</span>
+                                                        {transaction.payment_type === 'dp' && parseFloat(transaction.dp_amount) > 0 && (
+                                                            <div className="mt-1 flex flex-col gap-0.5">
+                                                                <span className="text-[9px] font-bold text-zenith-orange">DP: {formatCurrency(transaction.dp_amount)}</span>
+                                                                <span className={`text-[9px] font-bold ${transaction.is_pelunasan_paid ? 'text-green-600' : 'text-red-500'}`}>Sisa: {formatCurrency(transaction.total_price - transaction.dp_amount)}{transaction.is_pelunasan_paid ? ' (LUNAS)' : ''}</span>
+                                                                {transaction.is_pelunasan_paid ? (
+                                                                    <span className="text-[8px] font-bold text-green-600 uppercase bg-green-50 px-1.5 py-0.5 rounded w-fit mt-0.5 border border-green-100">PELUNASAN DIBAYAR</span>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() => quickMarkPelunasan(transaction)}
+                                                                        className="text-[8px] font-bold text-red-600 uppercase bg-red-50 hover:bg-red-100 px-1.5 py-0.5 rounded w-fit mt-0.5 border border-red-100 transition-colors cursor-pointer"
+                                                                        title="Klik untuk melunaskan sisa pembayaran"
+                                                                    >
+                                                                        SISA BELUM DIBAYAR (LUNASKAN)
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-5">
                                                         <div className="flex justify-center">
@@ -1349,6 +1415,59 @@ export default function Index({ transactions, filters, counts, employees, packag
                                         </div>
                                     </div>
                                 </div>
+
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Tipe Pembayaran</label>
+                                    <div className="relative">
+                                        <select
+                                            className="w-full pl-4 bg-gray-50 border-gray-200 rounded-xl text-xs font-bold text-gray-900 uppercase focus:ring-zenith-orange focus:border-zenith-orange cursor-pointer appearance-none"
+                                            value={selectedTransaction?.payment_type || 'full'}
+                                            onChange={(e) => {
+                                                const type = e.target.value;
+                                                setSelectedTransaction({ 
+                                                    ...selectedTransaction, 
+                                                    payment_type: type,
+                                                    dp_amount: type === 'full' ? null : selectedTransaction?.dp_amount
+                                                });
+                                            }}
+                                        >
+                                            <option value="full">Lunas (Full)</option>
+                                            <option value="dp">Down Payment (DP)</option>
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <span className="material-symbols-outlined text-gray-400 text-sm">expand_more</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {selectedTransaction?.payment_type === 'dp' && (
+                                    <div className="animate-fade-in">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Jumlah DP</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">Rp</span>
+                                            <input
+                                                type="number"
+                                                className="w-full pl-8 bg-gray-50 border-gray-200 rounded-xl text-sm focus:ring-zenith-orange focus:border-zenith-orange"
+                                                placeholder="0"
+                                                value={selectedTransaction?.dp_amount || ''}
+                                                onChange={(e) => setSelectedTransaction({ ...selectedTransaction, dp_amount: e.target.value })}
+                                            />
+                                        </div>
+                                        
+                                        <div className="mt-3 flex items-center gap-2 bg-green-50 p-3 rounded-xl border border-green-100">
+                                            <input
+                                                type="checkbox"
+                                                id="pelunasan_paid"
+                                                className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-600"
+                                                checked={selectedTransaction?.is_pelunasan_paid || false}
+                                                onChange={(e) => setSelectedTransaction({ ...selectedTransaction, is_pelunasan_paid: e.target.checked })}
+                                            />
+                                            <label htmlFor="pelunasan_paid" className="text-xs font-bold text-green-700 cursor-pointer">
+                                                Tandai Sisa Pelunasan Sudah Dibayar
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -1962,6 +2081,17 @@ export default function Index({ transactions, filters, counts, employees, packag
                                     <span className="font-bold text-red-600">
                                         {formatCurrency(Math.max(0, (parseFloat(invoiceTransaction?.total_price) || 0) - (parseFloat(dpAmount) || 0)))}
                                     </span>
+                                </div>
+                                <div className="pt-2 border-t border-orange-100/80">
+                                    <label className="flex items-center gap-2 cursor-pointer bg-green-50/50 p-2.5 rounded-lg border border-green-100 transition-colors hover:bg-green-100/50">
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500"
+                                            checked={invoicePelunasanPaid}
+                                            onChange={(e) => setInvoicePelunasanPaid(e.target.checked)}
+                                        />
+                                        <span className="text-[11px] font-bold text-green-700 uppercase tracking-widest">Tandai Sisa Pelunasan LUNAS</span>
+                                    </label>
                                 </div>
                             </div>
                         )}

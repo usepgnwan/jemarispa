@@ -9,6 +9,7 @@ class Transaction extends Model
     protected $fillable = [
         'order_number', 'customer_name', 'phone', 'address', 
         'schedule_date', 'schedule_time', 'payment_method', 
+        'payment_type', 'dp_amount', 'is_pelunasan_paid',
         'source', 'notes', 'total_price', 'transport_fee', 
         'discount_percent', 'discount_amount', 'status',
         'review_token', 'review_expires_at', 'voucher_id',
