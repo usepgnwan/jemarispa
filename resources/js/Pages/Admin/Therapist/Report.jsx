@@ -28,6 +28,7 @@ export default function Report({ therapistRevenue, filters }) {
     const [expandedRows, setExpandedRows] = useState([]);
     const [expandedInvoices, setExpandedInvoices] = useState([]);
     const [editingInvoiceId, setEditingInvoiceId] = useState(null);
+    const [invoicePages, setInvoicePages] = useState({});
 
     const toggleRow = (id) => {
         setExpandedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
@@ -312,6 +313,12 @@ export default function Report({ therapistRevenue, filters }) {
                                     {therapistRevenue.map((t, i) => {
                                         const maxRevenue = therapistRevenue[0]?.revenue || 1;
                                         const pct = Math.round((t.revenue / maxRevenue) * 100);
+                                        const invoices = t.invoices || [];
+                                        const itemsPerPage = 5;
+                                        const totalPages = Math.ceil(invoices.length / itemsPerPage);
+                                        const currentPage = Math.min(invoicePages[t.id] || 1, Math.max(1, totalPages));
+                                        const startIndex = (currentPage - 1) * itemsPerPage;
+                                        const paginatedInvoices = invoices.slice(startIndex, startIndex + itemsPerPage);
                                         return (
                                             <React.Fragment key={t.name}>
                                                 <tr className="hover:bg-gray-50/50 transition-colors group">
@@ -375,120 +382,166 @@ export default function Report({ therapistRevenue, filters }) {
                                                                     <h5 className="font-bold text-sm text-gray-700">Riwayat Invoice Terapis</h5>
                                                                 </div>
                                                                 {t.invoices && t.invoices.length > 0 ? (
-                                                                    <table className="w-full text-xs">
-                                                                        <thead className="bg-gray-50 text-gray-500">
-                                                                            <tr>
-                                                                                <th className="py-2 px-4 text-left uppercase font-bold tracking-wider">Tgl Invoice</th>
-                                                                                <th className="py-2 px-4 text-left uppercase font-bold tracking-wider">No Invoice</th>
-                                                                                <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Trx Sesi</th>
-                                                                                <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Transfer (Komisi)</th>
-                                                                                <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Cash (Net)</th>
-                                                                                <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Status Bayar</th>
-                                                                                <th className="py-2 px-4 text-center uppercase font-bold tracking-wider">Aksi</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody className="divide-y divide-gray-100">
-                                                                            {t.invoices.map((inv) => (
-                                                                                <React.Fragment key={inv.id}>
-                                                                                    <tr className="hover:bg-purple-50/30">
-                                                                                        <td className="py-2 px-4 text-gray-900">{new Date(inv.created_at).toLocaleDateString()}</td>
-                                                                                        <td className="py-2 px-4 text-purple-600 font-bold">{inv.invoice_no}</td>
-                                                                                        <td className="py-2 px-4 text-right">{inv.items ? inv.items.length : 0} Sesi</td>
-                                                                                        <td className="py-2 px-4 text-right">{fmt(inv.total_transfer_commission)}</td>
-                                                                                        <td className="py-2 px-4 text-right text-red-500">- {fmt(inv.total_cash_net_profit)}</td>
-                                                                                        <td className="py-2 px-4 text-right">
-                                                                                            <div className={`font-bold ${inv.total_amount < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                                                                                                {inv.total_amount < 0 ? 'Terapis Bayar Spa' : 'Spa Bayar Terapis'}<br />
-                                                                                                {fmt(inv.total_amount)}
-                                                                                            </div>
-                                                                                        </td>
-                                                                                        <td className="py-2 px-4 text-center whitespace-nowrap">
-                                                                                            <button
-                                                                                                onClick={() => copyInvoiceToText(inv)}
-                                                                                                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded text-[10px] transition-colors mr-2"
-                                                                                            >
-                                                                                                Copy Text
-                                                                                            </button>
-                                                                                            <button
-                                                                                                onClick={() => toggleInvoiceRow(inv.id)}
-                                                                                                className="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium rounded text-[10px] transition-colors mr-2"
-                                                                                            >
-                                                                                                {expandedInvoices.includes(inv.id) ? 'Tutup Detail' : 'Lihat Detail'}
-                                                                                            </button>
-                                                                                            <button
-                                                                                                onClick={() => handleEditInvoice(inv, t)}
-                                                                                                className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium rounded text-[10px] transition-colors mr-2"
-                                                                                                title="Edit Invoice"
-                                                                                            >
-                                                                                                <span className="material-symbols-outlined text-[14px] align-middle">edit</span>
-                                                                                            </button>
-                                                                                            <button
-                                                                                                onClick={() => handleDeleteInvoice(inv.id)}
-                                                                                                className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded text-[10px] transition-colors"
-                                                                                                title="Hapus Invoice"
-                                                                                            >
-                                                                                                <span className="material-symbols-outlined text-[14px] align-middle">delete</span>
-                                                                                            </button>
-                                                                                        </td>
-                                                                                    </tr>
-                                                                                    {expandedInvoices.includes(inv.id) && (
-                                                                                        <tr>
-                                                                                            <td colSpan={7} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
-                                                                                                <div className="bg-white rounded border border-gray-200 p-3 shadow-sm">
-                                                                                                    <h6 className="font-bold text-xs text-gray-700 mb-2">Rincian Sesi di Invoice {inv.invoice_no}</h6>
-                                                                                                    <table className="w-full text-[11px] text-left">
-                                                                                                        <thead className="text-gray-500 border-b border-gray-200">
-                                                                                                            <tr>
-                                                                                                                <th className="py-1 px-2 font-semibold">Tgl / No Trx</th>
-                                                                                                                <th className="py-1 px-2 font-semibold">Layanan</th>
-                                                                                                                <th className="py-1 px-2 font-semibold">Metode</th>
-                                                                                                                <th className="py-1 px-2 font-semibold text-right">Harga</th>
-                                                                                                                <th className="py-1 px-2 font-semibold text-right">Komisi (Transfer)</th>
-                                                                                                                <th className="py-1 px-2 font-semibold text-right">Net Profit (Cash)</th>
-                                                                                                            </tr>
-                                                                                                        </thead>
-                                                                                                        <tbody>
-                                                                                                            {inv.items && [...inv.items].sort((a, b) => {
-                                                                                                                const tiA = a.transaction_item || a.transactionItem;
-                                                                                                                const tiB = b.transaction_item || b.transactionItem;
-                                                                                                                return new Date(tiA?.transaction?.schedule_date || 0).getTime() - new Date(tiB?.transaction?.schedule_date || 0).getTime();
-                                                                                                            }).map((invItem) => {
-                                                                                                                const ti = invItem.transaction_item || invItem.transactionItem;
-                                                                                                                const method = ti?.transaction?.payment_method?.toLowerCase() || '';
-                                                                                                                const price = ti?.price || 0;
-                                                                                                                const comm = ti?.therapist_commission || 0;
-                                                                                                                return (
-                                                                                                                    <tr key={invItem.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                                                                                                                        <td className="py-2 px-2 text-gray-700">
-                                                                                                                            <div>{new Date(ti?.transaction?.schedule_date).toLocaleDateString()}</div>
-                                                                                                                            <div className="font-bold text-purple-600">{ti?.transaction?.order_number}</div>
-                                                                                                                            <div className="text-[10px] text-gray-500">{ti?.transaction?.customer_name}</div>
-                                                                                                                        </td>
-                                                                                                                        <td className="py-2 px-2 text-gray-700">
-                                                                                                                            <div className="font-semibold">{ti?.package_name}</div>
-                                                                                                                            <div className="text-gray-400">{ti?.package_duration}</div>
-                                                                                                                        </td>
-                                                                                                                        <td className="py-2 px-2 text-gray-700 uppercase font-semibold">{method}</td>
-                                                                                                                        <td className="py-2 px-2 text-right text-gray-700 font-medium">{fmt(price)}</td>
-                                                                                                                        <td className="py-2 px-2 text-right text-gray-700 font-medium">
-                                                                                                                            {method === 'transfer' ? fmt(comm) : '-'}
-                                                                                                                        </td>
-                                                                                                                        <td className="py-2 px-2 text-right text-gray-700 font-medium">
-                                                                                                                            {method === 'cash' ? fmt(price - comm) : '-'}
-                                                                                                                        </td>
-                                                                                                                    </tr>
-                                                                                                                );
-                                                                                                            })}
-                                                                                                        </tbody>
-                                                                                                    </table>
-                                                                                                </div>
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    )}
-                                                                                </React.Fragment>
-                                                                            ))}
-                                                                        </tbody>
-                                                                    </table>
+                                                                     <>
+                                                                         <table className="w-full text-xs">
+                                                                             <thead className="bg-gray-50 text-gray-500">
+                                                                                 <tr>
+                                                                                     <th className="py-2 px-4 text-left uppercase font-bold tracking-wider">Tgl Invoice</th>
+                                                                                     <th className="py-2 px-4 text-left uppercase font-bold tracking-wider">No Invoice</th>
+                                                                                     <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Trx Sesi</th>
+                                                                                     <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Transfer (Komisi)</th>
+                                                                                     <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Cash (Net)</th>
+                                                                                     <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Status Bayar</th>
+                                                                                     <th className="py-2 px-4 text-center uppercase font-bold tracking-wider">Aksi</th>
+                                                                                 </tr>
+                                                                             </thead>
+                                                                             <tbody className="divide-y divide-gray-100">
+                                                                                 {paginatedInvoices.map((inv) => (
+                                                                                     <React.Fragment key={inv.id}>
+                                                                                         <tr className="hover:bg-purple-50/30">
+                                                                                             <td className="py-2 px-4 text-gray-900">{new Date(inv.created_at).toLocaleDateString()}</td>
+                                                                                             <td className="py-2 px-4 text-purple-600 font-bold">{inv.invoice_no}</td>
+                                                                                             <td className="py-2 px-4 text-right">{inv.items ? inv.items.length : 0} Sesi</td>
+                                                                                             <td className="py-2 px-4 text-right">{fmt(inv.total_transfer_commission)}</td>
+                                                                                             <td className="py-2 px-4 text-right text-red-500">- {fmt(inv.total_cash_net_profit)}</td>
+                                                                                             <td className="py-2 px-4 text-right">
+                                                                                                 <div className={`font-bold ${inv.total_amount < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                                                                     {inv.total_amount < 0 ? 'Terapis Bayar Spa' : 'Spa Bayar Terapis'}<br />
+                                                                                                     {fmt(inv.total_amount)}
+                                                                                                 </div>
+                                                                                             </td>
+                                                                                             <td className="py-2 px-4 text-center whitespace-nowrap">
+                                                                                                 <button
+                                                                                                     onClick={() => copyInvoiceToText(inv)}
+                                                                                                     className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded text-[10px] transition-colors mr-2"
+                                                                                                 >
+                                                                                                     Copy Text
+                                                                                                 </button>
+                                                                                                 <button
+                                                                                                     onClick={() => toggleInvoiceRow(inv.id)}
+                                                                                                     className="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium rounded text-[10px] transition-colors mr-2"
+                                                                                                 >
+                                                                                                     {expandedInvoices.includes(inv.id) ? 'Tutup Detail' : 'Lihat Detail'}
+                                                                                                 </button>
+                                                                                                 <button
+                                                                                                     onClick={() => handleEditInvoice(inv, t)}
+                                                                                                     className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium rounded text-[10px] transition-colors mr-2"
+                                                                                                     title="Edit Invoice"
+                                                                                                 >
+                                                                                                     <span className="material-symbols-outlined text-[14px] align-middle">edit</span>
+                                                                                                 </button>
+                                                                                                 <button
+                                                                                                     onClick={() => handleDeleteInvoice(inv.id)}
+                                                                                                     className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded text-[10px] transition-colors"
+                                                                                                     title="Hapus Invoice"
+                                                                                                 >
+                                                                                                     <span className="material-symbols-outlined text-[14px] align-middle">delete</span>
+                                                                                                 </button>
+                                                                                             </td>
+                                                                                         </tr>
+                                                                                         {expandedInvoices.includes(inv.id) && (
+                                                                                             <tr>
+                                                                                                 <td colSpan={7} className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                                                                                                     <div className="bg-white rounded border border-gray-200 p-3 shadow-sm">
+                                                                                                         <h6 className="font-bold text-xs text-gray-700 mb-2">Rincian Sesi di Invoice {inv.invoice_no}</h6>
+                                                                                                         <table className="w-full text-[11px] text-left">
+                                                                                                             <thead className="text-gray-500 border-b border-gray-200">
+                                                                                                                 <tr>
+                                                                                                                     <th className="py-1 px-2 font-semibold">Tgl / No Trx</th>
+                                                                                                                     <th className="py-1 px-2 font-semibold">Layanan</th>
+                                                                                                                     <th className="py-1 px-2 font-semibold">Metode</th>
+                                                                                                                     <th className="py-1 px-2 font-semibold text-right">Harga</th>
+                                                                                                                     <th className="py-1 px-2 font-semibold text-right">Komisi (Transfer)</th>
+                                                                                                                     <th className="py-1 px-2 font-semibold text-right">Net Profit (Cash)</th>
+                                                                                                                 </tr>
+                                                                                                             </thead>
+                                                                                                             <tbody>
+                                                                                                                 {inv.items && [...inv.items].sort((a, b) => {
+                                                                                                                     const tiA = a.transaction_item || a.transactionItem;
+                                                                                                                     const tiB = b.transaction_item || b.transactionItem;
+                                                                                                                     return new Date(tiA?.transaction?.schedule_date || 0).getTime() - new Date(tiB?.transaction?.schedule_date || 0).getTime();
+                                                                                                                 }).map((invItem) => {
+                                                                                                                     const ti = invItem.transaction_item || invItem.transactionItem;
+                                                                                                                     const method = ti?.transaction?.payment_method?.toLowerCase() || '';
+                                                                                                                     const price = ti?.price || 0;
+                                                                                                                     const comm = ti?.therapist_commission || 0;
+                                                                                                                     return (
+                                                                                                                         <tr key={invItem.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                                                                                                                             <td className="py-2 px-2 text-gray-700">
+                                                                                                                                 <div>{new Date(ti?.transaction?.schedule_date).toLocaleDateString()}</div>
+                                                                                                                                 <div className="font-bold text-purple-600">{ti?.transaction?.order_number}</div>
+                                                                                                                                 <div className="text-[10px] text-gray-500">{ti?.transaction?.customer_name}</div>
+                                                                                                                             </td>
+                                                                                                                             <td className="py-2 px-2 text-gray-700">
+                                                                                                                                 <div className="font-semibold">{ti?.package_name}</div>
+                                                                                                                                 <div className="text-gray-400">{ti?.package_duration}</div>
+                                                                                                                             </td>
+                                                                                                                             <td className="py-2 px-2 text-gray-700 uppercase font-semibold">{method}</td>
+                                                                                                                             <td className="py-2 px-2 text-right text-gray-700 font-medium">{fmt(price)}</td>
+                                                                                                                             <td className="py-2 px-2 text-right text-gray-700 font-medium">
+                                                                                                                                 {method === 'transfer' ? fmt(comm) : '-'}
+                                                                                                                             </td>
+                                                                                                                             <td className="py-2 px-2 text-right text-gray-700 font-medium">
+                                                                                                                                 {method === 'cash' ? fmt(price - comm) : '-'}
+                                                                                                                             </td>
+                                                                                                                         </tr>
+                                                                                                                     );
+                                                                                                                 })}
+                                                                                                             </tbody>
+                                                                                                         </table>
+                                                                                                     </div>
+                                                                                                 </td>
+                                                                                             </tr>
+                                                                                         )}
+                                                                                     </React.Fragment>
+                                                                                 ))}
+                                                                             </tbody>
+                                                                         </table>
+                                                                         {totalPages > 1 && (
+                                                                             <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+                                                                                 <div>
+                                                                                     Menampilkan <span className="font-bold text-gray-700">{startIndex + 1}</span> - <span className="font-bold text-gray-700">{Math.min(startIndex + itemsPerPage, invoices.length)}</span> dari <span className="font-bold text-gray-700">{invoices.length}</span> invoice
+                                                                                 </div>
+                                                                                 <div className="flex items-center gap-1">
+                                                                                     <button
+                                                                                         onClick={() => setInvoicePages(prev => ({ ...prev, [t.id]: Math.max(1, currentPage - 1) }))}
+                                                                                         disabled={currentPage === 1}
+                                                                                         className={`px-3 py-1.5 rounded-lg font-semibold transition-all border ${
+                                                                                             currentPage === 1
+                                                                                                 ? 'bg-white/50 text-gray-300 border-gray-100 cursor-not-allowed'
+                                                                                                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                                                                         }`}
+                                                                                     >
+                                                                                         Sebelumnya
+                                                                                     </button>
+                                                                                     {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
+                                                                                         <button
+                                                                                             key={pageNum}
+                                                                                             onClick={() => setInvoicePages(prev => ({ ...prev, [t.id]: pageNum }))}
+                                                                                             className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                                                                                 currentPage === pageNum
+                                                                                                     ? 'bg-purple-600 text-white shadow-sm font-bold'
+                                                                                                     : 'text-gray-600 hover:bg-gray-100'
+                                                                                             }`}
+                                                                                         >
+                                                                                             {pageNum}
+                                                                                         </button>
+                                                                                     ))}
+                                                                                     <button
+                                                                                         onClick={() => setInvoicePages(prev => ({ ...prev, [t.id]: Math.min(totalPages, currentPage + 1) }))}
+                                                                                         disabled={currentPage === totalPages}
+                                                                                         className={`px-3 py-1.5 rounded-lg font-semibold transition-all border ${
+                                                                                             currentPage === totalPages
+                                                                                                 ? 'bg-white/50 text-gray-300 border-gray-100 cursor-not-allowed'
+                                                                                                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                                                                         }`}
+                                                                                     >
+                                                                                         Selanjutnya
+                                                                                     </button>
+                                                                                 </div>
+                                                                             </div>
+                                                                         )}
+                                                                     </>
                                                                 ) : (
                                                                     <div className="p-4 text-center text-gray-500 text-sm">Belum ada invoice tersimpan.</div>
                                                                 )}
