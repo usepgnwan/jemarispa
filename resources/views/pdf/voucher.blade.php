@@ -39,13 +39,11 @@
         
         .logo-wrapper {
             background-color: #555555;
-            padding: 10px;
             border-radius: 12px;
-            width: 50px;
-            height: 50px;
-            display: inline-block;
+            width: 40px;
+            height: 40px;
         }
-        .logo-wrapper img { width: 100%; height: auto; display: block; }
+        .logo-wrapper img { width: 25px; height: auto; }
         
         .voucher-card {
             margin-top: 15px;
@@ -77,7 +75,8 @@
             box-sizing: border-box;
         }
         .voucher-card-content .logo-small {
-            width: 55px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;
+            width: 55px;
+            display: inline-block;
         }
         .voucher-card-content h2 {
             font-size: 40px; text-align: center; margin: 0; letter-spacing: 5px; font-weight: bold; font-family: 'Times New Roman', serif;
@@ -132,13 +131,17 @@
                     Dipesan dan dibeli melalui <strong>Jemari Home Spa</strong>
                 </div>
             </td>
-            <td style="vertical-align: top; text-align: right; width: 100px;">
+            <td style="vertical-align: middle; text-align: right; width: 90px;">
                 @if($logoSrc)
-                    <div class="logo-wrapper">
-                        <img src="{{ $logoSrc }}" alt="Logo">
-                    </div>
+                    <table width="80" height="80" border="0" cellpadding="0" cellspacing="0" style="background-color: #555555; border-radius: 12px; border-collapse: collapse; margin-left: auto; width: 80px; height: 80px; overflow: hidden;">
+                        <tr height="80">
+                            <td align="center" valign="middle" style="padding: 12px; width: 60px; height: 60px; overflow: hidden;">
+                                <img src="{{ $logoSrc }}" alt="Logo" style="width: 46px; max-width: 46px; height: auto; display: inline;">
+                            </td>
+                        </tr>
+                    </table>
                 @else
-                    <div style="font-weight: bold; font-size: 14px; color: #f97316; float: right;">JEMARI</div>
+                    <div style="font-weight: bold; font-size: 14px; color: #f97316;">JEMARI</div>
                 @endif
             </td>
         </tr>
@@ -148,7 +151,9 @@
         <div class="voucher-card-image"></div>
         <div class="voucher-card-content">
             @if($logoSrc)
-                <img src="{{ $logoSrc }}" class="logo-small" />
+                <div style="text-align: center; width: 100%; margin-bottom: 15px;">
+                    <img src="{{ $logoSrc }}" class="logo-small" />
+                </div>
             @else
                 <div style="text-align: center; font-weight: bold; margin-bottom: 20px;">JEMARI</div>
             @endif
@@ -232,4 +237,4 @@
         </div>
     </div>
 </body>
-</html>
+</html> 
