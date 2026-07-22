@@ -57,7 +57,7 @@
         .voucher-card-image {
             position: absolute;
             left: 0; top: 0;
-            width: 45%; height: 100%;
+            width: 40%; height: 100%;
             @if($ogShareSrc)
                 background-image: url('{{ $ogShareSrc }}');
             @else
@@ -69,35 +69,48 @@
         .voucher-card-content {
             position: absolute;
             right: 0; top: 0;
-            width: 55%; height: 100%;
-            padding: 25px 35px;
+            width: 60%; height: 310px;
             background-color: #3f3f3f;
             box-sizing: border-box;
+            display: table;
         }
+        .voucher-card-content-inner {
+            display: table-cell;
+            vertical-align: middle;
+            height: 310px;
+            padding: 0 35px;
+            text-align: center;
+        }
+        .logo-top {
+            position: absolute;
+            top: 18px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+        .logo-top img { width: 50px; height: auto; display: inline; }
         .voucher-card-content .logo-small {
             width: 55px;
             display: inline-block;
         }
         .voucher-card-content h2 {
-            font-size: 40px; text-align: center; margin: 0; letter-spacing: 5px; font-weight: bold; font-family: 'Times New Roman', serif;
-        }
-        .voucher-card-content h3 {
-            font-size: 30px; text-align: center; margin: 0; letter-spacing: 5px; font-weight: bold; font-family: 'Times New Roman', serif;
+            font-size: 40px; text-align: center; margin: 10px 0 0 0; letter-spacing: 5px; font-weight: bold; font-family: 'Times New Roman', serif;
         }
         .package-badge {
             background-color: #f97316;
-            color: #fff; padding: 8px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: bold; margin-top: 15px;
+            color: #fff; padding: 8px 12px; border-radius: 8px; text-align: center; font-size: 11px; font-weight: bold; margin-top: 15px; display: inline-block;
+            white-space: nowrap;
         }
         .valid-until {
-            text-align: center; margin-top: 30px; font-size: 9px; color: #ccc;
+            text-align: center; margin-top: 25px; font-size: 9px; color: #ccc;
         }
         .valid-until .date {
-            display: block; font-size: 12px; color: #fff; margin-top: 3px;
+            display: block; font-size: 12px; color: #fff; margin-top: 3px; font-weight: bold;
         }
         .social-info {
-            position: absolute; bottom: 15px; width: 100%; text-align: center; font-size: 8px; color: #ccc;
+            position: absolute; bottom: 15px; left: 0; width: 100%; text-align: center; font-size: 8px; color: #ccc;
         }
-        .social-info span { margin: 0 10px; }
+        .social-info span { margin: 0 8px; }
 
         .details-section { margin-top: 25px; }
         .details-section h3 { font-size: 18px; margin-bottom: 10px; }
@@ -150,29 +163,32 @@
     <div class="voucher-card">
         <div class="voucher-card-image"></div>
         <div class="voucher-card-content">
-            @if($logoSrc)
-                <div style="text-align: center; width: 100%; margin-bottom: 15px;">
-                    <img src="{{ $logoSrc }}" class="logo-small" />
-                </div>
-            @else
-                <div style="text-align: center; font-weight: bold; margin-bottom: 20px;">JEMARI</div>
-            @endif
-            <h2>VOUCHER</h2>
-            <div class="package-badge">
-                @if($voucher->category === 'bundle')
-                    @foreach($voucher->bundle_packages as $pkg)
-                        {{ $pkg['name'] }} - {{ $pkg['duration'] }}{{ !$loop->last ? ' & ' : '' }}
-                    @endforeach
+            {{-- Logo di paling atas --}}
+            <div class="logo-top">
+                @if($logoSrc)
+                    <img src="{{ $logoSrc }}" />
                 @else
-                    {{ $voucher->description ?: 'Voucher Treatment' }}
+                    <div style="font-weight: bold; font-size: 13px; color: #fff; letter-spacing: 3px;">JEMARI</div>
                 @endif
             </div>
 
-            <div class="valid-until">
-                Valid until
-                <span class="date">{{ \Carbon\Carbon::parse($voucher->expired_at)->translatedFormat('F d, Y') }}</span>
+            {{-- Konten di tengah --}}
+            <div class="voucher-card-content-inner">
+                <h2>VOUCHER</h2>
+                <div class="package-badge">
+                    @if($voucher->category === 'bundle')
+                        @foreach($voucher->bundle_packages as $pkg)
+                            {{ $pkg['name'] }} - {{ $pkg['duration'] }}{{ !$loop->last ? ' & ' : '' }}
+                        @endforeach
+                    @else
+                        {{ $voucher->description ?: 'Voucher Treatment' }}
+                    @endif
+                </div>
+                <div class="valid-until">
+                    Valid until
+                    <span class="date">{{ \Carbon\Carbon::parse($voucher->expired_at)->translatedFormat('F d, Y') }}</span>
+                </div>
             </div>
-
             <div class="social-info">
                 <span>{{ $setting->website ?? 'jemarihomespa.com' }}</span>
                 <span>{{ $setting->phone ?? '0895 1616 6090' }}</span>
