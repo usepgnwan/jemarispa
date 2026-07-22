@@ -777,7 +777,7 @@ class TransactionController extends Controller
                 'commission' => (float) $row->total_commission,
                 'net'        => (float) max(0, $row->total_revenue - $row->total_commission),
                 'jobs'       => (int) $row->job_count,
-                'invoices'   => \App\Models\TherapistInvoice::with('items.transactionItem.transaction')->where('employee_id', $row->employee_id)->orderBy('created_at', 'asc')->get()
+                'invoices'   => \App\Models\TherapistInvoice::with('items.transactionItem.transaction')->where('employee_id', $row->employee_id)->orderBy('created_at', 'desc')->get()
             ];
         })->values();
 

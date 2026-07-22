@@ -386,7 +386,9 @@ export default function Report({ therapistRevenue, filters }) {
                                                                          <table className="w-full text-xs">
                                                                              <thead className="bg-gray-50 text-gray-500">
                                                                                  <tr>
-                                                                                     <th className="py-2 px-4 text-left uppercase font-bold tracking-wider">Tgl Invoice</th>
+                                                                                     <th className="py-2 px-4 text-left uppercase font-bold tracking-wider">
+                                                                                         <span className="flex items-center gap-1">Tgl Invoice <span className="text-purple-400 text-[10px]">↓</span></span>
+                                                                                     </th>
                                                                                      <th className="py-2 px-4 text-left uppercase font-bold tracking-wider">No Invoice</th>
                                                                                      <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Trx Sesi</th>
                                                                                      <th className="py-2 px-4 text-right uppercase font-bold tracking-wider">Transfer (Komisi)</th>
