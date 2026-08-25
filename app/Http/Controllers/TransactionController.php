@@ -777,7 +777,6 @@ class TransactionController extends Controller
                 'commission' => (float) $row->total_commission,
                 'net'        => (float) max(0, $row->total_revenue - $row->total_commission),
                 'jobs'       => (int) $row->job_count,
-                'invoices'   => \App\Models\TherapistInvoice::with('items.transactionItem.transaction')->where('employee_id', $row->employee_id)->orderBy('created_at', 'desc')->get()
             ];
         })->values();
 
@@ -844,6 +843,19 @@ class TransactionController extends Controller
         ]);
     }
 
+    public function therapistInvoicesApi(Request $request)
+    {
+        $employeeId = $request->query('employee_id');
+        $limit = $request->query('limit', 5);
+
+        $invoices = \App\Models\TherapistInvoice::with('items.transactionItem.transaction')
+            ->where('employee_id', $employeeId)
+            ->orderBy('created_at', 'desc')
+            ->paginate($limit);
+
+        return response()->json($invoices);
+    }
+
     public function storeTherapistInvoice(Request $request)
     {
         $validated = $request->validate([
@@ -889,7 +901,10 @@ class TransactionController extends Controller
                 ]);
             }
 
-            return back()->with('message', 'Invoice berhasil disimpan');
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice berhasil disimpan'
+            ]);
         });
     }
 
@@ -936,7 +951,10 @@ class TransactionController extends Controller
                 ]);
             }
 
-            return back()->with('message', 'Invoice berhasil diperbarui');
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice berhasil diperbarui'
+            ]);
         });
     }
 
@@ -945,6 +963,9 @@ class TransactionController extends Controller
         $invoice->items()->delete();
         $invoice->delete();
 
-        return back()->with('message', 'Invoice berhasil dihapus');
+        return response()->json([
+            'success' => true,
+            'message' => 'Invoice berhasil dihapus'
+        ]);
     }
 }

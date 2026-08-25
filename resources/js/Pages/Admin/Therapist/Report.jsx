@@ -28,10 +28,35 @@ export default function Report({ therapistRevenue, filters }) {
     const [expandedRows, setExpandedRows] = useState([]);
     const [expandedInvoices, setExpandedInvoices] = useState([]);
     const [editingInvoiceId, setEditingInvoiceId] = useState(null);
-    const [invoicePages, setInvoicePages] = useState({});
+    const [therapistInvoices, setTherapistInvoices] = useState({});
+    const [isLoadingInvoices, setIsLoadingInvoices] = useState({});
+
+    const fetchInvoices = async (employeeId, page = 1) => {
+        setIsLoadingInvoices(prev => ({ ...prev, [employeeId]: true }));
+        try {
+            const response = await axios.get(route('admin.therapist.report.invoices'), {
+                params: {
+                    employee_id: employeeId,
+                    page: page,
+                    limit: 5
+                }
+            });
+            setTherapistInvoices(prev => ({ ...prev, [employeeId]: response.data }));
+        } catch (error) {
+            console.error('Failed to load invoices:', error);
+        } finally {
+            setIsLoadingInvoices(prev => ({ ...prev, [employeeId]: false }));
+        }
+    };
 
     const toggleRow = (id) => {
-        setExpandedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+        setExpandedRows(prev => {
+            const isExpanding = !prev.includes(id);
+            if (isExpanding && !therapistInvoices[id]) {
+                fetchInvoices(id, 1);
+            }
+            return isExpanding ? [...prev, id] : prev.filter(r => r !== id);
+        });
     };
 
     const toggleInvoiceRow = (id) => {
@@ -74,29 +99,29 @@ export default function Report({ therapistRevenue, filters }) {
         alert('Invoice berhasil disalin ke clipboard!');
     };
 
-    const handleSaveInvoice = () => {
+    const handleSaveInvoice = async () => {
         if (selectedItems.length === 0) return;
 
-        if (editingInvoiceId) {
-            router.put(route('admin.therapist.invoice.update', editingInvoiceId), {
-                transaction_item_ids: selectedItems
-            }, {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    setSelectedItems([]);
-                    setEditingInvoiceId(null);
-                }
-            });
-        } else {
-            router.post(route('admin.therapist.invoice.store'), {
-                employee_id: selectedTherapist.id,
-                transaction_item_ids: selectedItems
-            }, {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    setSelectedItems([]);
-                }
-            });
+        try {
+            if (editingInvoiceId) {
+                await axios.put(route('admin.therapist.invoice.update', editingInvoiceId), {
+                    transaction_item_ids: selectedItems
+                });
+            } else {
+                await axios.post(route('admin.therapist.invoice.store'), {
+                    employee_id: selectedTherapist.id,
+                    transaction_item_ids: selectedItems
+                });
+            }
+            setIsModalOpen(false);
+            setSelectedItems([]);
+            setEditingInvoiceId(null);
+            if (selectedTherapist) {
+                fetchInvoices(selectedTherapist.id, therapistInvoices[selectedTherapist.id]?.current_page || 1);
+            }
+        } catch (error) {
+            console.error('Error saving invoice:', error);
+            alert('Gagal menyimpan invoice.');
         }
     };
     const handleFilter = () => {
@@ -155,9 +180,15 @@ export default function Report({ therapistRevenue, filters }) {
         }
     };
 
-    const handleDeleteInvoice = (invoiceId) => {
+    const handleDeleteInvoice = async (invoiceId, employeeId) => {
         if (confirm('Apakah Anda yakin ingin menghapus invoice ini? Data sesi akan kembali ke status belum dibayar.')) {
-            router.delete(route('admin.therapist.invoice.destroy', invoiceId));
+            try {
+                await axios.delete(route('admin.therapist.invoice.destroy', invoiceId));
+                fetchInvoices(employeeId, therapistInvoices[employeeId]?.current_page || 1);
+            } catch (error) {
+                console.error('Error deleting invoice:', error);
+                alert('Gagal menghapus invoice.');
+            }
         }
     };
 
@@ -313,12 +344,12 @@ export default function Report({ therapistRevenue, filters }) {
                                     {therapistRevenue.map((t, i) => {
                                         const maxRevenue = therapistRevenue[0]?.revenue || 1;
                                         const pct = Math.round((t.revenue / maxRevenue) * 100);
-                                        const invoices = t.invoices || [];
-                                        const itemsPerPage = 5;
-                                        const totalPages = Math.ceil(invoices.length / itemsPerPage);
-                                        const currentPage = Math.min(invoicePages[t.id] || 1, Math.max(1, totalPages));
-                                        const startIndex = (currentPage - 1) * itemsPerPage;
-                                        const paginatedInvoices = invoices.slice(startIndex, startIndex + itemsPerPage);
+                                        const invoiceData = therapistInvoices[t.id];
+                                        const invoices = invoiceData?.data || [];
+                                        const totalPages = invoiceData?.last_page || 1;
+                                        const currentPage = invoiceData?.current_page || 1;
+                                        const totalInvoices = invoiceData?.total || 0;
+                                        const isLoading = isLoadingInvoices[t.id];
                                         return (
                                             <React.Fragment key={t.name}>
                                                 <tr className="hover:bg-gray-50/50 transition-colors group">
@@ -381,7 +412,12 @@ export default function Report({ therapistRevenue, filters }) {
                                                                 <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
                                                                     <h5 className="font-bold text-sm text-gray-700">Riwayat Invoice Terapis</h5>
                                                                 </div>
-                                                                {t.invoices && t.invoices.length > 0 ? (
+                                                                {isLoading ? (
+                                                                    <div className="py-8 text-center flex flex-col items-center justify-center">
+                                                                        <ArrowPathIcon className="w-8 h-8 text-purple-600 animate-spin mb-2" />
+                                                                        <p className="text-gray-500 text-sm font-medium">Memuat data invoice...</p>
+                                                                    </div>
+                                                                ) : invoices.length > 0 ? (
                                                                      <>
                                                                          <table className="w-full text-xs">
                                                                              <thead className="bg-gray-50 text-gray-500">
@@ -398,7 +434,7 @@ export default function Report({ therapistRevenue, filters }) {
                                                                                  </tr>
                                                                              </thead>
                                                                              <tbody className="divide-y divide-gray-100">
-                                                                                 {paginatedInvoices.map((inv) => (
+                                                                                 {invoices.map((inv) => (
                                                                                      <React.Fragment key={inv.id}>
                                                                                          <tr className="hover:bg-purple-50/30">
                                                                                              <td className="py-2 px-4 text-gray-900">{new Date(inv.created_at).toLocaleDateString()}</td>
@@ -433,7 +469,7 @@ export default function Report({ therapistRevenue, filters }) {
                                                                                                      <span className="material-symbols-outlined text-[14px] align-middle">edit</span>
                                                                                                  </button>
                                                                                                  <button
-                                                                                                     onClick={() => handleDeleteInvoice(inv.id)}
+                                                                                                     onClick={() => handleDeleteInvoice(inv.id, t.id)}
                                                                                                      className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded text-[10px] transition-colors"
                                                                                                      title="Hapus Invoice"
                                                                                                  >
@@ -502,11 +538,11 @@ export default function Report({ therapistRevenue, filters }) {
                                                                          {totalPages > 1 && (
                                                                              <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
                                                                                  <div>
-                                                                                     Menampilkan <span className="font-bold text-gray-700">{startIndex + 1}</span> - <span className="font-bold text-gray-700">{Math.min(startIndex + itemsPerPage, invoices.length)}</span> dari <span className="font-bold text-gray-700">{invoices.length}</span> invoice
+                                                                                     Menampilkan <span className="font-bold text-gray-700">{invoiceData?.from || 0}</span> - <span className="font-bold text-gray-700">{invoiceData?.to || 0}</span> dari <span className="font-bold text-gray-700">{totalInvoices}</span> invoice
                                                                                  </div>
                                                                                  <div className="flex items-center gap-1">
                                                                                      <button
-                                                                                         onClick={() => setInvoicePages(prev => ({ ...prev, [t.id]: Math.max(1, currentPage - 1) }))}
+                                                                                         onClick={() => fetchInvoices(t.id, Math.max(1, currentPage - 1))}
                                                                                          disabled={currentPage === 1}
                                                                                          className={`px-3 py-1.5 rounded-lg font-semibold transition-all border ${
                                                                                              currentPage === 1
@@ -519,7 +555,7 @@ export default function Report({ therapistRevenue, filters }) {
                                                                                      {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
                                                                                          <button
                                                                                              key={pageNum}
-                                                                                             onClick={() => setInvoicePages(prev => ({ ...prev, [t.id]: pageNum }))}
+                                                                                             onClick={() => fetchInvoices(t.id, pageNum)}
                                                                                              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                                                                                                  currentPage === pageNum
                                                                                                      ? 'bg-purple-600 text-white shadow-sm font-bold'
@@ -530,7 +566,7 @@ export default function Report({ therapistRevenue, filters }) {
                                                                                          </button>
                                                                                      ))}
                                                                                      <button
-                                                                                         onClick={() => setInvoicePages(prev => ({ ...prev, [t.id]: Math.min(totalPages, currentPage + 1) }))}
+                                                                                         onClick={() => fetchInvoices(t.id, Math.min(totalPages, currentPage + 1))}
                                                                                          disabled={currentPage === totalPages}
                                                                                          className={`px-3 py-1.5 rounded-lg font-semibold transition-all border ${
                                                                                              currentPage === totalPages
@@ -540,15 +576,15 @@ export default function Report({ therapistRevenue, filters }) {
                                                                                      >
                                                                                          Selanjutnya
                                                                                      </button>
+                                                                                     </div>
                                                                                  </div>
-                                                                             </div>
-                                                                         )}
-                                                                     </>
-                                                                ) : (
-                                                                    <div className="p-4 text-center text-gray-500 text-sm">Belum ada invoice tersimpan.</div>
-                                                                )}
-                                                            </div>
-                                                        </td>
+                                                                             )}
+                                                                         </>
+                                                                    ) : (
+                                                                        <div className="p-4 text-center text-gray-500 text-sm">Belum ada invoice tersimpan.</div>
+                                                                    )}
+                                                                </div>
+                                                            </td>
                                                     </tr>
                                                 )}
                                             </React.Fragment>
