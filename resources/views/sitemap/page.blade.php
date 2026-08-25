@@ -20,19 +20,9 @@
         <changefreq>daily</changefreq>
         <priority>0.8</priority>
     </url>
-    @foreach ($packages as $package)
-        <url>
-            <loc>{{ url('/treatment/' . Str::slug(strtolower($package->title_id))) }}</loc>
-            <changefreq>weekly</changefreq>
-            <priority>0.8</priority>
-        </url>
-    @endforeach
-    @foreach ($blogs as $blog)
-        <url>
-            <loc>{{ url('/blog/' . $blog->slug) }}</loc>
-            <lastmod>{{ $blog->updated_at->tz('UTC')->toAtomString() }}</lastmod>
-            <changefreq>weekly</changefreq>
-            <priority>0.7</priority>
-        </url>
-    @endforeach
+    <url>
+        <loc>https://web.whatsapp.com/send?phone=&amp;text=Halo%20Jemari%20Home%20Spa%2C%20saya%20ingin%20bertanya%20mengenai%20layanan%20spa.</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
 </urlset>

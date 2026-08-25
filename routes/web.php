@@ -336,12 +336,24 @@ Route::post('/api/voucher/validate', [VoucherController::class, 'validateCode'])
 Route::post('/api/transactions', [TransactionController::class, 'store'])->name('transactions.store');
 
 Route::get('/sitemap.xml', function () {
-    $blogs = \App\Models\Blog::latest()->get();
-    $packages = \App\Models\Package::where('status', 'public')->get(); // Get all public packages (signature and non-signature)
+    return response()->view('sitemap.index')->header('Content-Type', 'text/xml');
+});
 
-    return response()->view('sitemap', [
-        'blogs' => $blogs,
+Route::get('/page-sitemap.xml', function () {
+    return response()->view('sitemap.page')->header('Content-Type', 'text/xml');
+});
+
+Route::get('/treatment-sitemap.xml', function () {
+    $packages = \App\Models\Package::where('status', 'public')->get();
+    return response()->view('sitemap.treatment', [
         'packages' => $packages,
+    ])->header('Content-Type', 'text/xml');
+});
+
+Route::get('/blog-sitemap.xml', function () {
+    $blogs = \App\Models\Blog::latest()->get();
+    return response()->view('sitemap.blog', [
+        'blogs' => $blogs,
     ])->header('Content-Type', 'text/xml');
 });
 
