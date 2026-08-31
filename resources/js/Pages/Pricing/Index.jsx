@@ -46,9 +46,14 @@ const translations = {
     }
 };
 
-export default function Index({ auth, packages = [], signaturePackages = [], initialSlug = null }) {
+export default function Index({ auth, packages = [], signaturePackages = [], initialSlug = null, currentPackage = null, meta = null }) {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'ID');
-    const [activeService, setActiveService] = useState(() => localStorage.getItem('active_service') || 'Default');
+    const [activeService, setActiveService] = useState(() => {
+        if (currentPackage) {
+            return currentPackage.title_id;
+        }
+        return localStorage.getItem('active_service') || 'Default';
+    });
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
     const [cartItems, setCartItems] = useState([]);
@@ -69,17 +74,23 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
         };
 
         checkSelection();
-        syncService();
 
-        if (initialSlug && signaturePackages.length > 0) {
-            const matchingService = signaturePackages.find(s =>
+        if (initialSlug && (signaturePackages.length > 0 || packages.length > 0)) {
+            const allKnown = [...signaturePackages, ...packages];
+            const matchingService = allKnown.find(s =>
                 (s.title_id && s.title_id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') === initialSlug) ||
                 (s.title_en && s.title_en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') === initialSlug)
             );
             if (matchingService) {
-                setActiveService(matchingService.title_id);
-                localStorage.setItem('active_service', matchingService.title_id);
+                const targetService = matchingService.is_signature
+                    ? matchingService.title_id
+                    : (signaturePackages.find(sp => sp.id === matchingService.parent_id)?.title_id || matchingService.title_id);
+
+                setActiveService(targetService);
+                localStorage.setItem('active_service', targetService);
             }
+        } else {
+            syncService();
         }
 
         window.addEventListener('cart-updated', checkSelection);
@@ -93,7 +104,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
             window.removeEventListener('storage', syncService);
             window.removeEventListener('active-service-updated', syncService);
         };
-    }, []);
+    }, [initialSlug, signaturePackages, packages]);
 
     // Also update setActiveService to sync with localStorage
     const handleSetActiveService = (service) => {
@@ -153,6 +164,52 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
 
     const t = translations[lang];
 
+    // Compute dynamic meta title and description reactively
+    const pageMeta = useMemo(() => {
+        if (activeService && activeService !== 'Default') {
+            const sName = displayService || activeService;
+            const matchSig = signaturePackages.find(s =>
+                s.title_id.toLowerCase() === activeService.toLowerCase() ||
+                (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
+            );
+            const title = lang === 'EN'
+                ? `Price & Packages ${sName} - Jemari Home Spa Bandung`
+                : `Harga ${sName} - Jemari Home Spa Bandung`;
+
+            let desc = '';
+            if (matchSig) {
+                desc = lang === 'EN'
+                    ? (matchSig.description_en || matchSig.description_id)
+                    : matchSig.description_id;
+                if (desc) desc = desc.replace(/<[^>]*>?/gm, '').trim();
+            }
+
+            if (!desc) {
+                desc = lang === 'EN'
+                    ? `Professional on-call ${sName} services in Bandung & Cimahi by Jemari Home Spa.`
+                    : `Daftar harga & info layanan ${sName} panggilan profesional di Bandung & Cimahi oleh Jemari Home Spa.`;
+            }
+
+            return {
+                title,
+                description: desc
+            };
+        }
+
+        // If backend provided meta for a specific slug and matches current page
+        if (meta?.title) {
+            return {
+                title: meta.title,
+                description: meta.description || t.metaDesc
+            };
+        }
+
+        return {
+            title: t.metaTitle,
+            description: t.metaDesc
+        };
+    }, [activeService, displayService, lang, meta, signaturePackages, t]);
+
     const showToast = (message) => {
         setToast({ show: true, message });
         setTimeout(() => setToast({ show: false, message: '' }), 3000);
@@ -208,10 +265,10 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
     return (
         <div className="font-sans text-zenith-charcoal antialiased bg-zenith-surface">
             <Head>
-                <title>{t.metaTitle}</title>
-                <meta name="description" content={t.metaDesc} />
-                <meta property="og:title" content={t.metaTitle} />
-                <meta property="og:description" content={t.metaDesc} />
+                <title>{pageMeta.title}</title>
+                <meta name="description" content={pageMeta.description} />
+                <meta property="og:title" content={pageMeta.title} />
+                <meta property="og:description" content={pageMeta.description} />
                 <meta name="keywords" content="harga pijat panggilan bandung, pricelist jemari home spa, biaya bekam bandung, paket spa rumah bandung" />
             </Head>
 
@@ -226,7 +283,13 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
             />
 
             {activeService !== 'Default' && (
-                <Hero activeService={activeService} lang={lang} hideButtonsAndStats={true} />
+                <Hero 
+                    activeService={activeService} 
+                    lang={lang} 
+                    hideButtonsAndStats={true} 
+                    signaturePackages={signaturePackages}
+                    titlePrefix={lang === 'EN' ? 'Price & Packages ' : 'Harga '}
+                />
             )}
 
             <main className={activeService !== 'Default' ? "pb-20 px-6 -mt-20 md:-mt-32 lg:-mt-48 relative z-20" : "pt-32 md:pt-40 pb-20 px-6"}>
