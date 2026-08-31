@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -5,8 +6,10 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 export default function Login({ status, canResetPassword }) {
+    const [showPassword, setShowPassword] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -52,15 +55,30 @@ export default function Login({ status, canResetPassword }) {
                 <div className="mt-4">
                     <InputLabel htmlFor="password" value="Password" />
 
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
+                    <div className="relative mt-1">
+                        <TextInput
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            name="password"
+                            value={data.password}
+                            className="block w-full pr-10"
+                            autoComplete="current-password"
+                            onChange={(e) => setData('password', e.target.value)}
+                        />
+
+                        <button
+                            type="button"
+                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-zenith-charcoal/40 hover:text-zenith-orange transition-colors focus:outline-none"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                        >
+                            {showPassword ? (
+                                <EyeSlashIcon className="h-5 w-5" aria-hidden="true" />
+                            ) : (
+                                <EyeIcon className="h-5 w-5" aria-hidden="true" />
+                            )}
+                        </button>
+                    </div>
 
                     <InputError message={errors.password} className="mt-2" />
                 </div>
