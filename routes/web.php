@@ -290,6 +290,21 @@ Route::get('/blog', [BlogController::class, 'publicIndex'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'publicShow'])->name('blog.show');
 
 Route::get('/treatment/{slug?}', function ($slug = null) {
+    $signaturePackages = \App\Models\Package::where('is_signature', true)
+        ->where('status', 'public')
+        ->orderByRaw('priority ASC NULLS LAST')
+        ->orderBy('id', 'desc')
+        ->get();
+
+    $packages = \App\Models\Package::with(['durations' => fn($q) => $q->where('status', 'public')])
+        ->where('is_signature', false)
+        ->where('status', 'public')
+        ->orderByRaw('priority ASC NULLS LAST')
+        ->orderBy('id', 'desc')
+        ->get();
+
+    $currentPackage = null;
+
     $meta = [
         'title' => 'Harga Layanan Spa & Pijat Panggilan Bandung - Jemari Home Spa',
         'description' => 'Daftar harga layanan pijat panggilan, lulur, dan spa dari Jemari Home Spa. Tersedia paket pijat tradisional, refleksi, totok wajah dengan harga terjangkau.',
@@ -297,19 +312,53 @@ Route::get('/treatment/{slug?}', function ($slug = null) {
     ];
 
     if ($slug) {
-        // Attempt to find the specific package based on the slug
-        $package = \App\Models\Package::where('title_id', 'ilike', str_replace('-', ' ', $slug))->first();
-        if ($package) {
-            $meta['title'] = $package->title_id . ' - Jemari Home Spa Bandung';
-            $meta['description'] = strip_tags($package->description_id);
-            $meta['static_content'] = '<h1>' . $package->title_id . '</h1><p>' . $meta['description'] . '</p>';
+        $normalizedSlug = strtolower(trim($slug));
+
+        // 1. Search in signature packages first (main treatment categories)
+        $currentPackage = $signaturePackages->first(function ($p) use ($normalizedSlug) {
+            $idSlug = \Illuminate\Support\Str::slug(strtolower($p->title_id ?? ''));
+            $enSlug = \Illuminate\Support\Str::slug(strtolower($p->title_en ?? ''));
+            return $idSlug === $normalizedSlug || $enSlug === $normalizedSlug;
+        });
+
+        // 2. Fallback search in regular packages
+        if (!$currentPackage) {
+            $currentPackage = $packages->first(function ($p) use ($normalizedSlug) {
+                $idSlug = \Illuminate\Support\Str::slug(strtolower($p->title_id ?? ''));
+                $enSlug = \Illuminate\Support\Str::slug(strtolower($p->title_en ?? ''));
+                return $idSlug === $normalizedSlug || $enSlug === $normalizedSlug;
+            });
+        }
+
+        // 3. Fallback database query
+        if (!$currentPackage) {
+            $currentPackage = \App\Models\Package::where('status', 'public')
+                ->where(function ($q) use ($slug) {
+                    $clean = str_replace('-', ' ', $slug);
+                    $q->where('title_id', 'ilike', $clean)
+                      ->orWhere('title_en', 'ilike', $clean);
+                })
+                ->first();
+        }
+
+        if ($currentPackage) {
+            $treatmentTitle = $currentPackage->title_id;
+            $meta['title'] = 'Harga ' . $treatmentTitle . ' - Jemari Home Spa Bandung';
+            $descText = strip_tags($currentPackage->description_id ?? '');
+            if (empty($descText)) {
+                $descText = 'Layanan ' . $treatmentTitle . ' panggilan profesional ke rumah, hotel, dan apartemen di Bandung & Cimahi dengan terapis berpengalaman dan higienis.';
+            }
+            $meta['description'] = 'Daftar harga & info layanan ' . $treatmentTitle . ' panggilan di Bandung & Cimahi. ' . $descText;
+            $meta['static_content'] = '<h1>Harga ' . e($treatmentTitle) . ' Bandung</h1><p>' . e($descText) . '</p>';
         }
     }
 
     return Inertia::render('Pricing/Index', [
-        'packages' => \App\Models\Package::with(['durations' => fn($q) => $q->where('status', 'public')])->where('is_signature', false)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
-        'signaturePackages' => \App\Models\Package::where('is_signature', true)->where('status', 'public')->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
-        'initialSlug' => $slug
+        'packages' => $packages,
+        'signaturePackages' => $signaturePackages,
+        'initialSlug' => $slug,
+        'currentPackage' => $currentPackage,
+        'meta' => $meta
     ])->withViewData(['meta' => $meta]);
 })->name('treatment.index');
 

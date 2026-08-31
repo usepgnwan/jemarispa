@@ -92,7 +92,7 @@ const serviceContent = {
     }
 };
 
-export default function Hero({ activeService, lang, hideButtonsAndStats = false }) {
+export default function Hero({ activeService, lang, hideButtonsAndStats = false, signaturePackages = [], titlePrefix = '' }) {
     const [dynamicContent, setDynamicContent] = useState(null);
     const [isVisible, setIsVisible] = useState(true);
 
@@ -100,32 +100,51 @@ export default function Hero({ activeService, lang, hideButtonsAndStats = false 
     const staticContent = langContent[activeService] || langContent['Default'];
 
     useEffect(() => {
-        const saved = localStorage.getItem('signature_packages');
-        if (saved) {
-            try {
-                const packages = JSON.parse(saved);
-                const pkg = packages.find(p => p.title_id === activeService);
-                if (pkg) {
-                    setDynamicContent({
-                        title: lang === 'ID' ? pkg.title_id : (pkg.title_en || pkg.title_id),
-                        subtitle: "Home Service Massage Bandung Cimahi",
-                        desc: lang === 'ID' ? pkg.description_id : (pkg.description_en || pkg.description_id),
-                        bg: pkg.image ? `/storage/${pkg.image}` : (staticContent?.bg || "/images/services.jpg"),
-                        isHTML: true
-                    });
-                } else {
-                    setDynamicContent(null);
+        let pkg = null;
+
+        // Try from prop first if available
+        if (signaturePackages && signaturePackages.length > 0) {
+            pkg = signaturePackages.find(p => p.title_id?.toLowerCase() === activeService?.toLowerCase() || p.title_en?.toLowerCase() === activeService?.toLowerCase());
+        }
+
+        // Otherwise check localStorage
+        if (!pkg) {
+            const saved = localStorage.getItem('signature_packages');
+            if (saved) {
+                try {
+                    const packages = JSON.parse(saved);
+                    pkg = packages.find(p => p.title_id?.toLowerCase() === activeService?.toLowerCase() || p.title_en?.toLowerCase() === activeService?.toLowerCase());
+                } catch (e) {
+                    console.error("Error parsing signature_packages in Hero", e);
                 }
-            } catch (e) {
-                console.error("Error parsing signature_packages in Hero", e);
-                setDynamicContent(null);
             }
+        }
+
+        if (pkg) {
+            const rawTitle = lang === 'ID' ? pkg.title_id : (pkg.title_en || pkg.title_id);
+            const headingTitle = titlePrefix ? `${titlePrefix}${rawTitle}` : rawTitle;
+            setDynamicContent({
+                title: headingTitle,
+                subtitle: "Home Service Massage Bandung Cimahi",
+                desc: lang === 'ID' ? pkg.description_id : (pkg.description_en || pkg.description_id),
+                bg: pkg.image ? `/storage/${pkg.image}` : (staticContent?.bg || "/images/services.jpg"),
+                isHTML: true
+            });
         } else {
             setDynamicContent(null);
         }
-    }, [activeService, lang, staticContent]);
+    }, [activeService, lang, staticContent, signaturePackages, titlePrefix]);
 
-    const content = dynamicContent || staticContent;
+    let content = dynamicContent || staticContent;
+
+    // If staticContent is used and titlePrefix is provided and not default
+    if (!dynamicContent && staticContent && titlePrefix && activeService !== 'Default') {
+        const rawTitle = activeService;
+        content = {
+            ...staticContent,
+            title: `${titlePrefix}${rawTitle}`
+        };
+    }
 
     const buttons = {
         'ID': { book: 'Pesan Sekarang', contact: 'Hubungi Kami' },
