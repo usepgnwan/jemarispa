@@ -8,4 +8,8 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Allow: /
 
+# Sitemap Index
 Sitemap: https://jemarihomespa.com/sitemap.xml
+Sitemap: https://jemarihomespa.com/page-sitemap.xml
+Sitemap: https://jemarihomespa.com/treatment-sitemap.xml
+Sitemap: https://jemarihomespa.com/blog-sitemap.xml
