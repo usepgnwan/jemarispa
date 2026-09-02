@@ -21,6 +21,14 @@ export default function MobileNav({ setActiveService, lang = 'ID' }) {
             }
         }
     };
+
+    const handlePricingClick = () => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('active_service', 'Default');
+            if (setActiveService) setActiveService('Default');
+            window.dispatchEvent(new Event('active-service-updated'));
+        }
+    };
     
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
@@ -63,9 +71,9 @@ export default function MobileNav({ setActiveService, lang = 'ID' }) {
     };
 
     const navItems = [
-        { label: t.home, icon: 'home', href: '/', active: isActive('/') },
+        { label: t.home, icon: 'home', href: '/', active: isActive('/'), onClick: handleHomeClick },
         { label: t.blog, icon: 'newspaper', href: '/blog', active: isActive('/blog') },
-        { label: t.pricing, icon: 'receipt_long', href: '/treatment', active: isActive('/treatment') },
+        { label: t.pricing, icon: 'receipt_long', href: '/treatment', active: isActive('/treatment'), onClick: handlePricingClick },
         { label: t.cart, icon: 'shopping_bag', href: '/cart', isCart: true, active: isActive('/cart') },
         { label: t.faq, icon: 'quiz', href: '/#faq', active: isActive('/', '#faq') },
     ];
@@ -78,7 +86,7 @@ export default function MobileNav({ setActiveService, lang = 'ID' }) {
                         <Link 
                             key={i} 
                             href={item.href} 
-                            onClick={item.icon === 'home' ? handleHomeClick : undefined}
+                            onClick={item.onClick}
                             className="flex flex-col items-center gap-y-1 relative group"
                         >
                             <div className="relative">
