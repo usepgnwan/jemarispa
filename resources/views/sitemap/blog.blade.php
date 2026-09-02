@@ -3,7 +3,7 @@
     @foreach ($blogs as $blog)
         <url>
             <loc>{{ url('/blog/' . $blog->slug) }}</loc>
-            <lastmod>{{ $blog->updated_at->tz('UTC')->toAtomString() }}</lastmod>
+            <lastmod>{{ ($blog->updated_at ?? $blog->created_at ?? now())->tz('UTC')->toAtomString() }}</lastmod>
             <changefreq>daily</changefreq>
             <priority>0.7</priority>
         </url>

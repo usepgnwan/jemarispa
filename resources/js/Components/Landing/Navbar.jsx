@@ -177,7 +177,11 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                         </Link>
                         <Link 
                             href="/treatment" 
-                            onClick={() => logAnalytic('Menu', 'Klik Harga')}
+                            onClick={() => {
+                                logAnalytic('Menu', 'Klik Harga');
+                                localStorage.setItem('active_service', 'Default');
+                                window.dispatchEvent(new Event('active-service-updated'));
+                            }}
                             className={`transition-colors ${isActive('/treatment') ? activeClass : inactiveClass}`}
                         >
                             {t.pricing}
@@ -189,15 +193,13 @@ export default function Navbar({ auth, activeService, setActiveService, lang, se
                         >
                             {t.blog}
                         </Link>
-                        <a 
-                            href={waUrl} 
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <Link 
+                            href="/kontak" 
                             onClick={() => logAnalytic('Menu', 'Klik Kontak')}
-                            className={`transition-colors ${inactiveClass}`}
+                            className={`transition-colors ${isActive('/kontak') ? activeClass : inactiveClass}`}
                         >
                             {t.contact}
-                        </a>
+                        </Link>
                     </div>
 
                     <div className="flex items-center gap-x-6">

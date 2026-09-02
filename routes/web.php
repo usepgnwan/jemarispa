@@ -377,6 +377,22 @@ Route::get('/cart', function () {
     ]);
 })->name('cart.index');
 
+Route::get('/kontak', function () {
+    $faqs = \App\Models\Faq::latest()->take(6)->get();
+    $meta = [
+        'title' => 'Hubungi Kami - Layanan Pijat Panggilan Bandung & Cimahi | Jemari Home Spa',
+        'description' => 'Hubungi Jemari Home Spa untuk konsultasi dan reservasi pijat panggilan di Bandung & Cimahi. Respon cepat via WhatsApp dan telepon.',
+        'static_content' => '<h1>Hubungi Jemari Home Spa Bandung</h1><p>Pusat layanan konsultasi dan reservasi pijat panggilan Bandung & Cimahi. Hubungi customer support kami melalui WhatsApp atau telepon resmi.</p>'
+    ];
+
+    return Inertia::render('Contact/Index', [
+        'faqs' => $faqs,
+        'meta' => $meta
+    ])->withViewData(['meta' => $meta]);
+})->name('contact.index');
+
+Route::redirect('/contact', '/kontak', 301);
+
 Route::get('/api/faqs', function () {
     return response()->json(\App\Models\Faq::latest()->take(6)->get());
 });
@@ -386,7 +402,14 @@ Route::post('/api/voucher/validate', [VoucherController::class, 'validateCode'])
 Route::post('/api/transactions', [TransactionController::class, 'store'])->name('transactions.store');
 
 Route::get('/sitemap.xml', function () {
-    return response()->view('sitemap.index')->header('Content-Type', 'text/xml');
+    $latestPackage = \App\Models\Package::where('status', 'public')->latest('updated_at')->first();
+    $latestBlog = \App\Models\Blog::latest('updated_at')->first();
+
+    return response()->view('sitemap.index', [
+        'latestPackage' => $latestPackage,
+        'latestBlog' => $latestBlog,
+        'latestPageDate' => $latestPackage?->updated_at ?? now(),
+    ])->header('Content-Type', 'text/xml');
 });
 
 Route::get('/page-sitemap.xml', function () {

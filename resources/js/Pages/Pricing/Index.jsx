@@ -52,7 +52,10 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
         if (currentPackage) {
             return currentPackage.title_id;
         }
-        return localStorage.getItem('active_service') || 'Default';
+        if (initialSlug) {
+            return 'Default';
+        }
+        return 'Default';
     });
     const [selectedDurations, setSelectedDurations] = useState({}); // { packageId: durationIndex }
     const [toast, setToast] = useState({ show: false, message: '' });
@@ -90,7 +93,10 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                 localStorage.setItem('active_service', targetService);
             }
         } else {
-            syncService();
+            // When accessing /treatment without a slug, always reset active filter to Default
+            setActiveService('Default');
+            localStorage.setItem('active_service', 'Default');
+            window.dispatchEvent(new Event('active-service-updated'));
         }
 
         window.addEventListener('cart-updated', checkSelection);

@@ -21,8 +21,8 @@
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://web.whatsapp.com/send?phone=&amp;text=Halo%20Jemari%20Home%20Spa%2C%20saya%20ingin%20bertanya%20mengenai%20layanan%20spa.</loc>
-        <changefreq>daily</changefreq>
+        <loc>{{ url('/kontak') }}</loc>
+        <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
 </urlset>
