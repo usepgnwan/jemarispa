@@ -26,7 +26,7 @@ import {
 } from '@heroicons/react/24/outline';
 import ReactSelect from 'react-select';
 
-export default function Calendar({ auth, events, summary, employees, packages, app_settings }) {
+export default function Calendar({ auth, events, summary, employees, packages, app_settings, date_range }) {
     console.log(packages)
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -36,7 +36,7 @@ export default function Calendar({ auth, events, summary, employees, packages, a
     const [originalScheduleDate, setOriginalScheduleDate] = useState('');
     const [selectedTherapist, setSelectedTherapist] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(date_range.start);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [visibleRange, setVisibleRange] = useState({ start: null, end: null });
@@ -497,6 +497,16 @@ jemarihomespa.com`;
             start: info.view.activeStart,
             end: info.view.activeEnd
         });
+        const start = info.startStr.slice(0, 10);
+        const end = info.endStr.slice(0, 10);
+        if (start !== date_range.start || end !== date_range.end) {
+            router.get(route('admin.calendar.index'), { start, end }, {
+                only: ['events', 'summary', 'date_range'],
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }
     };
 
     const handleDateClick = (info) => {
@@ -800,7 +810,17 @@ jemarihomespa.com`;
                             <div className="full-calendar-custom">
                                 <FullCalendar
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                    initialView="dayGridMonth"
+                                    initialView="timeGridWeek"
+                                    initialDate={date_range.start}
+                                    views={{
+                                        timeGridWeek: {
+                                            duration: { days: 7 },
+                                            dateAlignment: 'week',
+                                            eventMaxStack: 3,
+                                            dayMaxEvents: 3,
+                                            slotEventOverlap: true,
+                                        }
+                                    }}
                                     headerToolbar={{
                                         left: 'prev,next today',
                                         center: 'title',
@@ -810,6 +830,13 @@ jemarihomespa.com`;
                                     eventClick={handleEventClick}
                                     datesSet={handleDatesSet}
                                     dateClick={handleDateClick}
+                                    navLinks={true}
+                                    navLinkDayClick={(date) => {
+                                        const year = date.getFullYear();
+                                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                                        const day = String(date.getDate()).padStart(2, '0');
+                                        setSelectedDate(`${year}-${month}-${day}`);
+                                    }}
                                     eventTimeFormat={{
                                         hour: '2-digit',
                                         minute: '2-digit',
@@ -818,11 +845,24 @@ jemarihomespa.com`;
                                     }}
                                     height="auto"
                                     dayMaxEvents={5}
+                                    eventMinHeight={48}
+                                    slotDuration={'01:00:00'}
+                                    slotLabelInterval={'01:00:00'}
+                                    slotMinTime={'08:00:00'}
+                                    slotMaxTime={'22:00:00'}
+                                    allDaySlot={false}
+                                    expandRows={true}
+                                    nowIndicator={true}
+                                    moreLinkClick="popover"
+                                    moreLinkContent={(arg) => `+${arg.num} lainnya`}
                                     locale="id"
                                     eventContent={(arg) => {
                                         const items = arg.event.extendedProps.items || [];
-                                        const therapistNames = [...new Set(items.map(item => item.employee?.name).filter(Boolean))].join(', ');
-                                        const displayTherapist = therapistNames || 'Belum dipilih';
+                                        const therapistNames = [...new Set(items.map(item => item.employee?.name).filter(Boolean))];
+                                        // Show first name only to save space in week view
+                                        const displayTherapist = therapistNames.length > 0
+                                            ? therapistNames.map(n => n.split(' ')[0]).join(', ')
+                                            : 'Belum dipilih';
 
                                         // Calculate max duration for this booking
                                         const guestDurations = {};
@@ -834,11 +874,18 @@ jemarihomespa.com`;
 
                                         const startTime = arg.event.extendedProps.schedule_time || '00:00';
                                         const endTime = calculateEndTime(startTime, maxDuration);
+                                        const timeStr = `${startTime.substring(0, 5).replace('.', ':')} - ${endTime}`;
+                                        const customerName = arg.event.extendedProps.customer_name || '';
+                                        const fullTherapist = therapistNames.join(', ') || 'Belum dipilih';
 
                                         return (
-                                            <div className="flex flex-col gap-0.5 min-w-0 overflow-hidden leading-tight py-0.5">
-                                                <span className="shrink-0 text-[8px] opacity-75">{startTime.substring(0, 5).replace('.', ':')} - {endTime}</span>
-                                                <span className="truncate">{displayTherapist}</span>
+                                            <div
+                                                className="fc-week-event-card"
+                                                title={`${customerName}\n${timeStr}\n${fullTherapist}`}
+                                            >
+                                                <div className="fc-week-event-time">{timeStr}</div>
+                                                <div className="fc-week-event-name">{customerName}</div>
+                                                <div className="fc-week-event-therapist">{displayTherapist}</div>
                                             </div>
                                         );
                                     }}
@@ -1534,33 +1581,170 @@ jemarihomespa.com`;
                     color: white !important;
                     opacity: 1 !important;
                 }
+                /* ===== Event Cards ===== */
                 .full-calendar-custom .fc-event {
-                    border-radius: 0.6rem !important;
-                    padding: 4px 6px !important;
+                    border-radius: 0.5rem !important;
+                    padding: 3px 5px !important;
                     font-size: 10px !important;
                     font-weight: 700 !important;
                     border: none !important;
+                    border-left: 3px solid rgba(0,0,0,0.15) !important;
                     cursor: pointer !important;
-                    transition: all 0.2s !important;
-                    margin: 1px 0 !important;
+                    transition: all 0.15s ease !important;
+                    margin: 1px 2px !important;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
                 }
                 .full-calendar-custom .fc-event:hover {
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+                    box-shadow: 0 4px 8px -2px rgb(0 0 0 / 0.12) !important;
+                    z-index: 10 !important;
                 }
+                .full-calendar-custom .fc-timegrid-event .fc-event-main {
+                    overflow: hidden;
+                    padding: 1px 2px !important;
+                }
+
+                /* ===== Week Event Card Layout ===== */
+                .fc-week-event-card {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1px;
+                    min-width: 0;
+                    overflow: hidden;
+                    line-height: 1.2;
+                    padding: 1px 0;
+                }
+                .fc-week-event-time {
+                    font-size: 8px;
+                    font-weight: 600;
+                    opacity: 0.85;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    letter-spacing: 0.02em;
+                }
+                .fc-week-event-name {
+                    font-size: 10px;
+                    font-weight: 800;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    line-height: 1.3;
+                }
+                .fc-week-event-therapist {
+                    font-size: 9px;
+                    font-weight: 600;
+                    opacity: 0.8;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                /* ===== Time Grid Slots ===== */
+                .full-calendar-custom .fc-timegrid-slot {
+                    height: 3.5rem;
+                    border-color: #f1f5f9 !important;
+                }
+                .full-calendar-custom .fc-timegrid-slot-label {
+                    vertical-align: top !important;
+                    padding-top: 4px !important;
+                }
+                .full-calendar-custom .fc-timegrid-slot-label-cushion {
+                    font-size: 11px !important;
+                    font-weight: 700 !important;
+                    color: #94a3b8 !important;
+                    padding: 4px 8px !important;
+                }
+                .full-calendar-custom .fc-timegrid-axis-cushion {
+                    font-size: 11px !important;
+                    font-weight: 700 !important;
+                    color: #94a3b8 !important;
+                }
+
+                /* ===== Time Grid Columns ===== */
+                .full-calendar-custom .fc-timegrid-col {
+                    border-color: #f1f5f9 !important;
+                }
+                .full-calendar-custom .fc-timegrid-col-frame {
+                    min-height: 100% !important;
+                }
+
+                /* ===== Now Indicator ===== */
+                .full-calendar-custom .fc-timegrid-now-indicator-line {
+                    border-color: #f47c51 !important;
+                    border-width: 2px !important;
+                }
+                .full-calendar-custom .fc-timegrid-now-indicator-arrow {
+                    border-color: #f47c51 !important;
+                }
+
+                /* ===== Today column highlight ===== */
+                .full-calendar-custom .fc-day-today {
+                    background: #fffbf5 !important;
+                }
+                .full-calendar-custom .fc-col-header-cell.fc-day-today {
+                    background: #fff7ed !important;
+                }
+                .full-calendar-custom .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+                    color: #f47c51 !important;
+                }
+
+                /* ===== More Link ===== */
+                .full-calendar-custom .fc-more-link {
+                    background: #fff7ed;
+                    color: #c2410c;
+                    border: 1px solid #fed7aa;
+                    border-radius: 0.4rem;
+                    font-size: 9px;
+                    font-weight: 700;
+                    padding: 2px 4px;
+                    display: inline-block;
+                }
+                .full-calendar-custom .fc-more-link:hover {
+                    background: #ffedd5;
+                }
+                .full-calendar-custom .fc-popover {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 1rem;
+                    overflow: hidden;
+                    box-shadow: 0 10px 25px rgb(15 23 42 / 0.12);
+                    max-width: calc(100vw - 2rem);
+                }
+                .full-calendar-custom .fc-popover-body {
+                    min-width: 240px;
+                    max-height: 320px;
+                    overflow-y: auto;
+                }
+
+                /* ===== Column Headers ===== */
                 .full-calendar-custom .fc-col-header-cell {
-                    padding: 1.25rem 0 !important;
+                    padding: 0.75rem 0 !important;
                     background: #f8fafc !important;
                     border: none !important;
+                    border-bottom: 2px solid #f1f5f9 !important;
                 }
                 .full-calendar-custom .fc-col-header-cell-cushion {
                     font-size: 10px !important;
                     font-weight: 800 !important;
                     text-transform: uppercase !important;
-                    letter-spacing: 0.1em !important;
+                    letter-spacing: 0.08em !important;
                     color: #94a3b8 !important;
                     text-decoration: none !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    gap: 2px !important;
+                    cursor: pointer !important;
+                    padding: 6px 8px !important;
+                    border-radius: 0.5rem !important;
+                    transition: all 0.15s ease !important;
                 }
+                .full-calendar-custom .fc-col-header-cell-cushion:hover {
+                    color: #f47c51 !important;
+                    background: #fff7ed !important;
+                }
+
+                /* ===== Day Grid ===== */
                 .full-calendar-custom .fc-daygrid-day {
                     border-color: #f1f5f9 !important;
                 }
@@ -1571,6 +1755,8 @@ jemarihomespa.com`;
                     padding: 12px !important;
                     text-decoration: none !important;
                 }
+
+                /* ===== Scrollbar ===== */
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
                 }
@@ -1584,6 +1770,30 @@ jemarihomespa.com`;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: #94a3b8;
+                }
+
+                /* ===== Responsive Week View ===== */
+                @media (max-width: 1024px) {
+                    .full-calendar-custom .fc-timegrid-slot {
+                        height: 3rem;
+                    }
+                    .fc-week-event-time {
+                        font-size: 7px;
+                    }
+                    .fc-week-event-name {
+                        font-size: 9px;
+                    }
+                    .fc-week-event-therapist {
+                        font-size: 8px;
+                    }
+                }
+                @media (max-width: 640px) {
+                    .full-calendar-custom .fc-timegrid-slot {
+                        height: 2.5rem;
+                    }
+                    .fc-week-event-therapist {
+                        display: none;
+                    }
                 }
             `}} />
         </AuthenticatedLayout>

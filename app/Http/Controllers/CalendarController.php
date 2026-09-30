@@ -5,19 +5,30 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\Package;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CalendarController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $request->validate([
+            'start' => ['nullable', 'date_format:Y-m-d'],
+            'end' => ['nullable', 'date_format:Y-m-d', 'after:start'],
+        ]);
+
+        $start = $request->input('start') ?: CarbonImmutable::today()->toDateString();
+        // FullCalendar uses an exclusive end date: seven days starting today.
+        $end = $request->input('end') ?: CarbonImmutable::parse($start)->addDays(7)->toDateString();
+
         $user = auth()->user();
         $isTerapis = $user && $user->isTerapis();
         $employeeId = $isTerapis ? $user->employee_id : null;
 
         $query = Transaction::with(['items.employee', 'items.package', 'items.packageDurationRel', 'voucher'])
-            ->whereNotNull('schedule_date');
+            ->where('schedule_date', '>=', $start)
+            ->where('schedule_date', '<', $end);
 
         if ($isTerapis && $employeeId) {
             $query->whereHas('items', function ($q) use ($employeeId) {
@@ -68,15 +79,7 @@ class CalendarController extends Controller
             });
 
         // Summary totals based on status
-        $summaryQuery = Transaction::selectRaw('status, COUNT(*) as count');
-        
-        if ($isTerapis && $employeeId) {
-            $summaryQuery->whereHas('items', function ($q) use ($employeeId) {
-                $q->where('employee_id', $employeeId);
-            });
-        }
-
-        $statusCounts = $summaryQuery->groupBy('status')->pluck('count', 'status');
+        $statusCounts = $transactions->countBy(fn ($event) => $event['extendedProps']['status']);
 
         $summary = [
             'pending' => $statusCounts['pending'] ?? 0,
@@ -87,14 +90,13 @@ class CalendarController extends Controller
             'total' => $statusCounts->sum()
         ];
 
-        $employees = \App\Models\Employee::all();
-
         return Inertia::render('Admin/Calendar', [
+            'date_range' => ['start' => $start, 'end' => $end],
             'events' => $transactions,
             'summary' => $summary,
-            'employees' => $employees,
-            'packages' => Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
-            'app_settings' => \App\Models\Setting::first()
+            'employees' => fn () => \App\Models\Employee::all(),
+            'packages' => fn () => Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+            'app_settings' => fn () => \App\Models\Setting::first()
         ]);
     }
 }
