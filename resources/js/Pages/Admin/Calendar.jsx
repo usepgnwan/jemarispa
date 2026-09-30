@@ -1,4 +1,4 @@
-import { useState, Fragment, useMemo, useEffect } from 'react';
+import { useState, Fragment, useMemo, useEffect, useRef } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
@@ -26,8 +26,13 @@ import {
 } from '@heroicons/react/24/outline';
 import ReactSelect from 'react-select';
 
-export default function Calendar({ auth, events, summary, employees, packages, app_settings, date_range }) {
-    console.log(packages)
+const localDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+export default function Calendar({ auth, employees, packages, app_settings, date_range }) {
+    const [events, setEvents] = useState([]);
+    const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0, loading: false, failed: [] });
+    const [reloadVersion, setReloadVersion] = useState(0);
+    const dayCache = useRef({ version: 0, days: new Map() });
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [newItems, setNewItems] = useState([]);
@@ -40,6 +45,53 @@ export default function Calendar({ auth, events, summary, employees, packages, a
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [visibleRange, setVisibleRange] = useState({ start: null, end: null });
+    const rangeStart = visibleRange.start ? localDateKey(visibleRange.start) : null;
+    const rangeEnd = visibleRange.end ? localDateKey(visibleRange.end) : null;
+
+    useEffect(() => {
+        if (!rangeStart || !rangeEnd) return;
+        const controller = new AbortController();
+        const dates = [];
+        const cursor = new Date(`${rangeStart}T00:00:00`);
+        while (localDateKey(cursor) < rangeEnd) {
+            dates.push(localDateKey(cursor));
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        const activeDate = dates.includes(selectedDate) ? selectedDate : rangeStart;
+        const orderedDates = [activeDate, ...dates.filter(date => date !== activeDate)];
+        if (dayCache.current.version !== reloadVersion) {
+            dayCache.current = { version: reloadVersion, days: new Map() };
+        }
+        const cache = dayCache.current.days;
+        const loadedDates = dates.filter(date => cache.has(date));
+        setEvents(loadedDates.flatMap(date => cache.get(date)));
+        setLoadProgress({ loaded: loadedDates.length, total: dates.length, loading: loadedDates.length < dates.length, failed: [] });
+
+        const loadDays = async () => {
+            for (const date of orderedDates) {
+                if (controller.signal.aborted) return;
+                if (cache.has(date)) continue;
+                try {
+                    const { data } = await axios.get(route('admin.calendar.events'), {
+                        params: { date },
+                        signal: controller.signal,
+                    });
+                    if (controller.signal.aborted) return;
+                    cache.set(date, data.events);
+                    setEvents(current => [...current, ...data.events]);
+                    setLoadProgress(current => ({ ...current, loaded: current.loaded + 1 }));
+                } catch (error) {
+                    if (controller.signal.aborted) return;
+                    setLoadProgress(current => ({ ...current, failed: [...current.failed, date] }));
+                }
+            }
+            if (!controller.signal.aborted) {
+                setLoadProgress(current => ({ ...current, loading: false }));
+            }
+        };
+        loadDays();
+        return () => controller.abort();
+    }, [rangeStart, rangeEnd, selectedDate, reloadVersion]);
 
     const defaultInvoiceTemplate = `Halo, Kak [name],
 Terlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :
@@ -299,6 +351,7 @@ jemarihomespa.com`;
             total_price: finalTotal
         }, {
             onSuccess: () => {
+                setReloadVersion(current => current + 1);
                 setIsModalOpen(false);
                 setIsEditing(false);
                 setNewItems([]);
@@ -497,16 +550,6 @@ jemarihomespa.com`;
             start: info.view.activeStart,
             end: info.view.activeEnd
         });
-        const start = info.startStr.slice(0, 10);
-        const end = info.endStr.slice(0, 10);
-        if (start !== date_range.start || end !== date_range.end) {
-            router.get(route('admin.calendar.index'), { start, end }, {
-                only: ['events', 'summary', 'date_range'],
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }
     };
 
     const handleDateClick = (info) => {
@@ -808,6 +851,15 @@ jemarihomespa.com`;
                         {/* Calendar Section */}
                         <div className="flex-1 bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-gray-100">
                             <div className="full-calendar-custom">
+                                <div className="mb-3 flex items-center gap-3 text-xs text-slate-500" role="status" aria-live="polite">
+                                    {loadProgress.loading && <span>Memuat jadwal {loadProgress.loaded}/{loadProgress.total} hari…</span>}
+                                    {loadProgress.failed.length > 0 && (
+                                        <>
+                                            <span className="text-red-600">Jadwal {loadProgress.failed.length} hari gagal dimuat.</span>
+                                            <button type="button" onClick={() => setReloadVersion(current => current + 1)} className="font-semibold text-orange-600 hover:underline">Coba lagi</button>
+                                        </>
+                                    )}
+                                </div>
                                 <FullCalendar
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                                     initialView="timeGridWeek"

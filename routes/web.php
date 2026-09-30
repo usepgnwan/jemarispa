@@ -266,6 +266,9 @@ Route::middleware(['auth'])->group(function () {
     // ── ALL ROLES (Admin, CS, Terapis) ─────────────────────────────────────
     Route::middleware(['role:admin,cs,terapis'])->group(function() {
         // Shared Calendar
+        Route::get('admin/calendar/events', [\App\Http\Controllers\CalendarController::class, 'events'])
+            ->withoutMiddleware([\App\Http\Middleware\HandleInertiaRequests::class])
+            ->name('admin.calendar.events');
         Route::get('admin/calendar', [\App\Http\Controllers\CalendarController::class, 'index'])->name('admin.calendar.index');
     });
 

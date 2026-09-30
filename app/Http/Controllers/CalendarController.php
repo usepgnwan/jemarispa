@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
-use App\Models\TransactionItem;
 use App\Models\Package;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -22,9 +21,29 @@ class CalendarController extends Controller
         // FullCalendar uses an exclusive end date: seven days starting today.
         $end = $request->input('end') ?: CarbonImmutable::parse($start)->addDays(7)->toDateString();
 
+        return Inertia::render('Admin/Calendar', [
+            'date_range' => ['start' => $start, 'end' => $end],
+            'employees' => fn () => \App\Models\Employee::all(),
+            'packages' => fn () => Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
+            'app_settings' => fn () => \App\Models\Setting::first(),
+        ]);
+    }
+
+    public function events(Request $request)
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+        $start = $validated['date'];
+        $end = CarbonImmutable::parse($start)->addDay()->toDateString();
+
         $user = auth()->user();
         $isTerapis = $user && $user->isTerapis();
         $employeeId = $isTerapis ? $user->employee_id : null;
+
+        if ($isTerapis && !$employeeId) {
+            return response()->json(['date' => $start, 'events' => []]);
+        }
 
         $query = Transaction::with(['items.employee', 'items.package', 'items.packageDurationRel', 'voucher'])
             ->where('schedule_date', '>=', $start)
@@ -78,25 +97,9 @@ class CalendarController extends Controller
                 ];
             });
 
-        // Summary totals based on status
-        $statusCounts = $transactions->countBy(fn ($event) => $event['extendedProps']['status']);
-
-        $summary = [
-            'pending' => $statusCounts['pending'] ?? 0,
-            'send_terapis' => $statusCounts['send_terapis'] ?? 0,
-            'invoice' => $statusCounts['invoice'] ?? 0,
-            'success' => $statusCounts['success'] ?? 0,
-            'failed' => $statusCounts['failed'] ?? 0,
-            'total' => $statusCounts->sum()
-        ];
-
-        return Inertia::render('Admin/Calendar', [
-            'date_range' => ['start' => $start, 'end' => $end],
+        return response()->json([
+            'date' => $start,
             'events' => $transactions,
-            'summary' => $summary,
-            'employees' => fn () => \App\Models\Employee::all(),
-            'packages' => fn () => Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
-            'app_settings' => fn () => \App\Models\Setting::first()
         ]);
     }
 }
