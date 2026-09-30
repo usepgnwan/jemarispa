@@ -45,7 +45,15 @@ class CalendarController extends Controller
             return response()->json(['date' => $start, 'events' => []]);
         }
 
-        $query = Transaction::with(['items.employee', 'items.package', 'items.packageDurationRel', 'voucher'])
+        $query = Transaction::with([
+            'items' => function ($q) {
+                $q->select('id', 'transaction_id', 'package_id', 'package_duration_id', 'employee_id', 'guest_index', 'package_name', 'package_duration', 'price', 'therapist_commission');
+            },
+            'items.employee:id,name', 
+            'items.package:id,title_id', 
+            'items.packageDurationRel:id,duration,commission', 
+            'voucher:id,code,discount_type,discount_amount'
+        ])
             ->where('schedule_date', '>=', $start)
             ->where('schedule_date', '<', $end);
 

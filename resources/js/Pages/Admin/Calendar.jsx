@@ -662,7 +662,8 @@ jemarihomespa.com`;
                         customer: event.extendedProps.customer_name + (Object.keys(totalDurationPerGuest).length > 1 ? ` (Orang ${gIdx})` : ''),
                         id: event.id,
                         guestIdx: gIdx,
-                        startTime: startTime
+                        startTime: startTime,
+                        rawEvent: event
                     });
                 });
             });
@@ -965,7 +966,11 @@ jemarihomespa.com`;
                                             </h4>
                                             <div className="space-y-2 ml-3">
                                                 {schedules.map((s, idx) => (
-                                                    <div key={`${s.id}-${idx}`} className="flex flex-col gap-0.5">
+                                                    <div 
+                                                        key={`${s.id}-${idx}`} 
+                                                        className="flex flex-col gap-0.5 cursor-pointer hover:bg-gray-50 p-2 rounded-xl -mx-2 transition-colors border border-transparent hover:border-gray-100"
+                                                        onClick={() => handleEventClick({ event: s.rawEvent })}
+                                                    >
                                                         <span className="text-[10px] text-gray-400 font-bold">{s.timeRange}</span>
                                                         <span className="text-xs text-gray-900 font-medium truncate">{s.customer}</span>
                                                     </div>
