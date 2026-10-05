@@ -41,6 +41,10 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Prevent this browser from receiving the previous account's reminders after logout.
+        if ($deviceId = $request->session()->get('push_device_id')) {
+            \App\Models\PushDevice::whereKey($deviceId)->where('user_id', $request->user()->id)->delete();
+        }
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

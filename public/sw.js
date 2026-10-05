@@ -1,4 +1,6 @@
-const CACHE_NAME = 'jemari-spa-v1';
+importScripts('/firebase-messaging-sw.js');
+
+const CACHE_NAME = 'jemari-spa-v2';
 const ASSETS_TO_CACHE = [
   '/login',
   '/manifest.json',

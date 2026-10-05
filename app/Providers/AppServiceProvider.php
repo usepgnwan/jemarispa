@@ -20,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \App\Models\Transaction::observe(\App\Observers\TransactionObserver::class);
         Vite::prefetch(concurrency: 3);
     }
 }

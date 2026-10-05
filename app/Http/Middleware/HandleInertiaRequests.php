@@ -52,6 +52,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'push_config' => [
+                'firebase' => config('push.web'),
+                'vapidKey' => config('push.vapid_key'),
+                'timezone' => config('push.timezone'),
+            ],
             'flash' => [
                 'message' => $request->session()->get('message'),
                 'success' => $request->session()->get('success'),
