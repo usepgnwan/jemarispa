@@ -15,13 +15,21 @@ class ScheduleReminderService
         $schedule->loadMissing('items.employee');
         $therapists = $schedule->items->map(fn ($item) => $item->employee?->name ?: $item->employee?->fullname)
             ->filter()->unique()->implode(', ');
-        $time = $this->scheduleAt($schedule)->setTimezone(config('push.timezone'))->format('H:i');
+        $scheduledAt = $this->scheduleAt($schedule)->setTimezone(config('push.timezone'))->locale('id');
+        $today = CarbonImmutable::now(config('push.timezone'))->startOfDay();
+        $dayLabel = match (true) {
+            $scheduledAt->isSameDay($today) => 'Hari ini',
+            $scheduledAt->isSameDay($today->addDay()) => 'Besok',
+            default => $scheduledAt->translatedFormat('j M Y'),
+        };
+        $time = $scheduledAt->format('H.i');
 
         return [
             'url' => route('admin.scheduler.show', $schedule->id, false),
-            'title' => 'Pengingat jadwal Jemari',
-            'body' => $schedule->order_number.' - '.$schedule->customer_name."\n"
-                .'Terapis: '.($therapists ?: 'Belum ditentukan').' - '.$time,
+            'title' => 'REMINDER! ('.$dayLabel.' '.$time.')',
+            'body' => 'Nama Customer: '.$schedule->customer_name."\n"
+                .'Jadwal: '.$scheduledAt->translatedFormat('j F Y').', '.$time."\n"
+                .'Terapis: '.($therapists ?: 'Belum ditentukan'),
         ];
     }
 

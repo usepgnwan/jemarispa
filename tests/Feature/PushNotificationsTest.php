@@ -176,7 +176,7 @@ class PushNotificationsTest extends TestCase
             }
         }
         $before = ScheduleNotification::where('user_id', $user->id)->firstOrFail()->getAttributes();
-        $expected = "INV-123 - Budi\nTerapis: Sari, Dewi - 22:30";
+        $expected = "Nama Customer: Budi\nJadwal: 4 Oktober 2026, 22.30\nTerapis: Sari, Dewi";
         Http::fake(['fcm.googleapis.com/*' => Http::response(['name' => 'messages/transaction-test'])]);
         $this->actingAs($user)->getJson('/api/schedules/today?date=2026-10-04')->assertOk()
             ->assertJsonPath('schedules.0.push_message', $expected);
@@ -186,6 +186,7 @@ class PushNotificationsTest extends TestCase
         $this->postJson('/api/notifications/test-now', ['device_id' => $device->id, 'schedule_id' => $schedule->id])->assertOk();
         Http::assertSentCount(1);
         Http::assertSent(fn ($request) => $request['message']['token'] === 'test-device-token'
+            && $request['message']['data']['title'] === 'REMINDER! (Hari ini 22.30)'
             && $request['message']['data']['body'] === $expected
             && $request['message']['data']['url'] === '/admin/scheduler/'.$schedule->id);
         $this->assertSame($before, ScheduleNotification::findOrFail($before['id'])->getAttributes());
@@ -202,6 +203,22 @@ class PushNotificationsTest extends TestCase
             && $request['message']['data']['url'] === '/admin/scheduler/'.$schedule->id);
         $this->assertDatabaseHas('push_logs', ['type' => 'test', 'status' => 'success', 'body' => $expected, 'notify_before_minutes' => 360]);
         $this->assertDatabaseHas('push_logs', ['type' => 'scheduler', 'status' => 'success', 'body' => $expected]);
+    }
+
+    public function test_reminder_day_label_uses_the_schedule_date_and_local_day_at_send_time(): void
+    {
+        $reminders = app(ScheduleReminderService::class);
+        $schedule = $this->schedule(['schedule_date' => '2026-10-05', 'schedule_time' => '13:00']);
+        $this->assertSame('REMINDER! (Besok 13.00)', $reminders->message($schedule)['title']);
+        $this->assertSame("Nama Customer: Test Customer\nJadwal: 5 Oktober 2026, 13.00\nTerapis: Belum ditentukan", $reminders->message($schedule)['body']);
+
+        // UTC is still October 4, but Jakarta has crossed midnight into October 5.
+        $this->travelTo(Carbon::parse('2026-10-04 17:01:00', 'UTC'));
+        $this->assertSame('REMINDER! (Hari ini 13.00)', $reminders->message($schedule)['title']);
+        $schedule->schedule_date = '2026-10-06';
+        $this->assertSame('REMINDER! (Besok 13.00)', $reminders->message($schedule)['title']);
+        $schedule->schedule_date = '2026-10-07';
+        $this->assertSame('REMINDER! (7 Okt 2026 13.00)', $reminders->message($schedule)['title']);
     }
 
     public function test_schedule_detail_shows_the_selected_booking_and_only_the_current_users_reminder(): void
@@ -393,8 +410,8 @@ class PushNotificationsTest extends TestCase
         $this->artisan('queue:work', ['connection' => 'database', '--queue' => 'push', '--once' => true, '--sleep' => 0])->assertSuccessful();
         $notification->refresh();
         $this->assertSame('sent', $notification->status);
-        Http::assertSent(fn ($request) => $request['message']['data']['title'] === 'Pengingat jadwal Jemari'
-            && $request['message']['data']['body'] === $schedule->order_number." - Test Customer\nTerapis: Belum ditentukan - 22:00");
+        Http::assertSent(fn ($request) => $request['message']['data']['title'] === 'REMINDER! (Hari ini 22.00)'
+            && $request['message']['data']['body'] === "Nama Customer: Test Customer\nJadwal: 4 Oktober 2026, 22.00\nTerapis: Belum ditentukan");
         (new SendScheduleNotification($notification->id, $notification->revision))->handle(app(FcmService::class), app(ScheduleReminderService::class));
         Http::assertSentCount(1);
     }
