@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 import PushNotificationLogs from '@/Components/PushNotificationLogs';
+import SchedulerTimeline from '@/Components/SchedulerTimeline';
 import { disablePushDevice, isPushConfigured, registerPushDevice } from '@/lib/pushMessaging';
 
 const buttonClass = 'rounded-lg border px-3 py-2 text-sm disabled:opacity-50 hover:bg-gray-50';
@@ -42,7 +43,7 @@ function ReminderEditor({ schedule, busy, run }) {
 export default function DailyScheduleNotifications() {
     const { auth, push_config: config } = usePage().props;
     const timezone = config?.timezone || 'Asia/Jakarta';
-    const [date, setDate] = useState(() => dateInTimezone(timezone, 1));
+    const [date, setDate] = useState(() => dateInTimezone(timezone));
     const [result, setResult] = useState({ schedules: [], devices: [], tests: [] });
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
@@ -154,7 +155,13 @@ export default function DailyScheduleNotifications() {
             {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
             {busy && <p role="status" className="mt-2 text-sm">Memproses…</p>}
 
-            {tab === 'schedules' && <div className="mt-4 overflow-x-auto">
+            {tab === 'schedules' && <div className="mt-5 grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,85fr)_minmax(240px,25fr)]">
+                <div className="min-w-0 overflow-hidden rounded-xl border border-gray-200">
+                    <div className="border-b bg-gray-50/60 px-4 py-3">
+                        <h3 className="text-sm font-semibold text-gray-900">Jadwal harian</h3>
+                        <p className="mt-1 text-xs text-gray-500">{date} · {result.schedules.length} jadwal</p>
+                    </div>
+                    <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                     <thead><tr className="border-b text-gray-500"><th className="p-2">Pesan transaksi</th><th className="p-2">Jadwal</th><th className="p-2">Reminder sebelum</th><th className="p-2">Notify at</th><th className="p-2">Status push</th><th className="p-2">Tes notifikasi</th></tr></thead>
                     <tbody>
@@ -177,6 +184,9 @@ export default function DailyScheduleNotifications() {
                         <tr><td colSpan={6} className="p-2 text-gray-500">{loading ? 'Memuat jadwal…' : !result.schedules.length ? 'Tidak ada jadwal pada tanggal ini.' : ''}</td></tr>
                     </tbody>
                 </table>
+                    </div>
+                </div>
+                <SchedulerTimeline timeline={result.scheduler_timeline} loading={loading} formatTime={formatTime} />
             </div>}
             {tab === 'settings' && !!result.tests.length && <div className="mt-4 text-sm"><strong>Antrean Tes Scheduler</strong>
                 {result.tests.map((test) => <p key={test.id} className="mt-1">#{test.id} • {formatTime(test.notify_at)} • {statusLabels[test.status]}{test.sent_at && ` • FCM ${formatTime(test.sent_at)}`}

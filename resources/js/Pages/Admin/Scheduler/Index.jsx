@@ -9,7 +9,7 @@ export default function Index() {
             <Head title="Scheduler" />
 
             <div className="py-8">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-6">
                         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                             UTAMA <span className="mx-1">/</span> SCHEDULER
