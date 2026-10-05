@@ -69,7 +69,34 @@ class PushNotificationController extends Controller
             }),
             'devices' => PushDevice::where('user_id', $request->user()->id)->orderByDesc('last_used_at')->get(),
             'tests' => ScheduleNotification::where('user_id', $request->user()->id)->where('is_test', true)->latest()->limit(10)->get(),
+            'scheduler_timeline' => $this->schedulerTimeline($request, $reminders),
         ]);
+    }
+
+    private function schedulerTimeline(Request $request, ScheduleReminderService $reminders): array
+    {
+        $now = now('UTC');
+        $query = ScheduleNotification::where('user_id', $request->user()->id)->where('is_test', false)
+            ->whereHas('schedule')->with('schedule:id,order_number,customer_name,schedule_date,schedule_time');
+        $past = (clone $query)->where('notify_at', '<=', $now);
+        $upcoming = (clone $query)->where('notify_at', '>', $now)->where('status', '!=', 'cancelled');
+        $summarize = fn ($notification) => [
+            'id' => $notification->id,
+            'schedule_id' => $notification->schedule_id,
+            'order_number' => $notification->schedule->order_number,
+            'customer_name' => $notification->schedule->customer_name,
+            'schedule_at' => $reminders->scheduleAt($notification->schedule)->toIso8601String(),
+            'notify_at' => $notification->notify_at->toIso8601String(),
+            'status' => $notification->status,
+            'error_message' => $notification->error_message,
+        ];
+
+        return [
+            'past_count' => (clone $past)->count(),
+            'upcoming_count' => (clone $upcoming)->count(),
+            'past' => $past->orderByDesc('notify_at')->orderByDesc('id')->limit(10)->get()->map($summarize),
+            'upcoming' => $upcoming->orderBy('notify_at')->orderBy('id')->limit(10)->get()->map($summarize),
+        ];
     }
 
     public function updateNotification(Request $request, Transaction $schedule, ScheduleReminderService $reminders)

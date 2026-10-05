@@ -102,6 +102,37 @@ class PushNotificationsTest extends TestCase
         $this->actingAs($user)->getJson('/api/schedules/today')->assertForbidden();
     }
 
+    public function test_scheduler_timeline_groups_reminder_times_across_dates_and_only_includes_the_current_account(): void
+    {
+        $user = $this->user();
+        $other = $this->user('cs');
+        $past = $this->schedule(['schedule_date' => '2026-10-03']);
+        $due = $this->schedule(['schedule_time' => '07:00']);
+        $future = $this->schedule(['schedule_date' => '2026-10-05']);
+        $cancelled = $this->schedule(['schedule_date' => '2026-10-06']);
+        ScheduleNotification::where('user_id', $user->id)->where('schedule_id', $past->id)
+            ->update(['notify_at' => now()->subMinutes(5), 'status' => 'sent']);
+        ScheduleNotification::where('user_id', $user->id)->where('schedule_id', $due->id)
+            ->update(['notify_at' => now(), 'status' => 'queued']);
+        ScheduleNotification::where('user_id', $user->id)->where('schedule_id', $future->id)
+            ->update(['notify_at' => now()->addMinutes(5), 'status' => 'pending']);
+        ScheduleNotification::where('user_id', $user->id)->where('schedule_id', $cancelled->id)
+            ->update(['notify_at' => now()->addMinutes(2), 'status' => 'cancelled']);
+        ScheduleNotification::where('user_id', $other->id)->update(['notify_at' => now()->addMinutes(1)]);
+        ScheduleNotification::create(['user_id' => $user->id, 'is_test' => true, 'notify_at' => now()->addMinute()]);
+
+        $this->actingAs($user)->getJson('/api/schedules/today')->assertOk()
+            ->assertJsonPath('date', '2026-10-04')->assertJsonCount(1, 'schedules')
+            ->assertJsonPath('scheduler_timeline.past_count', 2)
+            ->assertJsonPath('scheduler_timeline.upcoming_count', 1)
+            ->assertJsonPath('scheduler_timeline.past.0.schedule_id', $due->id)
+            ->assertJsonPath('scheduler_timeline.past.0.status', 'queued')
+            ->assertJsonPath('scheduler_timeline.past.1.schedule_id', $past->id)
+            ->assertJsonPath('scheduler_timeline.upcoming.0.schedule_id', $future->id);
+        $this->getJson('/api/schedules/today?date=2026-10-05')->assertOk()->assertJsonCount(1, 'schedules')
+            ->assertJsonPath('scheduler_timeline.past_count', 2)->assertJsonPath('scheduler_timeline.upcoming_count', 1);
+    }
+
     public function test_device_registration_is_per_device_and_owned_by_current_account(): void
     {
         $user = $this->user();
