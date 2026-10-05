@@ -1,5 +1,6 @@
 import Dropdown from '@/Components/Dropdown';
 import Sidebar from '@/Components/Sidebar';
+import PushNotifications from '@/Components/PushNotifications';
 import { usePage, Link } from '@inertiajs/react';
 import { useState, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
@@ -18,6 +19,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="bg-zenith-surface min-h-screen">
+            <PushNotifications />
             {/* Mobile Sidebar (Always full width when open) */}
             <Transition.Root show={sidebarOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpen}>

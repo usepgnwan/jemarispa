@@ -18,10 +18,14 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'push.active' => \App\Http\Middleware\ActivePushUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return null;
+            }
             $status = $e->getStatusCode();
             if ($status === 404 && !$request->is('api/*')) {
                 return redirect()->to('/');

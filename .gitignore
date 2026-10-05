@@ -19,6 +19,9 @@
 /public/hot
 /public/storage
 /storage/*.key
+/storage/app/private/firebase/
+/public/key/
+/public/lkayfbr/
 /storage/pail
 /vendor
 _ide_helper.php

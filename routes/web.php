@@ -5,6 +5,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+require __DIR__.'/push.php';
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -219,6 +221,12 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin,cs'])->group(function() {
 
         // Transaction management
+        Route::get('admin/scheduler', function () {
+            return Inertia::render('Admin/Scheduler/Index');
+        })->name('admin.scheduler.index');
+        Route::get('admin/scheduler/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'show'])
+            ->whereNumber('schedule')->name('admin.scheduler.show');
+
         Route::get('admin/transaction', [TransactionController::class, 'index'])->name('admin.transaction.index');
         Route::patch('admin/transaction/{transaction}', [TransactionController::class, 'update'])->name('admin.transaction.update');
         Route::patch('admin/transaction-items/{item}', [TransactionController::class, 'updateItem'])->name('admin.transaction_item.update');
