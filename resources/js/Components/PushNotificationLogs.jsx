@@ -50,7 +50,7 @@ export default function PushNotificationLogs({ formatTime }) {
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                     <thead><tr className="border-b text-gray-500">
-                        {['Waktu', 'Tipe', 'Pesan', 'Device', 'Status', 'Detail / Error'].map((label) => <th key={label} className="p-2">{label}</th>)}
+                        {['Waktu', 'Tipe', 'Pesan', 'Penerima / Device', 'Status', 'Detail / Error'].map((label) => <th key={label} className="p-2">{label}</th>)}
                     </tr></thead>
                     <tbody>
                         {loading ? <tr><td colSpan={6} className="p-4 text-gray-500">Memuat log…</td></tr>
@@ -60,8 +60,9 @@ export default function PushNotificationLogs({ formatTime }) {
                                 <td className="min-w-56 p-2"><strong>{log.title}</strong><p className="whitespace-pre-line">{log.body}</p>
                                     {log.notify_before_minutes != null && <p className="mt-1 text-xs text-gray-500">Reminder: {log.notify_before_minutes} menit sebelum jadwal</p>}</td>
                                 <td className="max-w-48 break-words p-2">
-                                    {log.device_label && <p className="font-semibold">{log.device_label}</p>}
-                                    <p className="text-xs text-gray-500">{log.device_name || 'Tidak ada device'}</p>
+                                    <p className="font-semibold">User: {log.receiver_user_name || '-'}</p>
+                                    <p className="text-xs text-gray-500">Label: {log.device_label || '-'}</p>
+                                    <p className="text-xs text-gray-500">Device: {log.device_name || (log.push_device_id ? `Device ${log.push_device_id}` : '-')}</p>
                                 </td>
                                 <td className="p-2"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${log.status === 'success' ? 'bg-green-50 text-green-700' : log.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{statusLabels[log.status] || log.status}</span></td>
                                 <td className="min-w-56 max-w-sm break-words p-2">
