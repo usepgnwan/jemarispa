@@ -48,9 +48,23 @@ class ScheduleReminderService
 
             return;
         }
-        User::whereIn('role', ['admin', 'cs'])->where('is_active', true)->each(function ($user) use ($schedule) {
+        $employeeIds = $schedule->items()->whereNotNull('employee_id')->pluck('employee_id')->unique();
+        $recipients = User::where('is_active', true)->where(function ($query) use ($employeeIds) {
+            $query->whereIn('role', ['admin', 'cs'])
+                ->orWhere(fn ($therapists) => $therapists->where('role', 'terapis')->whereIn('employee_id', $employeeIds));
+        })->get();
+        ScheduleNotification::where('schedule_id', $schedule->id)->whereNotIn('user_id', $recipients->modelKeys())
+            ->whereIn('status', ['pending', 'queued'])->update(['status' => 'cancelled', 'updated_at' => now()]);
+        $recipients->each(function ($user) use ($schedule) {
             $this->forUser($schedule, $user);
         });
+    }
+
+    public function isRecipient(Transaction $schedule, User $user): bool
+    {
+        return $user->is_active && (in_array($user->role, ['admin', 'cs'], true)
+            || ($user->role === 'terapis' && $user->employee_id
+                && $schedule->items()->where('employee_id', $user->employee_id)->exists()));
     }
 
     public function forUser(Transaction $schedule, User $user, ?int $minutes = null): ScheduleNotification
@@ -61,9 +75,10 @@ class ScheduleReminderService
             $notification = ScheduleNotification::firstOrNew(['schedule_id' => $schedule->id, 'user_id' => $user->id]);
             $before = $minutes ?? $notification->notify_before_minutes ?? 360;
             $at = $this->scheduleAt($schedule)->subMinutes($before);
-            $active = ! in_array($schedule->status, ['success', 'failed'], true);
+            $active = ! in_array($schedule->status, ['success', 'failed'], true) && $this->isRecipient($schedule, $user);
             if (! $notification->exists || ! $notification->notify_at->equalTo($at)
-                || $notification->notify_before_minutes !== $before || ($active && $notification->status === 'cancelled')) {
+                || $notification->notify_before_minutes !== $before || ($active && $notification->status === 'cancelled')
+                || (! $active && in_array($notification->status, ['pending', 'queued'], true))) {
                 $notification->fill([
                     'notify_before_minutes' => $before, 'notify_at' => $at,
                     'status' => $active && $this->scheduleAt($schedule)->isFuture() ? 'pending' : 'cancelled',
@@ -81,7 +96,9 @@ class ScheduleReminderService
         Transaction::where('schedule_date', '>=', now(config('push.timezone'))->toDateString())
             ->whereNotIn('status', ['success', 'failed'])->each(function ($schedule) use ($user) {
                 if ($user) {
-                    $this->forUser($schedule, $user);
+                    if ($this->isRecipient($schedule, $user)) {
+                        $this->forUser($schedule, $user);
+                    }
                 } else {
                     $this->sync($schedule);
                 }

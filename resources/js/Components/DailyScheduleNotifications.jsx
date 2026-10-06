@@ -63,14 +63,14 @@ export default function DailyScheduleNotifications() {
     const load = useCallback(async () => {
         const sequence = ++requestSequence.current;
         try {
-            const { data } = await axios.get('/api/schedules/today', { params: { date, device_page: devicePage } });
+            const { data } = await axios.get('/api/schedules/today', { params: { date, device_page: devicePage, device_id: deviceId || undefined } });
             if (sequence === requestSequence.current) setResult(data);
         } catch (e) {
             if (sequence === requestSequence.current) setError(e.response?.data?.message || 'Gagal memuat jadwal harian.');
         } finally {
             if (sequence === requestSequence.current) setLoading(false);
         }
-    }, [date, devicePage]);
+    }, [date, devicePage, deviceId]);
 
     useEffect(() => {
         setLoading(true);
@@ -142,6 +142,7 @@ export default function DailyScheduleNotifications() {
     const formatTime = (value) => value ? new Intl.DateTimeFormat('id-ID', {
         timeZone: timezone, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
     }).format(new Date(value)) : '—';
+    const selectedDevice = result.devices.find((device) => String(device.id) === String(deviceId));
 
     return (
         <section className="mb-6 rounded-2xl border bg-white p-4 sm:p-6" aria-label="Jadwal harian dan push notification">
@@ -168,7 +169,7 @@ export default function DailyScheduleNotifications() {
             <div className="mt-4 flex flex-wrap items-center gap-2">
                 {tab === 'settings' && <button disabled={busy || !isPushConfigured(config)} className={buttonClass}
                     onClick={() => openDeviceModal()}>Aktifkan Push di Device Ini</button>}
-                <select aria-label="Device untuk tes langsung" className="max-w-xs rounded-lg border-gray-300 text-sm" value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
+                <select aria-label="Device untuk tes dan filter jadwal" className="max-w-xs rounded-lg border-gray-300 text-sm" value={deviceId} onChange={(e) => { setLoading(true); setDeviceId(e.target.value); }}>
                     <option value="">{result.devices.length ? 'Pilih device aktif' : 'Tidak ada device aktif'}</option>
                     {result.devices.map((device) => <option key={device.id} value={device.id}>{device.device_label || `Device ${device.id}`} — {device.user?.name || `User ${device.user_id}`}</option>)}
                 </select>
@@ -186,6 +187,9 @@ export default function DailyScheduleNotifications() {
             </div>
             {!isPushConfigured(config) && <p className="mt-2 text-sm text-amber-700">Firebase Web config dan VAPID key perlu diisi di server.</p>}
             {tab === 'schedules' && <p className="mt-2 text-xs text-gray-500">Pilih device, lalu klik Tes Push untuk kirim sekarang. Simpan reminder tiap jadwal dalam menit (1–10080). Jika waktu pengingat sudah lewat, scheduler mengirim pada proses berikutnya.</p>}
+            {tab === 'schedules' && <p className="mt-2 text-sm text-gray-600">{selectedDevice?.user?.role === 'terapis'
+                ? `Menampilkan jadwal yang men-tag ${selectedDevice.user.name}.`
+                : 'Menampilkan semua jadwal.'}</p>}
             {tab === 'schedules' && !result.devices.length && <button className="mt-2 text-sm text-zenith-orange" onClick={() => setTab('settings')}>Aktifkan device di tab Setting</button>}
             {feedback && <p role="status" className="mt-3 text-sm text-green-700">{feedback}</p>}
             {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}

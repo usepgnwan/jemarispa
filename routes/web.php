@@ -224,8 +224,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('admin/scheduler', function () {
             return Inertia::render('Admin/Scheduler/Index');
         })->name('admin.scheduler.index');
-        Route::get('admin/scheduler/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'show'])
-            ->whereNumber('schedule')->name('admin.scheduler.show');
 
         Route::get('admin/transaction', [TransactionController::class, 'index'])->name('admin.transaction.index');
         Route::patch('admin/transaction/{transaction}', [TransactionController::class, 'update'])->name('admin.transaction.update');
@@ -273,6 +271,8 @@ Route::middleware(['auth'])->group(function () {
 
     // ── ALL ROLES (Admin, CS, Terapis) ─────────────────────────────────────
     Route::middleware(['role:admin,cs,terapis'])->group(function() {
+        Route::get('admin/scheduler/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'show'])
+            ->middleware('push.active')->whereNumber('schedule')->name('admin.scheduler.show');
         // Shared Calendar
         Route::get('admin/calendar/events', [\App\Http\Controllers\CalendarController::class, 'events'])
             ->withoutMiddleware([\App\Http\Middleware\HandleInertiaRequests::class])
@@ -282,6 +282,8 @@ Route::middleware(['auth'])->group(function () {
 
     // ── TERAPIS ONLY ───────────────────────────────────────────────────────
     Route::middleware(['role:terapis'])->group(function() {
+        Route::get('terapis/notifikasi', fn () => Inertia::render('Therapist/Notifications'))
+            ->middleware('push.active')->name('admin.therapist_user.notifications');
         Route::get('terapis', function() {
             return redirect()->route('admin.therapist_user.dashboard');
         });

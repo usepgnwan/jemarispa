@@ -12,6 +12,9 @@ class ScheduleController extends Controller
 {
     public function show(Request $request, Transaction $schedule, ScheduleReminderService $reminders)
     {
+        if ($request->user()->role === 'terapis') {
+            abort_unless($reminders->isRecipient($schedule, $request->user()), 403);
+        }
         $schedule->load('items.employee');
         $notification = ScheduleNotification::where('schedule_id', $schedule->id)
             ->where('user_id', $request->user()->id)->first();

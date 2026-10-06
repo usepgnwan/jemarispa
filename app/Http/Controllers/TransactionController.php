@@ -606,6 +606,8 @@ class TransactionController extends Controller
                 }
             }
 
+            app(\App\Services\ScheduleReminderService::class)->sync($transaction);
+
             return back()->with('message', 'Transaksi berhasil diperbarui');
         });
     }

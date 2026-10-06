@@ -16,6 +16,7 @@ import {
     TicketIcon,
     CalendarDaysIcon,
     ClockIcon,
+    BellIcon,
     ChartBarSquareIcon,
     CalendarIcon,
     BanknotesIcon,
@@ -75,12 +76,13 @@ export default function Sidebar({ collapsed }) {
                 { name: 'Main Service', href: route('admin.signature-ritual.index'), icon: SparklesIcon, current: route().current('admin.signature-ritual.*'), roles: ['admin'] },
             ]
         },
-        { 
+        {
             section: 'TERAPIS',
             items: [
                 { name: 'Dashboard', href: route('admin.therapist_user.dashboard'), icon: ChartBarSquareIcon, current: route().current('admin.therapist_user.dashboard'), roles: ['terapis'] },
                 { name: 'Jadwal', href: route('admin.calendar.index'), icon: CalendarIcon, current: route().current('admin.calendar.index'), roles: ['terapis'] },
                 { name: 'Pendapatan', href: route('admin.therapist_user.revenue'), icon: BanknotesIcon, current: route().current('admin.therapist_user.revenue'), roles: ['terapis'] },
+                { name: 'Notifikasi', href: route('admin.therapist_user.notifications'), icon: BellIcon, current: route().current('admin.therapist_user.notifications'), roles: ['terapis'] },
             ]
         }
     ];
