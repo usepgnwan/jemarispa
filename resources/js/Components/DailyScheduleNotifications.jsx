@@ -53,6 +53,7 @@ export default function DailyScheduleNotifications() {
     const [error, setError] = useState('');
     const [delay, setDelay] = useState(1);
     const [deviceId, setDeviceId] = useState('');
+    const [devicePage, setDevicePage] = useState(1);
     const [tab, setTab] = useState('schedules');
     const [deviceModal, setDeviceModal] = useState(null);
     const [deviceName, setDeviceName] = useState('');
@@ -62,14 +63,14 @@ export default function DailyScheduleNotifications() {
     const load = useCallback(async () => {
         const sequence = ++requestSequence.current;
         try {
-            const { data } = await axios.get('/api/schedules/today', { params: { date } });
+            const { data } = await axios.get('/api/schedules/today', { params: { date, device_page: devicePage } });
             if (sequence === requestSequence.current) setResult(data);
         } catch (e) {
             if (sequence === requestSequence.current) setError(e.response?.data?.message || 'Gagal memuat jadwal harian.');
         } finally {
             if (sequence === requestSequence.current) setLoading(false);
         }
-    }, [date]);
+    }, [date, devicePage]);
 
     useEffect(() => {
         setLoading(true);
@@ -88,6 +89,10 @@ export default function DailyScheduleNotifications() {
             setDeviceId(result.devices[0]?.id || '');
         }
     }, [result.devices, deviceId]);
+
+    useEffect(() => {
+        if (result.active_devices) setDevicePage(result.active_devices.current_page);
+    }, [result.active_devices]);
 
     const run = async (action) => {
         setBusy(true); setError(''); setFeedback('');
@@ -164,8 +169,8 @@ export default function DailyScheduleNotifications() {
                 {tab === 'settings' && <button disabled={busy || !isPushConfigured(config)} className={buttonClass}
                     onClick={() => openDeviceModal()}>Aktifkan Push di Device Ini</button>}
                 <select aria-label="Device untuk tes langsung" className="max-w-xs rounded-lg border-gray-300 text-sm" value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
-                    <option value="">Pilih device</option>
-                    {result.devices.map((device) => <option key={device.id} value={device.id}>{device.device_label ? `${device.device_label} — ` : ''}{device.device_name || `Device ${device.id}`}</option>)}
+                    <option value="">{result.devices.length ? 'Pilih device aktif' : 'Tidak ada device aktif'}</option>
+                    {result.devices.map((device) => <option key={device.id} value={device.id}>{device.device_label || `Device ${device.id}`} — {device.user?.name || `User ${device.user_id}`}</option>)}
                 </select>
                 {tab === 'settings' && <><button disabled={busy || !deviceId} className={buttonClass} onClick={() => run(async () => {
                     const { data } = await axios.post('/api/notifications/test-now', { device_id: Number(deviceId) });
@@ -174,7 +179,7 @@ export default function DailyScheduleNotifications() {
                 <select aria-label="Delay Test Scheduler" className="rounded-lg border-gray-300 text-sm" value={delay} onChange={(e) => setDelay(Number(e.target.value))}>
                     {[1, 2, 5].map((minutes) => <option key={minutes} value={minutes}>{minutes} menit</option>)}
                 </select>
-                <button disabled={busy || !result.devices.length} className={buttonClass} onClick={() => run(async () => {
+                <button disabled={busy || !result.devices.some((device) => device.user_id === auth.user.id)} className={buttonClass} onClick={() => run(async () => {
                     const { data } = await axios.post('/api/notifications/test-schedule', { delay_minutes: delay });
                     return `Tes #${data.notification.id} pending sampai ${formatTime(data.notification.notify_at)}. Menunggu scheduler dan queue worker.`;
                 })}>Test Scheduler</button></>}
@@ -223,15 +228,23 @@ export default function DailyScheduleNotifications() {
                 {result.tests.map((test) => <p key={test.id} className="mt-1">#{test.id} • {formatTime(test.notify_at)} • {statusLabels[test.status]}{test.sent_at && ` • FCM ${formatTime(test.sent_at)}`}
                     {test.error_message && <span className="text-red-600"> • {test.error_message}</span>}</p>)}
             </div>}
-            {tab === 'settings' && !!result.devices.length && <details open className="mt-4 text-sm"><summary>Device terdaftar ({result.devices.length})</summary>
-                {result.devices.map((device) => <div key={device.id} className="mt-2 flex flex-wrap items-center justify-between gap-2"><div className="min-w-0 flex-1 break-all">
+            {tab === 'settings' && !!result.active_devices?.total && <details open className="mt-4 text-sm"><summary>Device aktif ({result.active_devices.total})</summary>
+                {loading ? <p className="mt-3 text-gray-500">Memuat device…</p> : result.active_devices.data.map((device) => <div key={device.id} className="mt-2 flex flex-wrap items-center justify-between gap-2"><div className="min-w-0 flex-1 break-all">
                     {device.device_label && <p className="font-semibold">{device.device_label}</p>}
                     <p className="text-xs text-gray-500">{device.device_name || `Device ${device.id}`}</p>
+                    <p className="text-xs text-gray-500">Akun: {device.user?.name || `User ${device.user_id}`}</p>
                 </div>
-                    <div className="flex shrink-0 gap-2">
+                    {device.user_id === auth.user.id && <div className="flex shrink-0 gap-2">
                         <button disabled={busy} className={buttonClass} onClick={() => openDeviceModal(device)}>Edit Label</button>
                         <button disabled={busy} className={buttonClass} onClick={() => run(() => disablePushDevice(device.id, config, auth.user.id).then(() => 'Device dinonaktifkan.'))}>Nonaktifkan</button>
-                    </div></div>)}
+                    </div>}</div>)}
+                <nav aria-label="Pagination device aktif" className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+                    <span className="text-gray-500">{result.active_devices.from}–{result.active_devices.to} dari {result.active_devices.total} device · Halaman {result.active_devices.current_page} / {result.active_devices.last_page}</span>
+                    <div className="flex gap-2">
+                        <button className={buttonClass} disabled={busy || loading || devicePage <= 1} onClick={() => { setLoading(true); setDevicePage((page) => page - 1); }}>Sebelumnya</button>
+                        <button className={buttonClass} disabled={busy || loading || devicePage >= result.active_devices.last_page} onClick={() => { setLoading(true); setDevicePage((page) => page + 1); }}>Berikutnya</button>
+                    </div>
+                </nav>
             </details>}
             </>}
             <Modal show={deviceModal !== null} maxWidth="md" closeable={!busy} onClose={() => setDeviceModal(null)}>

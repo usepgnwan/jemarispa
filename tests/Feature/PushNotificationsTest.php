@@ -180,6 +180,7 @@ class PushNotificationsTest extends TestCase
     public function test_push_history_keeps_device_name_and_label_after_edit_and_deletion(): void
     {
         $user = $this->user();
+        $receiverName = $user->name;
         $device = $this->device($user);
         $device->update(['device_name' => 'web • Chrome Test', 'device_label' => 'Laptop CS']);
         Http::fake(['fcm.googleapis.com/*' => Http::response(['name' => 'projects/test-project/messages/labels'])]);
@@ -187,11 +188,13 @@ class PushNotificationsTest extends TestCase
         $this->patchJson('/api/push/devices/'.$device->id, ['device_label' => 'Laptop Admin'])->assertOk();
         $this->postJson('/api/notifications/test-now', ['device_id' => $device->id])->assertOk();
         $this->deleteJson('/api/push/devices/'.$device->id)->assertNoContent();
+        $user->update(['name' => 'Nama baru']);
 
         foreach (['Laptop CS', 'Laptop Admin'] as $label) {
             $this->assertDatabaseHas('push_logs', [
                 'user_id' => $user->id, 'device_name' => 'web • Chrome Test',
                 'device_label' => $label, 'push_device_id' => null, 'status' => 'success',
+                'receiver_user_id' => $user->id, 'receiver_user_name' => $receiverName,
             ]);
         }
         $labels = $this->getJson('/api/notifications/logs')->assertOk()->json('data');
@@ -225,16 +228,68 @@ class PushNotificationsTest extends TestCase
         $this->assertSame('* * * * *', $event->expression);
     }
 
-    public function test_send_now_uses_only_selected_owned_device_without_creating_queue_jobs(): void
+    public function test_active_device_list_is_paginated_and_keeps_all_test_options(): void
+    {
+        $user = $this->user();
+        $devices = [];
+        for ($i = 0; $i < 12; $i++) {
+            $devices[] = $this->device($user, 'pagination-token-'.$i);
+        }
+        $inactive = $this->user('cs');
+        $inactive->update(['is_active' => false]);
+        $this->device($inactive, 'inactive-pagination-token');
+
+        $first = $this->actingAs($user)->getJson('/api/schedules/today')->assertOk()
+            ->assertJsonCount(12, 'devices')->assertJsonCount(10, 'active_devices.data')
+            ->assertJsonPath('active_devices.total', 12)->assertJsonPath('active_devices.last_page', 2);
+        $second = $this->getJson('/api/schedules/today?device_page=2')->assertOk()
+            ->assertJsonCount(12, 'devices')->assertJsonCount(2, 'active_devices.data')
+            ->assertJsonPath('active_devices.current_page', 2);
+        $this->assertEqualsCanonicalizing(array_map(fn ($device) => $device->id, $devices),
+            array_merge(array_column($first->json('active_devices.data'), 'id'), array_column($second->json('active_devices.data'), 'id')));
+        foreach ($second->json('active_devices.data') as $device) {
+            $this->deleteJson('/api/push/devices/'.$device['id'])->assertNoContent();
+        }
+        $this->getJson('/api/schedules/today?device_page=2')->assertOk()
+            ->assertJsonPath('active_devices.current_page', 1)->assertJsonPath('active_devices.total', 10);
+        $this->getJson('/api/schedules/today?device_page=0')->assertUnprocessable();
+    }
+
+    public function test_daily_devices_include_all_active_accounts_and_hide_disabled_devices(): void
+    {
+        $user = $this->user();
+        $own = $this->device($user);
+        $other = $this->device($this->user('cs'), 'active-cs-token');
+        $inactiveUser = $this->user('cs');
+        $inactiveUser->update(['is_active' => false]);
+        $inactive = $this->device($inactiveUser, 'inactive-token');
+        $ineligible = $this->device($this->user('marketing'), 'marketing-token');
+        $disabled = $this->device($user, 'disabled-token');
+        $this->actingAs($user)->deleteJson('/api/push/devices/'.$disabled->id)->assertNoContent();
+
+        $response = $this->getJson('/api/schedules/today')->assertOk()->assertJsonCount(2, 'devices');
+        $this->assertEqualsCanonicalizing([$own->id, $other->id], array_column($response->json('devices'), 'id'));
+        $response->assertJsonMissing(['fcm_token' => 'active-cs-token'])
+            ->assertJsonMissing(['token_hash' => $other->token_hash]);
+        foreach ([$inactive, $ineligible, $disabled] as $device) {
+            $this->postJson('/api/notifications/test-now', ['device_id' => $device->id])->assertNotFound();
+        }
+        Http::assertNothingSent();
+    }
+
+    public function test_send_now_uses_only_selected_active_device_without_creating_queue_jobs(): void
     {
         $user = $this->user();
         $device = $this->device($user);
         $otherDevice = $this->device($this->user('cs'), 'other-token');
         Http::fake(['fcm.googleapis.com/*' => Http::response(['name' => 'projects/test-project/messages/direct'])]);
-        $this->actingAs($user)->postJson('/api/notifications/test-now', ['device_id' => $otherDevice->id])->assertNotFound();
-        $this->postJson('/api/notifications/test-now', ['device_id' => $device->id])->assertOk()->assertJsonPath('fcm_message_id', 'projects/test-project/messages/direct');
+        $this->actingAs($user)->postJson('/api/notifications/test-now', ['device_id' => $otherDevice->id])->assertOk()->assertJsonPath('fcm_message_id', 'projects/test-project/messages/direct');
         $this->assertDatabaseCount('jobs', 0);
         Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => $request['message']['token'] === 'other-token');
+        $this->getJson('/api/notifications/logs')->assertOk()
+            ->assertJsonPath('data.0.receiver_user_id', $otherDevice->user_id)
+            ->assertJsonPath('data.0.receiver_user_name', $otherDevice->user->name);
         $this->postJson('/api/notifications/test-schedule', ['delay_minutes' => 0])->assertUnprocessable();
     }
 
@@ -244,6 +299,7 @@ class PushNotificationsTest extends TestCase
         $device = $this->device($user);
         $otherDevice = $this->device($this->user('cs'), 'other-token');
         $schedule = $this->schedule(['order_number' => 'INV-123', 'customer_name' => 'Budi', 'schedule_time' => '22.30']);
+        $otherDevice->user->update(['is_active' => false]);
         foreach (['Sari', 'Dewi'] as $name) {
             $employee = Employee::create(['name' => $name, 'nohp' => '0800000000', 'title' => 'Terapis']);
             foreach ([1, 2] as $guest) {

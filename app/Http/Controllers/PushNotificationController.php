@@ -69,11 +69,19 @@ class PushNotificationController extends Controller
 
     public function today(Request $request, ScheduleReminderService $reminders)
     {
-        $data = $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
+        $data = $request->validate([
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'device_page' => ['nullable', 'integer', 'min:1'],
+        ]);
         $date = $data['date'] ?? now(config('push.timezone'))->toDateString();
         $schedules = Transaction::with('items.employee')->whereDate('schedule_date', $date)->orderBy('schedule_time')->get();
         $notifications = ScheduleNotification::where('user_id', $request->user()->id)
             ->whereIn('schedule_id', $schedules->modelKeys())->get()->keyBy('schedule_id');
+        $deviceQuery = PushDevice::active()->with('user:id,name')->orderByDesc('last_used_at')->orderByDesc('id');
+        $activeDevices = (clone $deviceQuery)->paginate(10, ['*'], 'device_page', $data['device_page'] ?? 1);
+        if ($activeDevices->currentPage() > $activeDevices->lastPage()) {
+            $activeDevices = (clone $deviceQuery)->paginate(10, ['*'], 'device_page', $activeDevices->lastPage());
+        }
 
         return response()->json([
             'date' => $date, 'timezone' => config('push.timezone'),
@@ -88,7 +96,8 @@ class PushNotificationController extends Controller
                     'notification' => $notification,
                 ];
             }),
-            'devices' => PushDevice::where('user_id', $request->user()->id)->orderByDesc('last_used_at')->get(),
+            'devices' => $deviceQuery->get(['id', 'user_id', 'device_label']),
+            'active_devices' => $activeDevices,
             'tests' => ScheduleNotification::where('user_id', $request->user()->id)->where('is_test', true)->latest()->limit(10)->get(),
             'scheduler_timeline' => $this->schedulerTimeline($request, $reminders),
         ]);
@@ -158,7 +167,7 @@ class PushNotificationController extends Controller
             'device_id' => ['required', 'integer'],
             'schedule_id' => ['nullable', 'integer', 'exists:transactions,id'],
         ]);
-        $device = PushDevice::where('user_id', $request->user()->id)->findOrFail($data['device_id']);
+        $device = PushDevice::active()->findOrFail($data['device_id']);
         $schedule = isset($data['schedule_id']) ? Transaction::findOrFail($data['schedule_id']) : null;
         $message = $schedule ? $reminders->message($schedule) : [
             'title' => 'Send Push Now', 'body' => 'Koneksi FCM ke PWA berhasil.',
