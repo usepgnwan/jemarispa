@@ -3,6 +3,8 @@ import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 import PushNotificationLogs from '@/Components/PushNotificationLogs';
 import SchedulerTimeline from '@/Components/SchedulerTimeline';
+import Modal from '@/Components/Modal';
+import { DialogTitle } from '@headlessui/react';
 import { disablePushDevice, isPushConfigured, registerPushDevice } from '@/lib/pushMessaging';
 
 const buttonClass = 'rounded-lg border px-3 py-2 text-sm disabled:opacity-50 hover:bg-gray-50';
@@ -52,6 +54,9 @@ export default function DailyScheduleNotifications() {
     const [delay, setDelay] = useState(1);
     const [deviceId, setDeviceId] = useState('');
     const [tab, setTab] = useState('schedules');
+    const [deviceModal, setDeviceModal] = useState(null);
+    const [deviceName, setDeviceName] = useState('');
+    const [deviceError, setDeviceError] = useState('');
     const requestSequence = useRef(0);
 
     const load = useCallback(async () => {
@@ -101,6 +106,34 @@ export default function DailyScheduleNotifications() {
         day.setUTCDate(day.getUTCDate() + amount);
         setDate(day.toISOString().slice(0, 10));
     };
+    const openDeviceModal = (device = null) => {
+        setDeviceName(device?.device_label || '');
+        setDeviceError('');
+        setDeviceModal({ device });
+    };
+    const saveDevice = async (event) => {
+        event.preventDefault();
+        const label = deviceName.trim();
+        if (!label) {
+            setDeviceError('Title / label device wajib diisi.');
+            return;
+        }
+        setBusy(true); setDeviceError(''); setError(''); setFeedback('');
+        try {
+            if (deviceModal.device) {
+                await axios.patch(`/api/push/devices/${deviceModal.device.id}`, { device_label: label });
+            } else {
+                const device = await registerPushDevice(config, auth.user.id, true, label);
+                if (!device) throw new Error('Device belum berhasil diaktifkan.');
+            }
+            setFeedback(deviceModal.device ? 'Label device disimpan.' : 'Push aktif di device ini.');
+            setDeviceModal(null);
+            await load();
+        } catch (e) {
+            const errors = e.response?.data?.errors;
+            setDeviceError(errors ? Object.values(errors).flat().join(' ') : e.response?.data?.message || e.message);
+        } finally { setBusy(false); }
+    };
     const formatTime = (value) => value ? new Intl.DateTimeFormat('id-ID', {
         timeZone: timezone, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
     }).format(new Date(value)) : '—';
@@ -128,13 +161,11 @@ export default function DailyScheduleNotifications() {
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-                {tab === 'settings' && <button disabled={busy || !isPushConfigured(config)} className={buttonClass} onClick={() => run(async () => {
-                    await registerPushDevice(config, auth.user.id, true);
-                    return 'Push aktif di device ini.';
-                })}>Aktifkan Push di Device Ini</button>}
+                {tab === 'settings' && <button disabled={busy || !isPushConfigured(config)} className={buttonClass}
+                    onClick={() => openDeviceModal()}>Aktifkan Push di Device Ini</button>}
                 <select aria-label="Device untuk tes langsung" className="max-w-xs rounded-lg border-gray-300 text-sm" value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
                     <option value="">Pilih device</option>
-                    {result.devices.map((device) => <option key={device.id} value={device.id}>{device.device_name || `Device ${device.id}`}</option>)}
+                    {result.devices.map((device) => <option key={device.id} value={device.id}>{device.device_label ? `${device.device_label} — ` : ''}{device.device_name || `Device ${device.id}`}</option>)}
                 </select>
                 {tab === 'settings' && <><button disabled={busy || !deviceId} className={buttonClass} onClick={() => run(async () => {
                     const { data } = await axios.post('/api/notifications/test-now', { device_id: Number(deviceId) });
@@ -193,10 +224,35 @@ export default function DailyScheduleNotifications() {
                     {test.error_message && <span className="text-red-600"> • {test.error_message}</span>}</p>)}
             </div>}
             {tab === 'settings' && !!result.devices.length && <details open className="mt-4 text-sm"><summary>Device terdaftar ({result.devices.length})</summary>
-                {result.devices.map((device) => <div key={device.id} className="mt-2 flex items-center justify-between gap-2"><span className="break-all">{device.device_name || `Device ${device.id}`}</span>
-                    <button disabled={busy} className={buttonClass} onClick={() => run(() => disablePushDevice(device.id, config, auth.user.id).then(() => 'Device dinonaktifkan.'))}>Nonaktifkan</button></div>)}
+                {result.devices.map((device) => <div key={device.id} className="mt-2 flex flex-wrap items-center justify-between gap-2"><div className="min-w-0 flex-1 break-all">
+                    {device.device_label && <p className="font-semibold">{device.device_label}</p>}
+                    <p className="text-xs text-gray-500">{device.device_name || `Device ${device.id}`}</p>
+                </div>
+                    <div className="flex shrink-0 gap-2">
+                        <button disabled={busy} className={buttonClass} onClick={() => openDeviceModal(device)}>Edit Label</button>
+                        <button disabled={busy} className={buttonClass} onClick={() => run(() => disablePushDevice(device.id, config, auth.user.id).then(() => 'Device dinonaktifkan.'))}>Nonaktifkan</button>
+                    </div></div>)}
             </details>}
             </>}
+            <Modal show={deviceModal !== null} maxWidth="md" closeable={!busy} onClose={() => setDeviceModal(null)}>
+                <form onSubmit={saveDevice} className="p-6">
+                    <DialogTitle className="text-lg font-bold">{deviceModal?.device ? 'Edit Label Device' : 'Tambahkan Device'}</DialogTitle>
+                    <p className="mt-2 text-sm text-gray-500">{deviceModal?.device ? 'Ubah label agar device mudah dikenali.' : 'Beri label untuk browser / device ini, lalu aktifkan push notification.'}</p>
+                    {deviceModal?.device && <p className="mt-3 break-all text-xs text-gray-500">Device: {deviceModal.device.device_name || `Device ${deviceModal.device.id}`}</p>}
+                    <label htmlFor="push-device-label" className="mt-5 block text-sm font-semibold">Title / Label Device</label>
+                    <input id="push-device-label" type="text" autoFocus required maxLength={255} disabled={busy}
+                        className="mt-2 w-full rounded-lg border-gray-300 text-sm" placeholder="Contoh: HP Admin atau Laptop CS"
+                        value={deviceName} onChange={(event) => setDeviceName(event.target.value)}
+                        aria-invalid={!!deviceError} aria-describedby={deviceError ? 'push-device-error' : undefined} />
+                    {deviceError && <p id="push-device-error" role="alert" className="mt-2 text-sm text-red-700">{deviceError}</p>}
+                    <div className="mt-6 flex justify-end gap-2">
+                        <button type="button" disabled={busy} className={buttonClass} onClick={() => setDeviceModal(null)}>Batal</button>
+                        <button type="submit" disabled={busy || !deviceName.trim()} className="rounded-lg bg-zenith-orange px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                            {busy ? 'Menyimpan…' : deviceModal?.device ? 'Simpan Label' : 'Aktifkan Push'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </section>
     );
 }

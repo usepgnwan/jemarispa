@@ -23,9 +23,19 @@ class PushNotificationController extends Controller
         $data = $request->validate([
             'fcm_token' => ['required', 'string', 'max:4096'],
             'device_name' => ['nullable', 'string', 'max:255'],
+            'device_label' => ['sometimes', 'required', 'string', 'max:255'],
             'platform' => ['required', Rule::in(['web', 'android', 'ios'])],
         ]);
-        $device = PushDevice::updateOrCreate(['token_hash' => hash('sha256', $data['fcm_token'])], [
+        $tokenHash = hash('sha256', $data['fcm_token']);
+        $existing = PushDevice::where('token_hash', $tokenHash)->first();
+        if (!array_key_exists('device_name', $data)) {
+            $data['device_name'] = $data['platform'].' • '.Str::limit($request->userAgent() ?? 'Browser', 180, '');
+        }
+        if (!array_key_exists('device_label', $data)) {
+            $data['device_label'] = $existing && $existing->user_id === $request->user()->id
+                ? $existing->device_label : null;
+        }
+        $device = PushDevice::updateOrCreate(['token_hash' => $tokenHash], [
             ...$data, 'user_id' => $request->user()->id, 'last_used_at' => now('UTC'),
         ]);
         // A shared browser belongs only to the currently logged-in account.
@@ -33,6 +43,17 @@ class PushNotificationController extends Controller
         $reminders->backfill($request->user());
 
         return response()->json(['device' => $device], 201);
+    }
+
+    public function updateDevice(Request $request, PushDevice $device)
+    {
+        abort_unless($device->user_id === $request->user()->id, 404);
+        $data = $request->validate([
+            'device_label' => ['required', 'string', 'max:255'],
+        ]);
+        $device->update($data);
+
+        return response()->json(['device' => $device]);
     }
 
     public function destroyDevice(Request $request, PushDevice $device)

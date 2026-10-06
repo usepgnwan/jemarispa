@@ -18,6 +18,7 @@ class PushLogService
         return PushLog::create([
             'user_id' => $userId, 'type' => $type,
             'push_device_id' => $device?->id, 'device_name' => $device?->device_name ?? ($device ? 'Device '.$device->id : null),
+            'device_label' => $device?->device_label,
             'schedule_id' => $schedule?->id, 'order_number' => $schedule?->order_number,
             'schedule_notification_id' => $notification?->id, 'revision' => $notification?->revision,
             'notify_before_minutes' => $notification?->notify_before_minutes,

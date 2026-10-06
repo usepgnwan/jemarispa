@@ -151,6 +151,53 @@ class PushNotificationsTest extends TestCase
         $this->assertDatabaseMissing('push_devices', ['id' => $id]);
     }
 
+    public function test_device_labels_can_be_edited_by_owner_and_survive_automatic_registration(): void
+    {
+        $user = $this->user();
+        $device = $this->device($user);
+        $device->update(['device_name' => 'web • Chrome Test']);
+        $url = '/api/push/devices/'.$device->id;
+
+        $this->actingAs($user)->patchJson($url, ['device_label' => 'HP Admin'])->assertOk()
+            ->assertJsonPath('device.device_label', 'HP Admin')
+            ->assertJsonPath('device.device_name', 'web • Chrome Test')
+            ->assertJsonMissing(['fcm_token' => 'test-device-token']);
+        $this->postJson('/api/push/devices', ['fcm_token' => 'test-device-token', 'platform' => 'web', 'device_name' => 'web • Chrome Test'])
+            ->assertCreated()->assertJsonPath('device.device_label', 'HP Admin');
+        $this->assertDatabaseCount('push_devices', 1);
+        $this->getJson('/api/schedules/today')->assertOk()->assertJsonPath('devices.0.device_label', 'HP Admin');
+        foreach (['', '   ', str_repeat('x', 256)] as $invalid) {
+            $this->patchJson($url, ['device_label' => $invalid])->assertUnprocessable();
+        }
+        $this->actingAs($this->user('cs'))->patchJson($url, ['device_label' => 'Other'])->assertNotFound();
+        $this->assertSame('HP Admin', $device->fresh()->device_label);
+        $this->assertSame('web • Chrome Test', $device->fresh()->device_name);
+        $this->postJson('/api/push/devices', ['fcm_token' => 'test-device-token', 'platform' => 'web'])
+            ->assertCreated()->assertJsonPath('device.user_id', auth()->id());
+        $this->assertNull($device->fresh()->device_label);
+    }
+
+    public function test_push_history_keeps_device_name_and_label_after_edit_and_deletion(): void
+    {
+        $user = $this->user();
+        $device = $this->device($user);
+        $device->update(['device_name' => 'web • Chrome Test', 'device_label' => 'Laptop CS']);
+        Http::fake(['fcm.googleapis.com/*' => Http::response(['name' => 'projects/test-project/messages/labels'])]);
+        $this->actingAs($user)->postJson('/api/notifications/test-now', ['device_id' => $device->id])->assertOk();
+        $this->patchJson('/api/push/devices/'.$device->id, ['device_label' => 'Laptop Admin'])->assertOk();
+        $this->postJson('/api/notifications/test-now', ['device_id' => $device->id])->assertOk();
+        $this->deleteJson('/api/push/devices/'.$device->id)->assertNoContent();
+
+        foreach (['Laptop CS', 'Laptop Admin'] as $label) {
+            $this->assertDatabaseHas('push_logs', [
+                'user_id' => $user->id, 'device_name' => 'web • Chrome Test',
+                'device_label' => $label, 'push_device_id' => null, 'status' => 'success',
+            ]);
+        }
+        $labels = $this->getJson('/api/notifications/logs')->assertOk()->json('data');
+        $this->assertEqualsCanonicalizing(['Laptop CS', 'Laptop Admin'], array_column($labels, 'device_label'));
+    }
+
     public function test_scheduled_test_stays_pending_until_due_then_database_worker_sends_fcm(): void
     {
         $user = $this->user();

@@ -59,7 +59,10 @@ export default function PushNotificationLogs({ formatTime }) {
                                 <td className="p-2">{log.type === 'test' ? 'Tes' : 'Scheduler'}</td>
                                 <td className="min-w-56 p-2"><strong>{log.title}</strong><p className="whitespace-pre-line">{log.body}</p>
                                     {log.notify_before_minutes != null && <p className="mt-1 text-xs text-gray-500">Reminder: {log.notify_before_minutes} menit sebelum jadwal</p>}</td>
-                                <td className="max-w-48 break-words p-2">{log.device_name || 'Tidak ada device'}</td>
+                                <td className="max-w-48 break-words p-2">
+                                    {log.device_label && <p className="font-semibold">{log.device_label}</p>}
+                                    <p className="text-xs text-gray-500">{log.device_name || 'Tidak ada device'}</p>
+                                </td>
                                 <td className="p-2"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${log.status === 'success' ? 'bg-green-50 text-green-700' : log.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{statusLabels[log.status] || log.status}</span></td>
                                 <td className="min-w-56 max-w-sm break-words p-2">
                                     {log.error_code && <strong className="text-xs text-red-700">{log.error_code}</strong>}
