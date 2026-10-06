@@ -49,6 +49,13 @@ test('clicking a push opens a new window when the PWA is closed', async () => {
     assert.deepEqual(app.opened, ['https://jemarihomespa.com/admin/scheduler/456']);
 });
 
+test('therapist notifications open the therapist notification page', async () => {
+    const app = setup();
+    await app.receive({ url: '/terapis/notifikasi' });
+    await app.click(app.shown[0]);
+    assert.deepEqual(app.opened, ['https://jemarihomespa.com/terapis/notifikasi']);
+});
+
 test('legacy, generic, and external destinations fall back to Scheduler', async () => {
     for (const url of [undefined, '/admin/transaction', 'https://other.test/admin/scheduler/123', '//other.test']) {
         const app = setup();

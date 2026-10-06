@@ -45,10 +45,11 @@ class SendScheduleNotification implements ShouldQueue
         if (! $notification || $notification->revision !== $this->revision || $notification->status !== 'queued') {
             return;
         }
-        if (! $notification->user?->is_active || ! in_array($notification->user->role, ['admin', 'cs'], true)
+        if (! $notification->user?->is_active || ! in_array($notification->user->role, ['admin', 'cs', 'terapis'], true)
             || (! $notification->is_test && (! $notification->schedule
                 || in_array($notification->schedule->status, ['success', 'failed'], true)
-                || $reminders->scheduleAt($notification->schedule)->isPast()))) {
+                || $reminders->scheduleAt($notification->schedule)->isPast()
+                || ! $reminders->isRecipient($notification->schedule, $notification->user)))) {
             $notification->update(['status' => 'cancelled']);
 
             return;
@@ -63,12 +64,20 @@ class SendScheduleNotification implements ShouldQueue
             'notification_id' => (string) $notification->id,
             'tag' => 'schedule-'.$notification->id.'-'.$this->revision,
         ];
+        if ($notification->user->role === 'terapis' && $notification->is_test) {
+            $data['url'] = route('admin.therapist_user.notifications', [], false);
+        }
         $retry = null;
         foreach (PushDevice::where('user_id', $notification->user_id)->get() as $device) {
-            DB::transaction(function () use ($device, $fcm, $data, $schedule, &$retry) {
+            DB::transaction(function () use ($device, $fcm, $data, $schedule, $reminders, &$retry) {
                 // Edits/deletion cannot race an individual FCM send. Successful devices are persisted before retry.
                 $current = ScheduleNotification::whereKey($this->notificationId)->lockForUpdate()->first();
                 if (! $current || $current->revision !== $this->revision || $current->status !== 'queued') {
+                    return;
+                }
+                if (! $current->user?->is_active || (! $current->is_test && (! $current->schedule
+                    || ! $reminders->isRecipient($current->schedule, $current->user)))) {
+                    $current->update(['status' => 'cancelled']);
                     return;
                 }
                 $device = PushDevice::whereKey($device->id)->where('user_id', $current->user_id)->lockForUpdate()->first();

@@ -228,6 +228,202 @@ class PushNotificationsTest extends TestCase
         $this->assertSame('* * * * *', $event->expression);
     }
 
+    private function therapist(string $name): User
+    {
+        $employee = Employee::create(['name' => $name, 'nohp' => '0800000000', 'title' => 'Terapis']);
+        $user = $this->user('terapis');
+        $user->update(['employee_id' => $employee->id]);
+
+        return $user;
+    }
+
+    public function test_selected_therapist_device_filters_daily_schedules_and_timeline_while_admin_sees_all(): void
+    {
+        $admin = $this->user();
+        $adminDevice = $this->device($admin, 'admin-filter-token');
+        $csDevice = $this->device($this->user('cs'), 'cs-filter-token');
+        $therapist = $this->therapist('Yuni');
+        $therapistDevice = $this->device($therapist, 'therapist-filter-token');
+        $unlinkedDevice = $this->device($this->user('terapis'), 'unlinked-filter-token');
+        $tagged = $this->schedule();
+        $other = $this->schedule();
+        $tomorrow = $this->schedule(['schedule_date' => '2026-10-05']);
+        foreach ([$tagged, $tomorrow] as $schedule) {
+            foreach ([1, 2] as $guest) {
+                $schedule->items()->create(['employee_id' => $therapist->employee_id, 'guest_index' => $guest,
+                    'package_name' => 'Pijat', 'package_duration' => '60', 'price' => 100000]);
+            }
+        }
+        $this->actingAs($admin)->getJson('/api/schedules/today?device_id='.$therapistDevice->id)->assertOk()
+            ->assertJsonCount(1, 'schedules')->assertJsonPath('schedules.0.id', $tagged->id)
+            ->assertJsonPath('scheduler_timeline.upcoming_count', 2)->assertJsonCount(4, 'devices');
+        $this->getJson('/api/schedules/today?device_id='.$therapistDevice->id.'&date=2026-10-05')->assertOk()
+            ->assertJsonCount(1, 'schedules')->assertJsonPath('schedules.0.id', $tomorrow->id);
+        foreach ([$adminDevice, $csDevice] as $device) {
+            $this->getJson('/api/schedules/today?device_id='.$device->id)->assertOk()
+                ->assertJsonCount(2, 'schedules')->assertJsonPath('scheduler_timeline.upcoming_count', 3);
+        }
+        $this->getJson('/api/schedules/today?device_id='.$unlinkedDevice->id)->assertOk()
+            ->assertJsonCount(0, 'schedules')->assertJsonPath('scheduler_timeline.upcoming_count', 0);
+        $therapistDevice->delete();
+        $this->getJson('/api/schedules/today?device_id='.$therapistDevice->id)->assertOk()
+            ->assertJsonCount(0, 'schedules')->assertJsonCount(3, 'devices');
+        $this->getJson('/api/schedules/today?device_id=invalid')->assertUnprocessable();
+    }
+
+    public function test_scheduled_reminder_reaches_admin_cs_and_only_tagged_therapists(): void
+    {
+        $admin = $this->user();
+        $cs = $this->user('cs');
+        $sari = $this->therapist('Sari');
+        $dewi = $this->therapist('Dewi');
+        $untagged = $this->therapist('Other');
+        foreach ([$admin, $cs, $sari, $dewi, $untagged] as $user) {
+            $this->device($user, 'recipient-'.$user->id);
+        }
+        $schedule = $this->schedule();
+        foreach ([$sari, $sari, $dewi] as $user) {
+            $schedule->items()->create(['employee_id' => $user->employee_id, 'guest_index' => 1,
+                'package_name' => 'Pijat', 'package_duration' => '60', 'price' => 100000]);
+        }
+        $notifications = ScheduleNotification::where('schedule_id', $schedule->id)->get();
+        $this->assertEqualsCanonicalizing([$admin->id, $cs->id, $sari->id, $dewi->id], $notifications->pluck('user_id')->all());
+        $this->travelTo($notifications->first()->notify_at);
+        Http::fake(['fcm.googleapis.com/*' => Http::response(['name' => 'messages/tagged-reminder'])]);
+        $this->artisan('push:dispatch-due')->assertSuccessful();
+        $this->artisan('queue:work', ['connection' => 'database', '--queue' => 'push', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
+        Http::assertSentCount(4);
+        Http::assertNotSent(fn ($request) => $request['message']['token'] === 'recipient-'.$untagged->id);
+        Http::assertSent(fn ($request) => $request['message']['token'] === 'recipient-'.$admin->id
+            && $request['message']['data']['url'] === '/admin/scheduler/'.$schedule->id);
+        Http::assertSent(fn ($request) => $request['message']['token'] === 'recipient-'.$sari->id
+            && $request['message']['data']['url'] === '/admin/scheduler/'.$schedule->id);
+        $this->actingAs($sari)->getJson('/api/notifications/received')->assertOk()->assertJsonPath('total', 1);
+        $this->actingAs($untagged)->getJson('/api/notifications/received')->assertOk()->assertJsonPath('total', 0);
+    }
+
+    public function test_changing_and_removing_therapist_tags_cancels_old_jobs_and_preserves_admin_reminders(): void
+    {
+        $admin = $this->user();
+        $old = $this->therapist('Old');
+        $new = $this->therapist('New');
+        $this->device($old, 'old-assignment-token');
+        $this->device($new, 'new-assignment-token');
+        $schedule = $this->schedule();
+        $item = $schedule->items()->create(['employee_id' => $old->employee_id, 'guest_index' => 1,
+            'package_name' => 'Pijat', 'package_duration' => '60', 'price' => 100000]);
+        $adminNotification = ScheduleNotification::where('user_id', $admin->id)->firstOrFail();
+        $this->actingAs($admin)->patchJson('/api/schedules/'.$schedule->id.'/notification', ['notify_before_minutes' => 120])->assertOk();
+        $oldNotification = ScheduleNotification::where('user_id', $old->id)->firstOrFail();
+        $oldNotification->update(['status' => 'queued']);
+        $oldRevision = $oldNotification->revision;
+        $this->patch('/admin/transaction/'.$schedule->id, ['items' => [
+            ['id' => $item->id, 'employee_id' => $new->employee_id, 'package_name' => 'Pijat', 'package_duration' => '60', 'price' => 100000],
+        ]])->assertRedirect();
+        $this->assertSame('cancelled', $oldNotification->fresh()->status);
+        $this->assertSame(120, $adminNotification->fresh()->notify_before_minutes);
+        $newNotification = ScheduleNotification::where('user_id', $new->id)->firstOrFail();
+        $this->assertSame('pending', $newNotification->status);
+        (new SendScheduleNotification($oldNotification->id, $oldRevision))->handle(app(FcmService::class), app(ScheduleReminderService::class));
+        Http::assertNothingSent();
+        $this->patch('/admin/transaction-items/'.$item->id, ['employee_id' => $old->employee_id])->assertRedirect();
+        $this->assertGreaterThan($oldRevision, $oldNotification->fresh()->revision);
+        $this->assertSame('pending', $oldNotification->fresh()->status);
+        $this->assertSame('cancelled', $newNotification->fresh()->status);
+        $item->refresh()->delete();
+        $this->assertSame('cancelled', $oldNotification->fresh()->status);
+        $this->assertSame('pending', $adminNotification->fresh()->status);
+    }
+
+    public function test_worker_rechecks_therapist_tag_and_activation_backfills_only_assigned_schedules(): void
+    {
+        $admin = $this->user();
+        $therapist = $this->therapist('Sari');
+        $device = $this->device($therapist, 'backfill-therapist-token');
+        $assigned = $this->schedule();
+        $unassigned = $this->schedule();
+        $item = $assigned->items()->create(['employee_id' => $therapist->employee_id, 'guest_index' => 1,
+            'package_name' => 'Pijat', 'package_duration' => '60', 'price' => 100000]);
+        ScheduleNotification::where('user_id', $therapist->id)->delete();
+        $this->actingAs($therapist)->postJson('/api/push/devices', ['fcm_token' => 'backfill-therapist-token', 'platform' => 'web'])->assertCreated();
+        $notification = ScheduleNotification::where('user_id', $therapist->id)->firstOrFail();
+        $this->assertSame($assigned->id, $notification->schedule_id);
+        $this->assertDatabaseMissing('schedule_notifications', ['user_id' => $therapist->id, 'schedule_id' => $unassigned->id]);
+        $notification->update(['status' => 'queued']);
+        // Simulate assignment updates that bypass model events while a job is already queued.
+        \App\Models\TransactionItem::whereKey($item->id)->update(['employee_id' => null]);
+        (new SendScheduleNotification($notification->id, $notification->revision))->handle(app(FcmService::class), app(ScheduleReminderService::class));
+        Http::assertNothingSent();
+        $this->assertSame('cancelled', $notification->fresh()->status);
+        $this->actingAs($admin)->postJson('/api/notifications/test-now', ['device_id' => $device->id, 'schedule_id' => $assigned->id])->assertNotFound();
+    }
+
+    public function test_therapist_can_activate_and_manage_only_their_devices_without_admin_reminders(): void
+    {
+        $admin = $this->user();
+        $adminDevice = $this->device($admin, 'admin-activation-token');
+        $therapist = $this->user('terapis');
+        $this->schedule();
+        $response = $this->actingAs($therapist)->postJson('/api/push/devices', [
+            'fcm_token' => 'therapist-token', 'platform' => 'android', 'device_label' => 'HP Sari',
+        ])->assertCreated()->assertJsonPath('device.device_label', 'HP Sari');
+        $id = $response->json('device.id');
+        $this->assertDatabaseMissing('schedule_notifications', ['user_id' => $therapist->id]);
+        $this->getJson('/api/push/devices')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.id', $id);
+        $this->patchJson('/api/push/devices/'.$id, ['device_label' => 'HP Baru'])->assertOk();
+        $this->deleteJson('/api/push/devices/'.$adminDevice->id)->assertNotFound();
+        $this->patchJson('/api/push/devices/'.$adminDevice->id, ['device_label' => 'Other'])->assertNotFound();
+        $this->getJson('/api/schedules/today')->assertForbidden();
+        $this->postJson('/api/notifications/test-now', ['device_id' => $id])->assertForbidden();
+        $this->deleteJson('/api/push/devices/'.$id)->assertNoContent();
+        $this->getJson('/api/push/devices')->assertOk()->assertJsonPath('total', 0);
+    }
+
+    public function test_therapist_history_is_scoped_to_receiver_and_survives_device_deactivation(): void
+    {
+        $admin = $this->user();
+        $therapist = $this->user('terapis');
+        $other = $this->user('terapis');
+        $device = $this->device($therapist, 'therapist-history-token');
+        $device->update(['device_label' => 'HP Sari']);
+        $otherDevice = $this->device($other, 'other-therapist-token');
+        Http::fake(['fcm.googleapis.com/*' => Http::response(['name' => 'messages/therapist-test'])]);
+        $this->actingAs($admin)->postJson('/api/notifications/test-now', ['device_id' => $device->id])->assertOk();
+        Http::assertSent(fn ($request) => $request['message']['data']['url'] === '/terapis/notifikasi');
+        $this->postJson('/api/notifications/test-now', ['device_id' => $otherDevice->id])->assertOk();
+        $logService = app(\App\Services\PushLogService::class);
+        for ($i = 0; $i < 10; $i++) {
+            $log = $logService->start($admin->id, 'test', ['title' => 'Notification '.$i, 'body' => 'Pesan'], $device);
+            $log->update(['status' => 'success']);
+        }
+        $logService->start($admin->id, 'test', ['title' => 'Pending', 'body' => 'Hidden'], $device);
+        $failed = $logService->start($admin->id, 'test', ['title' => 'Failed', 'body' => 'Hidden'], $device);
+        $logService->fail($failed, 'SEND_ERROR', 'Gagal');
+        $this->actingAs($therapist)->deleteJson('/api/push/devices/'.$device->id)->assertNoContent();
+        $this->getJson('/api/notifications/received')->assertOk()->assertJsonPath('total', 11)
+            ->assertJsonCount(10, 'data')->assertJsonPath('data.0.device_label', 'HP Sari')
+            ->assertJsonMissing(['body' => 'Hidden'])->assertJsonMissing(['fcm_token' => 'therapist-history-token']);
+        $this->getJson('/api/notifications/received?page=2')->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson('/api/notifications/received?page=0')->assertUnprocessable();
+        $this->actingAs($other)->getJson('/api/notifications/received')->assertOk()->assertJsonPath('total', 1);
+    }
+
+    public function test_therapist_notification_page_and_apis_require_active_therapist(): void
+    {
+        $this->get('/terapis/notifikasi')->assertRedirect('/login');
+        $therapist = $this->user('terapis');
+        $this->actingAs($therapist)->get('/terapis/notifikasi')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Therapist/Notifications'));
+        $therapist->update(['is_active' => false]);
+        $this->get('/terapis/notifikasi')->assertForbidden();
+        $this->getJson('/api/notifications/received')->assertForbidden();
+        $this->getJson('/api/push/devices')->assertForbidden();
+        foreach (['admin', 'cs', 'marketing'] as $role) {
+            $this->actingAs($this->user($role))->get('/terapis/notifikasi')->assertForbidden();
+            $this->getJson('/api/notifications/received')->assertForbidden();
+        }
+    }
+
     public function test_active_device_list_is_paginated_and_keeps_all_test_options(): void
     {
         $user = $this->user();
@@ -376,6 +572,28 @@ class PushNotificationsTest extends TestCase
         $this->getJson('/admin/scheduler/999999')->assertNotFound();
         $schedule->delete();
         $this->getJson('/admin/scheduler/'.$schedule->id)->assertNotFound();
+    }
+
+    public function test_tagged_therapist_can_access_schedule_detail_with_own_reminder_only(): void
+    {
+        $admin = $this->user();
+        $therapist = $this->therapist('Yuni');
+        $other = $this->therapist('Other');
+        $schedule = $this->schedule();
+        $item = $schedule->items()->create(['employee_id' => $therapist->employee_id,
+            'package_name' => 'Pijat', 'package_duration' => '60', 'price' => 100000]);
+        app(ScheduleReminderService::class)->forUser($schedule, $admin, 30);
+        $this->actingAs($therapist)->get('/admin/scheduler/'.$schedule->id)->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Admin/Scheduler/Show')
+                ->where('schedule.id', $schedule->id)->where('reminder.notify_before_minutes', 360));
+        $this->actingAs($other)->get('/admin/scheduler/'.$schedule->id)->assertForbidden();
+        $therapist->update(['is_active' => false]);
+        $this->actingAs($therapist)->get('/admin/scheduler/'.$schedule->id)->assertForbidden();
+        $therapist->update(['is_active' => true]);
+        $item->update(['employee_id' => $other->employee_id]);
+        $this->get('/admin/scheduler/'.$schedule->id)->assertForbidden();
+        $this->actingAs($other)->get('/admin/scheduler/'.$schedule->id)->assertOk();
+        $this->actingAs($admin)->get('/admin/scheduler/'.$schedule->id)->assertOk();
     }
 
     public function test_schedule_detail_requires_login_and_an_allowed_role(): void

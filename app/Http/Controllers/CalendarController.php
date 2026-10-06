@@ -17,13 +17,21 @@ class CalendarController extends Controller
             'end' => ['nullable', 'date_format:Y-m-d', 'after:start'],
         ]);
 
-        $start = $request->input('start') ?: CarbonImmutable::today()->toDateString();
+        $today = CarbonImmutable::today(config('push.timezone'))->toDateString();
+        $start = $request->input('start');
+        if (! $start && $request->user()->isTerapis() && $request->user()->employee_id) {
+            $start = Transaction::where('schedule_date', '>=', $today)->whereNotIn('status', ['success', 'failed'])
+                ->whereHas('items', fn ($items) => $items->where('employee_id', $request->user()->employee_id))
+                ->orderBy('schedule_date')->orderBy('schedule_time')->value('schedule_date');
+        }
+        $start = $start ?: $today;
         // FullCalendar uses an exclusive end date: seven days starting today.
         $end = $request->input('end') ?: CarbonImmutable::parse($start)->addDays(7)->toDateString();
 
         return Inertia::render('Admin/Calendar', [
             'date_range' => ['start' => $start, 'end' => $end],
-            'employees' => fn () => \App\Models\Employee::all(),
+            'employees' => fn () => \App\Models\Employee::query()
+                ->when($request->user()->isTerapis(), fn ($employees) => $employees->where('id', $request->user()->employee_id))->get(),
             'packages' => fn () => Package::with('durations')->where('is_signature', false)->orderByRaw('priority ASC NULLS LAST')->orderBy('id', 'desc')->get(),
             'app_settings' => fn () => \App\Models\Setting::first(),
         ]);
@@ -77,11 +85,12 @@ class CalendarController extends Controller
                 $items = $isTerapis 
                     ? $t->items->filter(fn($i) => $i->employee_id == $employeeId)->values() 
                     : $t->items;
+                $scheduleTime = $t->schedule_time ? str_replace('.', ':', $t->schedule_time) : null;
 
                 return [
                     'id' => $t->id,
                     'title' => $t->customer_name . ' - ' . ($items->first()->package_name ?? 'Package'),
-                    'start' => $t->schedule_date . ($t->schedule_time ? 'T' . $t->schedule_time : ''),
+                    'start' => $t->schedule_date . ($scheduleTime ? 'T' . $scheduleTime : ''),
                     'backgroundColor' => $color,
                     'borderColor' => $color,
                     'extendedProps' => [
@@ -99,7 +108,7 @@ class CalendarController extends Controller
                         'items'            => $items,
                         'notes'            => $t->notes,
                         'schedule_date'    => $t->schedule_date,
-                        'schedule_time'    => $t->schedule_time,
+                        'schedule_time'    => $scheduleTime,
                         'payment_method'   => $t->payment_method,
                     ]
                 ];

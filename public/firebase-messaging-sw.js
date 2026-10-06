@@ -1,6 +1,7 @@
 // Imported by the existing /sw.js; do not register another root-scope worker.
 // The web config contains public Firebase identifiers only.
 function scheduleNotificationUrl(value) {
+    if (value === '/terapis/notifikasi') return value;
     return /^\/admin\/scheduler(?:\/\d+)?$/.test(value || '') ? value : '/admin/scheduler';
 }
 

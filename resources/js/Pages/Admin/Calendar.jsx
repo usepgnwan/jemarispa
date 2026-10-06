@@ -30,9 +30,10 @@ const localDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() +
 
 export default function Calendar({ auth, employees, packages, app_settings, date_range }) {
     const [events, setEvents] = useState([]);
+    const calendarRef = useRef(null);
     const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0, loading: false, failed: [] });
     const [reloadVersion, setReloadVersion] = useState(0);
-    const dayCache = useRef({ version: 0, days: new Map() });
+    const dayCache = useRef({ version: 0, account: null, days: new Map() });
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [newItems, setNewItems] = useState([]);
@@ -47,6 +48,7 @@ export default function Calendar({ auth, employees, packages, app_settings, date
     const [visibleRange, setVisibleRange] = useState({ start: null, end: null });
     const rangeStart = visibleRange.start ? localDateKey(visibleRange.start) : null;
     const rangeEnd = visibleRange.end ? localDateKey(visibleRange.end) : null;
+    const calendarAccount = `${auth.user.id}:${auth.user.role}:${auth.user.employee_id || ''}`;
 
     useEffect(() => {
         if (!rangeStart || !rangeEnd) return;
@@ -59,8 +61,8 @@ export default function Calendar({ auth, employees, packages, app_settings, date
         }
         const activeDate = dates.includes(selectedDate) ? selectedDate : rangeStart;
         const orderedDates = [activeDate, ...dates.filter(date => date !== activeDate)];
-        if (dayCache.current.version !== reloadVersion) {
-            dayCache.current = { version: reloadVersion, days: new Map() };
+        if (dayCache.current.version !== reloadVersion || dayCache.current.account !== calendarAccount) {
+            dayCache.current = { version: reloadVersion, account: calendarAccount, days: new Map() };
         }
         const cache = dayCache.current.days;
         const loadedDates = dates.filter(date => cache.has(date));
@@ -91,7 +93,7 @@ export default function Calendar({ auth, employees, packages, app_settings, date
         };
         loadDays();
         return () => controller.abort();
-    }, [rangeStart, rangeEnd, selectedDate, reloadVersion]);
+    }, [rangeStart, rangeEnd, selectedDate, reloadVersion, calendarAccount]);
 
     const defaultInvoiceTemplate = `Halo, Kak [name],
 Terlampir Invoice [invoice_no] dengan detail pesanan sebagai berikut :
@@ -556,6 +558,17 @@ jemarihomespa.com`;
         setSelectedDate(info.dateStr);
     };
 
+    const selectScheduleDate = (date) => {
+        if (!date) return;
+        setSelectedDate(date);
+        if (!rangeStart || date < rangeStart || date >= rangeEnd) calendarRef.current?.getApi().gotoDate(date);
+    };
+    const changeScheduleDate = (amount) => {
+        const date = new Date(`${selectedDate}T12:00:00`);
+        date.setDate(date.getDate() + amount);
+        selectScheduleDate(localDateKey(date));
+    };
+
     const displayEvents = useMemo(() => {
         if (!events || !Array.isArray(events)) return [];
         return events.filter(event => {
@@ -862,6 +875,7 @@ jemarihomespa.com`;
                                     )}
                                 </div>
                                 <FullCalendar
+                                    ref={calendarRef}
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                                     initialView="timeGridWeek"
                                     initialDate={date_range.start}
@@ -958,6 +972,11 @@ jemarihomespa.com`;
                                     </div>
                                 </div>
                                 <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 scrollbar-hide">
+                                    <div className="flex items-center gap-2">
+                                        <button type="button" aria-label="Jadwal hari sebelumnya" className="rounded-lg border px-2 py-2 text-sm" onClick={() => changeScheduleDate(-1)}>←</button>
+                                        <input aria-label="Tanggal daftar jadwal" type="date" value={selectedDate} onChange={(event) => selectScheduleDate(event.target.value)} className="min-w-0 flex-1 rounded-lg border-gray-300 text-sm" />
+                                        <button type="button" aria-label="Jadwal hari berikutnya" className="rounded-lg border px-2 py-2 text-sm" onClick={() => changeScheduleDate(1)}>→</button>
+                                    </div>
                                     {dailySchedules.map(([therapist, schedules]) => (
                                         <div key={therapist} className="space-y-3">
                                             <h4 className={`text-[10px] font-extrabold uppercase tracking-widest flex items-center gap-2 ${therapist === 'Belum terpilih terapis' ? 'text-red-400' : 'text-zenith-orange'}`}>

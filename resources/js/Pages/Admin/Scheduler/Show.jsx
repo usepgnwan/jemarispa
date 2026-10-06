@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeftIcon, CalendarDaysIcon, ClockIcon, MapPinIcon, UserIcon } from '@heroicons/react/24/outline';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
@@ -12,6 +12,7 @@ const statuses = {
 const reminderStatuses = { pending: 'Menunggu scheduler', queued: 'Dalam antrean', sent: 'Diterima FCM', failed: 'Gagal', cancelled: 'Dibatalkan', partial: 'Sebagian terkirim' };
 
 export default function Show({ schedule, reminder, timezone }) {
+    const isTherapist = usePage().props.auth.user.role === 'terapis';
     const [status, statusClass] = statuses[schedule.status] || [schedule.status, 'bg-gray-100 text-gray-700'];
     const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
         timeZone: timezone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -25,12 +26,12 @@ export default function Show({ schedule, reminder, timezone }) {
         <AuthenticatedLayout>
             <Head title={`Detail Jadwal ${schedule.order_number}`} />
             <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-                <Link href={route('admin.scheduler.index')} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-zenith-orange">
-                    <ArrowLeftIcon className="h-4 w-4" /> Kembali ke Scheduler
+                <Link href={route(isTherapist ? 'admin.therapist_user.notifications' : 'admin.scheduler.index')} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-zenith-orange">
+                    <ArrowLeftIcon className="h-4 w-4" /> {isTherapist ? 'Kembali ke Notifikasi' : 'Kembali ke Scheduler'}
                 </Link>
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Scheduler / Detail Jadwal</p>
+                        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{isTherapist ? 'Notifikasi' : 'Scheduler'} / Detail Jadwal</p>
                         <h1 className="text-2xl font-bold text-gray-900">{schedule.order_number}</h1>
                         <p className="mt-1 text-gray-500">{schedule.customer_name}</p>
                     </div>

@@ -16,7 +16,7 @@ class PushDevice extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->whereHas('user', fn (Builder $users) => $users
-            ->where('is_active', true)->whereIn('role', ['admin', 'cs']));
+            ->where('is_active', true)->whereIn('role', ['admin', 'cs', 'terapis']));
     }
 
     public function user()
