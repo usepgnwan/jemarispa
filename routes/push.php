@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 // Keep the existing session authentication and CSRF protection for the Inertia PWA.
 Route::prefix('api')->middleware(['auth', 'role:admin,cs', 'push.active'])->group(function () {
     Route::post('push/devices', [PushNotificationController::class, 'storeDevice'])->middleware('throttle:20,1');
+    Route::patch('push/devices/{device}', [PushNotificationController::class, 'updateDevice']);
     Route::delete('push/devices/{device}', [PushNotificationController::class, 'destroyDevice']);
     Route::get('schedules/today', [PushNotificationController::class, 'today']);
     Route::get('notifications/logs', [PushNotificationController::class, 'logs']);

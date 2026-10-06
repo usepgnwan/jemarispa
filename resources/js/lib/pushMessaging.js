@@ -24,7 +24,7 @@ async function messagingClient(config) {
     return messagingPromise;
 }
 
-export async function registerPushDevice(config, userId, requestPermission = false) {
+export async function registerPushDevice(config, userId, requestPermission = false, deviceLabel) {
     try {
         const key = `jemari-push-disabled-${userId}`;
         if (requestPermission) localStorage.removeItem(key);
@@ -48,6 +48,7 @@ export async function registerPushDevice(config, userId, requestPermission = fal
     const { data } = await axios.post('/api/push/devices', {
         fcm_token: token, platform,
         device_name: `${platform} • ${navigator.userAgent.slice(0, 180)}`,
+        ...(deviceLabel !== undefined ? { device_label: deviceLabel } : {}),
     });
     const storageKey = `jemari-push-device-${userId}`;
     try {
