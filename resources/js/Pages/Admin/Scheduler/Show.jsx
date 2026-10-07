@@ -11,7 +11,7 @@ const statuses = {
 };
 const reminderStatuses = { pending: 'Menunggu scheduler', queued: 'Dalam antrean', sent: 'Diterima FCM', failed: 'Gagal', cancelled: 'Dibatalkan', partial: 'Sebagian terkirim' };
 
-export default function Show({ schedule, reminder, timezone }) {
+export default function Show({ schedule, reminder, timezone, delivery }) {
     const isTherapist = usePage().props.auth.user.role === 'terapis';
     const [status, statusClass] = statuses[schedule.status] || [schedule.status, 'bg-gray-100 text-gray-700'];
     const formatDate = (value) => new Intl.DateTimeFormat('id-ID', {
@@ -63,6 +63,20 @@ export default function Show({ schedule, reminder, timezone }) {
                         </div> : <p className="text-sm text-gray-500">Belum ada pengingat untuk akun Anda.</p>}
                     </section>
                 </div>
+
+                {delivery && <section className="mt-6 rounded-2xl border bg-white p-5 sm:p-6">
+                    <h2 className="mb-2 font-bold text-gray-900">Penerima Notifikasi</h2>
+                    <p className="mb-4 text-sm text-gray-500">{delivery.success_count} device sukses · {delivery.failed_count} device gagal</p>
+                    <div className="divide-y">{delivery.recipients.map((recipient, index) => <div key={index} className="py-3 text-sm">
+                        <p className="font-semibold">{recipient.user_name || `User ${recipient.user_id}`}</p>
+                        <p className="mt-1 text-gray-500">{recipient.device_label || recipient.device_name || 'Belum ada device saat pengiriman'}</p>
+                        {recipient.device_label && <p className="text-xs text-gray-500">{recipient.device_name}</p>}
+                        <p className={`mt-1 font-semibold ${recipient.status === 'success' ? 'text-green-700' : recipient.status === 'failed' ? 'text-red-700' : 'text-gray-500'}`}>
+                            {{ success: 'Sukses — diterima FCM', failed: 'Gagal', pending: 'Memproses', no_device: 'Tidak ada device' }[recipient.status]}
+                        </p>
+                        {recipient.error_message && <p className="mt-1 text-xs text-gray-500">{recipient.error_code}: {recipient.error_message}</p>}
+                    </div>)}</div>
+                </section>}
 
                 <section className="mt-6 rounded-2xl border bg-white p-5 sm:p-6">
                     <h2 className="mb-4 font-bold text-gray-900">Layanan & Terapis</h2>

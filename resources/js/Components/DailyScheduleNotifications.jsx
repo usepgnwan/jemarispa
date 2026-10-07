@@ -238,7 +238,7 @@ export default function DailyScheduleNotifications() {
                     <p className="text-xs text-gray-500">{device.device_name || `Device ${device.id}`}</p>
                     <p className="text-xs text-gray-500">Akun: {device.user?.name || `User ${device.user_id}`}</p>
                 </div>
-                    {device.user_id === auth.user.id && <div className="flex shrink-0 gap-2">
+                    {(auth.user.role === 'admin' || device.user_id === auth.user.id) && <div className="flex shrink-0 gap-2">
                         <button disabled={busy} className={buttonClass} onClick={() => openDeviceModal(device)}>Edit Label</button>
                         <button disabled={busy} className={buttonClass} onClick={() => run(() => disablePushDevice(device.id, config, auth.user.id).then(() => 'Device dinonaktifkan.'))}>Nonaktifkan</button>
                     </div>}</div>)}

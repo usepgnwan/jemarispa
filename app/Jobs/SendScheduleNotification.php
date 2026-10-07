@@ -68,7 +68,7 @@ class SendScheduleNotification implements ShouldQueue
             $data['url'] = route('admin.therapist_user.notifications', [], false);
         }
         $retry = null;
-        foreach (PushDevice::where('user_id', $notification->user_id)->get() as $device) {
+        foreach (PushDevice::active()->where('user_id', $notification->user_id)->get() as $device) {
             DB::transaction(function () use ($device, $fcm, $data, $schedule, $reminders, &$retry) {
                 // Edits/deletion cannot race an individual FCM send. Successful devices are persisted before retry.
                 $current = ScheduleNotification::whereKey($this->notificationId)->lockForUpdate()->first();
@@ -80,7 +80,7 @@ class SendScheduleNotification implements ShouldQueue
                     $current->update(['status' => 'cancelled']);
                     return;
                 }
-                $device = PushDevice::whereKey($device->id)->where('user_id', $current->user_id)->lockForUpdate()->first();
+                $device = PushDevice::active()->whereKey($device->id)->where('user_id', $current->user_id)->lockForUpdate()->first();
                 if (! $device) {
                     return;
                 }
@@ -126,9 +126,9 @@ class SendScheduleNotification implements ShouldQueue
             $sent = $deliveries->where('status', 'sent');
             $failed = $deliveries->where('status', 'failed');
             if ($deliveries->isEmpty() && ! \App\Models\PushLog::where('schedule_notification_id', $current->id)->where('revision', $this->revision)->exists()) {
-                $logs = app(PushLogService::class);
-                $log = $logs->start($current->user_id, $current->is_test ? 'test' : 'scheduler', $data, null, $schedule, $current);
-                $logs->fail($log, 'NO_DEVICE', 'Tidak ada device aktif untuk menerima notifikasi.');
+                // The device may have been disabled between dispatch and execution.
+                $current->update(['status' => 'cancelled', 'error_message' => null]);
+                return;
             }
             $current->update([
                 'status' => $sent->isEmpty() ? 'failed' : ($failed->isEmpty() ? 'sent' : 'partial'),
@@ -148,10 +148,23 @@ class SendScheduleNotification implements ShouldQueue
             if (! $current) {
                 return;
             }
+            if (! PushDevice::active()->where('user_id', $current->user_id)->exists()
+                && ! \App\Models\PushLog::where('schedule_notification_id', $current->id)
+                    ->where('revision', $this->revision)->whereNotNull('device_name')->exists()) {
+                $current->update(['status' => 'cancelled', 'error_message' => null]);
+                return;
+            }
             $logs = app(PushLogService::class);
             $detail = $exception ? $logs->error($exception)[1] : 'Worker berhenti sebelum pengiriman selesai.';
             $message = 'Pengiriman gagal setelah retry. '.($current->error_message ?: $detail);
-            $current->update(['status' => 'failed', 'error_message' => $message]);
+            $sent = PushDelivery::where('schedule_notification_id', $current->id)
+                ->where('revision', $this->revision)->where('status', 'sent')->get();
+            $current->update([
+                'status' => $sent->isEmpty() ? 'failed' : 'partial',
+                'sent_at' => $sent->isEmpty() ? null : $sent->max('sent_at'),
+                'fcm_message_id' => $sent->isEmpty() ? null : $sent->pluck('fcm_message_id')->implode(','),
+                'error_message' => $message,
+            ]);
             $log = $logs->start($current->user_id, $current->is_test ? 'test' : 'scheduler', [
                 'title' => 'Pengiriman berhenti',
                 'body' => $current->schedule ? $current->schedule->order_number.' - '.$current->schedule->customer_name : 'Tes Scheduler',

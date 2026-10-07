@@ -10,7 +10,7 @@ use Inertia\Inertia;
 
 class ScheduleController extends Controller
 {
-    public function show(Request $request, Transaction $schedule, ScheduleReminderService $reminders)
+    public function show(Request $request, Transaction $schedule, ScheduleReminderService $reminders, \App\Services\PushLogHistoryService $history)
     {
         if ($request->user()->role === 'terapis') {
             abort_unless($reminders->isRecipient($schedule, $request->user()), 403);
@@ -18,6 +18,11 @@ class ScheduleController extends Controller
         $schedule->load('items.employee');
         $notification = ScheduleNotification::where('schedule_id', $schedule->id)
             ->where('user_id', $request->user()->id)->first();
+        $logs = \App\Models\PushLog::where('schedule_id', $schedule->id)->where('type', 'scheduler');
+        if (! $request->user()->isAdmin()) {
+            $logs->where('user_id', $request->user()->id);
+        }
+        $delivery = $history->paginate($logs)->getCollection()->first();
 
         return Inertia::render('Admin/Scheduler/Show', [
             'schedule' => [
@@ -44,6 +49,7 @@ class ScheduleController extends Controller
                 'error_message' => $notification->error_message,
             ] : null,
             'timezone' => config('push.timezone'),
+            'delivery' => $delivery,
         ]);
     }
 }

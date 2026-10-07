@@ -177,6 +177,39 @@ class PushNotificationsTest extends TestCase
         $this->assertNull($device->fresh()->device_label);
     }
 
+    public function test_admin_can_edit_and_disable_devices_owned_by_other_accounts(): void
+    {
+        $admin = $this->user();
+        $ownDevice = $this->device($admin, 'admin-management-token');
+        foreach (['admin', 'cs', 'terapis'] as $role) {
+            $owner = $this->user($role);
+            $device = $this->device($owner, 'managed-'.$role);
+            $url = '/api/push/devices/'.$device->id;
+
+            $this->actingAs($admin)->withSession(['push_device_id' => $ownDevice->id])
+                ->patchJson($url, ['device_label' => 'HP '.$role])->assertOk()
+                ->assertJsonPath('device.device_label', 'HP '.$role)
+                ->assertJsonPath('device.user_id', $owner->id)
+                ->assertJsonMissing(['fcm_token' => 'managed-'.$role]);
+            $this->patchJson($url, ['device_label' => ''])->assertUnprocessable();
+            $this->deleteJson($url)->assertNoContent()->assertSessionHas('push_device_id', $ownDevice->id);
+            $this->assertDatabaseMissing('push_devices', ['id' => $device->id]);
+        }
+        $this->assertDatabaseHas('push_devices', ['id' => $ownDevice->id, 'user_id' => $admin->id]);
+    }
+
+    public function test_non_admin_cannot_edit_or_disable_another_accounts_device(): void
+    {
+        $device = $this->device($this->user(), 'protected-device');
+        $url = '/api/push/devices/'.$device->id;
+        foreach (['cs', 'terapis'] as $role) {
+            $this->actingAs($this->user($role))->patchJson($url, ['device_label' => 'Unauthorized'])->assertNotFound();
+            $this->deleteJson($url)->assertNotFound();
+        }
+        $this->assertNull($device->fresh()->device_label);
+        $this->assertDatabaseHas('push_devices', ['id' => $device->id]);
+    }
+
     public function test_push_history_keeps_device_name_and_label_after_edit_and_deletion(): void
     {
         $user = $this->user();
@@ -632,7 +665,7 @@ class PushNotificationsTest extends TestCase
         $this->actingAs($this->user('marketing'))->getJson('/api/notifications/logs')->assertForbidden();
     }
 
-    public function test_scheduler_failures_and_retries_are_logged_separately_and_missing_devices_are_recorded(): void
+    public function test_scheduler_failures_and_retries_are_logged_separately_and_missing_devices_are_skipped(): void
     {
         $user = $this->user();
         $device = $this->device($user);
@@ -661,7 +694,9 @@ class PushNotificationsTest extends TestCase
         $notification = ScheduleNotification::firstOrFail();
         $notification->update(['status' => 'queued']);
         (new SendScheduleNotification($notification->id, $notification->revision))->handle(app(FcmService::class), app(ScheduleReminderService::class));
-        $this->assertDatabaseHas('push_logs', ['type' => 'scheduler', 'status' => 'failed', 'error_code' => 'NO_DEVICE']);
+        $this->assertDatabaseCount('push_logs', 2);
+        $this->assertSame('cancelled', $notification->fresh()->status);
+        Http::assertSentCount(2);
     }
 
     public function test_unexpected_send_errors_are_recorded_without_secrets(): void

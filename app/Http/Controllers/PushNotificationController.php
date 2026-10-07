@@ -48,7 +48,7 @@ class PushNotificationController extends Controller
 
     public function updateDevice(Request $request, PushDevice $device)
     {
-        abort_unless($device->user_id === $request->user()->id, 404);
+        abort_unless($request->user()->isAdmin() || $device->user_id === $request->user()->id, 404);
         $data = $request->validate([
             'device_label' => ['required', 'string', 'max:255'],
         ]);
@@ -59,7 +59,7 @@ class PushNotificationController extends Controller
 
     public function destroyDevice(Request $request, PushDevice $device)
     {
-        abort_unless($device->user_id === $request->user()->id, 404);
+        abort_unless($request->user()->isAdmin() || $device->user_id === $request->user()->id, 404);
         $device->delete();
         if ((int) $request->session()->get('push_device_id') === $device->id) {
             $request->session()->forget('push_device_id');
@@ -172,17 +172,24 @@ class PushNotificationController extends Controller
         return response()->json(['notification' => $reminders->forUser($schedule, $request->user(), $data['notify_before_minutes'])]);
     }
 
-    public function logs(Request $request)
+    public function logs(Request $request, \App\Services\PushLogHistoryService $history)
     {
         $filters = $request->validate([
             'type' => ['nullable', Rule::in(['test', 'scheduler'])],
-            'status' => ['nullable', Rule::in(['pending', 'success', 'failed'])],
+            'status' => ['nullable', Rule::in(['pending', 'success', 'failed', 'partial'])],
+            'grouped' => ['nullable', 'boolean'],
             'date' => ['nullable', 'date_format:Y-m-d'],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
-        $query = PushLog::where('user_id', $request->user()->id);
+        $grouped = $request->boolean('grouped');
+        $query = PushLog::query()->where(fn ($logs) => $logs->whereNull('error_code')->orWhere('error_code', '!=', 'NO_DEVICE'))
+            ->where(fn ($logs) => $logs->whereNotNull('push_device_id')->orWhereNotNull('device_name')
+                ->orWhereNotNull('device_label')->orWhereNotNull('fcm_message_id'));
+        if (! $grouped || ! $request->user()->isAdmin()) {
+            $query->where('user_id', $request->user()->id);
+        }
         foreach (['type', 'status'] as $field) {
-            if (! empty($filters[$field])) {
+            if (! empty($filters[$field]) && (! $grouped || $field !== 'status')) {
                 $query->where($field, $filters[$field]);
             }
         }
@@ -191,7 +198,8 @@ class PushNotificationController extends Controller
             $query->where('created_at', '>=', $start->utc())->where('created_at', '<', $start->addDay()->utc());
         }
 
-        return response()->json($query->orderByDesc('id')->paginate(20));
+        return response()->json($grouped ? $history->paginate($query, $filters['status'] ?? null)
+            : $query->orderByDesc('id')->paginate(20));
     }
 
     public function testNow(Request $request, FcmService $fcm, ScheduleReminderService $reminders, PushLogService $logs)

@@ -20,11 +20,16 @@ class DispatchDuePushNotifications extends Command
             ->update(['status' => 'pending', 'updated_at' => now('UTC')]);
         $count = 0;
         ScheduleNotification::where('status', 'pending')->where('notify_at', '<=', now('UTC'))
+            ->whereHas('user', fn ($users) => $users->where('is_active', true)
+                ->whereIn('role', ['admin', 'cs', 'terapis'])->whereHas('pushDevices'))
             ->chunkById(100, function ($notifications) use (&$count) {
                 foreach ($notifications as $notification) {
                     DB::transaction(function () use ($notification, &$count) {
                         $current = ScheduleNotification::whereKey($notification->id)->lockForUpdate()->first();
                         if (! $current || $current->status !== 'pending' || $current->notify_at->isFuture()) {
+                            return;
+                        }
+                        if (! \App\Models\PushDevice::active()->where('user_id', $current->user_id)->exists()) {
                             return;
                         }
                         $current->update(['status' => 'queued']);
