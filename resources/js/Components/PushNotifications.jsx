@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { isPushConfigured, registerPushDevice, subscribeForeground } from '@/lib/pushMessaging';
+import { showForegroundPushNotification } from '@/lib/foregroundPushNotification';
 
 export default function PushNotifications() {
     const { auth, push_config: config } = usePage().props;
@@ -15,6 +16,9 @@ export default function PushNotifications() {
             if (!disposed) {
                 setMessage(payload.data || payload.notification);
                 window.dispatchEvent(new Event('jemari:push-devices'));
+                showForegroundPushNotification(payload).catch((error) => {
+                    console.warn('Notifikasi sistem gagal ditampilkan saat aplikasi terbuka.', error);
+                });
             }
         }).then((stop) => { if (disposed) stop(); else unsubscribe = stop; }).catch(() => {});
         registerPushDevice(config, user.id).catch(() => {});
