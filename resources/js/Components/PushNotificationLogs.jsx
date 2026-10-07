@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 
-const statusLabels = { pending: 'Memproses', success: 'Sukses', failed: 'Gagal' };
+const statusLabels = { pending: 'Memproses', success: 'Sukses', failed: 'Gagal', partial: 'Sebagian terkirim', no_device: 'Tidak ada device' };
 
 export default function PushNotificationLogs({ formatTime }) {
+    const isAdmin = usePage().props.auth.user.role === 'admin';
     const [filters, setFilters] = useState({ type: '', status: '', date: '', page: 1 });
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
@@ -17,7 +19,7 @@ export default function PushNotificationLogs({ formatTime }) {
         const load = async () => {
             const request = ++sequence;
             try {
-                const { data } = await axios.get('/api/notifications/logs', { params: filters });
+                const { data } = await axios.get('/api/notifications/logs', { params: { ...filters, grouped: 1 } });
                 if (active && request === sequence) { setResult(data); setError(''); }
             } catch (e) {
                 if (active && request === sequence) setError(e.response?.data?.message || 'Gagal memuat log push.');
@@ -35,13 +37,13 @@ export default function PushNotificationLogs({ formatTime }) {
     return (
         <div className="mt-4">
             <h3 className="text-lg font-bold">Log Push</h3>
-            <p className="mt-1 text-xs text-gray-500">Riwayat pengiriman akun Anda. Sukses berarti pesan diterima FCM. Setiap percobaan ulang dicatat terpisah.</p>
+            <p className="mt-1 text-xs text-gray-500">{isAdmin ? 'Riwayat pengiriman seluruh penerima.' : 'Riwayat pengiriman akun Anda.'} Sukses berarti pesan diterima FCM. Hasil terakhir tiap device ditampilkan bersama riwayat percobaan ulang.</p>
             <div className="my-4 flex flex-wrap gap-2">
                 <select aria-label="Tipe log" value={filters.type} onChange={(e) => filter('type', e.target.value)} className="rounded-lg border-gray-300 text-sm">
                     <option value="">Semua tipe</option><option value="test">Tes</option><option value="scheduler">Scheduler</option>
                 </select>
                 <select aria-label="Status log" value={filters.status} onChange={(e) => filter('status', e.target.value)} className="rounded-lg border-gray-300 text-sm">
-                    <option value="">Semua status</option><option value="success">Sukses</option><option value="failed">Gagal</option><option value="pending">Memproses</option>
+                    <option value="">Semua status</option><option value="success">Sukses</option><option value="partial">Sebagian terkirim</option><option value="failed">Gagal</option><option value="pending">Memproses</option>
                 </select>
                 <input type="date" aria-label="Tanggal log" value={filters.date} onChange={(e) => filter('date', e.target.value)} className="rounded-lg border-gray-300 text-sm" />
                 <button onClick={() => setRefresh((value) => value + 1)} className="rounded-lg border px-3 py-2 text-sm">Refresh</button>
@@ -59,17 +61,23 @@ export default function PushNotificationLogs({ formatTime }) {
                                 <td className="p-2">{log.type === 'test' ? 'Tes' : 'Scheduler'}</td>
                                 <td className="min-w-56 p-2"><strong>{log.title}</strong><p className="whitespace-pre-line">{log.body}</p>
                                     {log.notify_before_minutes != null && <p className="mt-1 text-xs text-gray-500">Reminder: {log.notify_before_minutes} menit sebelum jadwal</p>}</td>
-                                <td className="max-w-48 break-words p-2">
-                                    <p className="font-semibold">User: {log.receiver_user_name || '-'}</p>
-                                    <p className="text-xs text-gray-500">Label: {log.device_label || '-'}</p>
-                                    <p className="text-xs text-gray-500">Device: {log.device_name || (log.push_device_id ? `Device ${log.push_device_id}` : '-')}</p>
+                                <td className="min-w-64 break-words p-2">
+                                    <div className="space-y-3">{log.recipients.map((recipient, index) => <div key={index} className="rounded-lg border p-2">
+                                        <p className="font-semibold">{recipient.user_name || `User ${recipient.user_id}`}</p>
+                                        <p className="text-xs text-gray-500">{recipient.device_label || recipient.device_name || 'Belum ada device saat pengiriman'}</p>
+                                        {recipient.device_label && <p className="text-xs text-gray-500">{recipient.device_name}</p>}
+                                        <p className={`mt-1 text-xs font-semibold ${recipient.status === 'success' ? 'text-green-700' : recipient.status === 'failed' ? 'text-red-700' : 'text-gray-500'}`}>{statusLabels[recipient.status]}</p>
+                                        {recipient.error_message && <p className="mt-1 text-xs text-gray-500">{recipient.error_code}: {recipient.error_message}</p>}
+                                        <details className="mt-1 text-xs text-gray-500"><summary className="cursor-pointer">Detail pengiriman ({recipient.attempt_count} percobaan)</summary>
+                                            {recipient.fcm_message_id && <p className="mt-1 break-all">FCM: {recipient.fcm_message_id}</p>}
+                                            {recipient.attempts.map((attempt) => <p key={attempt.id} className="mt-1">#{attempt.id} · {formatTime(attempt.created_at)} · {statusLabels[attempt.status]}{attempt.error_code ? ` · ${attempt.error_code}: ${attempt.error_message}` : ''}</p>)}
+                                        </details>
+                                    </div>)}</div>
                                 </td>
                                 <td className="p-2"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${log.status === 'success' ? 'bg-green-50 text-green-700' : log.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{statusLabels[log.status] || log.status}</span></td>
                                 <td className="min-w-56 max-w-sm break-words p-2">
-                                    {log.error_code && <strong className="text-xs text-red-700">{log.error_code}</strong>}
-                                    {log.error_message && <p className="text-red-600">{log.error_message}</p>}
-                                    {log.fcm_message_id && <p className="break-all text-xs text-gray-500">{log.fcm_message_id}</p>}
-                                    {log.finished_at && <p className="mt-1 text-xs text-gray-400">Selesai: {formatTime(log.finished_at)}</p>}
+                                    <p>{log.success_count} device sukses · {log.failed_count} device gagal</p>
+                                    <p className="mt-1 text-xs text-gray-500">{log.attempt_count} percobaan pengiriman</p>
                                 </td>
                             </tr>)}
                         {!loading && !error && !result?.data.length && <tr><td colSpan={6} className="p-4 text-gray-500">Belum ada log sesuai filter. Pengiriman baru akan tercatat di sini.</td></tr>}

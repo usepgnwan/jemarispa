@@ -63,6 +63,11 @@ class User extends Authenticatable
         return $this->belongsTo(Employee::class);
     }
 
+    public function pushDevices()
+    {
+        return $this->hasMany(PushDevice::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
