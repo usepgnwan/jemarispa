@@ -479,7 +479,7 @@ export default function Index({ analytics, stats, filters }) {
 
                     {/* Pagination */}
                     {analytics.links && (
-                        <div className="p-8 border-t border-gray-100 bg-gray-50/30">
+                        <div className="min-w-0 p-4 sm:p-8 border-t border-gray-100 bg-gray-50/30">
                             <Pagination links={analytics.links} />
                         </div>
                     )}

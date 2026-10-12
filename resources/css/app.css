@@ -123,6 +123,32 @@
     }
 }
 
+/* Let public articles expand and wrap within the available screen width. */
+.blog-article .ql-container.ql-snow,
+.blog-article .ql-container.ql-snow .ql-editor {
+    height: auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.blog-article .ql-container.ql-snow .ql-editor {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    padding: 0 !important;
+}
+
+.blog-article .ql-editor img,
+.blog-article .ql-editor video,
+.blog-article .ql-editor iframe {
+    max-width: 100%;
+}
+
+@media (max-width: 767px) {
+    .blog-article .ql-editor {
+        font-size: 1rem !important;
+    }
+}
+
 /* Force standard browser list styles inside Quill container to bypass clipping / preflight issues */
 .ql-container.ql-snow .ql-editor ul {
     list-style: disc inside !important;

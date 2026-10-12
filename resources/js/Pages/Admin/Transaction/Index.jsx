@@ -633,12 +633,12 @@ export default function Index({ transactions, filters, counts, employees, packag
             dpAmount: paymentType === 'dp' ? dpAmount : 0
         });
 
-        const performAction = () => {
+        const performAction = async () => {
             if (actionType === 'send') {
                 const phone = invoiceTransaction.phone || app_settings?.phone || '';
                 if (!phone) {
                     alert('Nomor WhatsApp tidak ditemukan.');
-                    return;
+                    return false;
                 }
                 const encodedMessage = encodeURIComponent(message);
                 const cleanPhone = phone.toString().replace(/[^0-9]/g, '');
@@ -650,7 +650,7 @@ export default function Index({ transactions, filters, counts, employees, packag
                 }
                 if (!waPhone) {
                     alert('Nomor telepon tidak valid.');
-                    return;
+                    return false;
                 }
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 const waBaseUrl = isMobile ? 'https://wa.me/' : 'https://web.whatsapp.com/send';
@@ -661,31 +661,47 @@ export default function Index({ transactions, filters, counts, employees, packag
                 window.open(finalUrl, '_blank');
                 setIsInvoiceModalOpen(false);
             } else {
-                navigator.clipboard.writeText(message).then(() => {
+                try {
+                    await navigator.clipboard.writeText(message);
                     setToastMessage(invoiceLang === 'en' ? 'Teks invoice (EN) berhasil disalin!' : 'Teks invoice berhasil disalin!');
                     setShowToast(true);
                     setTimeout(() => setShowToast(false), 3000);
                     setIsInvoiceModalOpen(false);
-                }).catch(err => {
+                } catch (err) {
                     console.error('Failed to copy: ', err);
                     alert('Gagal menyalin teks.');
-                });
+                    return false;
+                }
             }
+            return true;
         };
 
         // Execute immediately to prevent popup blocking
-        performAction();
+        if (!await performAction()) return;
 
-        // Save DP options to DB asynchronously without waiting
-        axios.patch(route('admin.transaction.update', invoiceTransaction.id), {
+        // Save the invoice action and refresh the table through the same Inertia visit.
+        router.patch(route('admin.transaction.update', invoiceTransaction.id), {
+            invoice_sent: true,
             payment_type: paymentType,
             dp_amount: paymentType === 'dp' ? dpAmount : null,
             is_pelunasan_paid: paymentType === 'dp' ? invoicePelunasanPaid : false
-        }).then(() => {
-            // Trigger an inertia reload so table UI updates with the new DP values
-            router.reload({ only: ['transactions'] });
-        }).catch(err => {
-            console.error("Gagal menyimpan opsi pembayaran invoice", err);
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: (page) => {
+                const updated = page.props.transactions.data.find((transaction) => transaction.id === invoiceTransaction.id);
+                if (updated) {
+                    setInvoiceTransaction(updated);
+                    setSelectedTransaction((current) => current?.id === updated.id ? { ...current,
+                        status: updated.status, payment_type: updated.payment_type,
+                        dp_amount: updated.dp_amount, is_pelunasan_paid: updated.is_pelunasan_paid,
+                    } : current);
+                }
+            },
+            onError: (errors) => {
+                setToastMessage(Object.values(errors).flat().join(' ') || 'Gagal menyimpan status invoice.');
+                setShowToast(true);
+            },
         });
     };
 

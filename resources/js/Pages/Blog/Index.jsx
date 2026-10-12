@@ -159,13 +159,15 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                 >
                                     <div className="relative h-64 overflow-hidden">
                                         <img src={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/services.jpg'} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={blog.title} />
-                                        <div className="absolute top-4 left-4">
-                                            <span className="px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md text-[10px] font-bold text-zenith-orange uppercase tracking-wider shadow-lg">
-                                                {blog.tag || blog.type_package || 'Article'}
-                                            </span>
-                                        </div>
                                     </div>
                                     <div className="p-8 flex flex-col flex-1">
+                                        <div className="mb-4 flex flex-wrap gap-2">
+                                            {(blog.tag || blog.type_package || 'Article').split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
+                                                <span key={`${tag}-${index}`} className="max-w-full rounded-full bg-white/90 px-4 py-1.5 text-[10px] font-bold text-zenith-orange uppercase tracking-wider [overflow-wrap:anywhere]">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
                                         <p className="text-zenith-charcoal/30 text-[10px] font-bold uppercase tracking-widest mb-4">
                                             {new Date(blog.created_at).toLocaleDateString(lang === 'EN' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </p>

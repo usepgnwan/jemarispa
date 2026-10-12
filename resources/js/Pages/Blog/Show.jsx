@@ -46,6 +46,7 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
     };
 
     const metaDesc = blog.description ? stripHtml(blog.description).substring(0, 160) + '...' : blog.title;
+    const articleHtml = (blog.description || '').replace(/&nbsp;|&#160;|&#x0*a0;|\u00a0/gi, ' ');
 
     return (
         <div className="font-sans text-zenith-charcoal antialiased bg-zenith-surface">
@@ -66,14 +67,15 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                 activeService="Blog"
                 setActiveService={() => { }}
                 signaturePackages={signaturePackages}
+                forceSolid
             />
 
-            <main className="pt-32 pb-20 px-6">
+            <main className="pt-24 pb-10 px-4 sm:pt-32 sm:pb-20 sm:px-6">
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col lg:flex-row gap-12">
+                    <div className="flex flex-col lg:flex-row gap-6 sm:gap-12">
 
                         {/* Sidebar Left: Suggestions */}
-                        <aside className="w-full lg:w-1/4 order-2 lg:order-1">
+                        <aside className="w-full min-w-0 lg:w-1/4 order-2 lg:order-1">
                             <div className="sticky top-32">
                                 <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-zenith-orange mb-8 border-b border-zenith-orange/10 pb-4">
                                     {t.recommendedStories}
@@ -84,8 +86,12 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                                             <div className="h-20 w-20 flex-shrink-0 rounded-2xl overflow-hidden shadow-lg">
                                                 <img src={item.thumbnail ? `/storage/${item.thumbnail}` : '/images/services.jpg'} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={item.title} />
                                             </div>
-                                            <div>
-                                                <p className="text-[8px] font-bold text-zenith-orange uppercase tracking-widest mb-1">{item.tag || item.type_package || 'Article'}</p>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="mb-1 flex flex-wrap gap-1">
+                                                    {(item.tag || item.type_package || 'Article').split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
+                                                        <span key={`${tag}-${index}`} className="max-w-full rounded-full bg-zenith-orange/10 px-2 py-1 text-[8px] font-bold text-zenith-orange uppercase tracking-widest [overflow-wrap:anywhere]">{tag}</span>
+                                                    ))}
+                                                </div>
                                                 <h5 className="text-sm font-bold leading-tight group-hover:text-zenith-orange transition-colors line-clamp-2">{item.title}</h5>
                                             </div>
                                         </Link>
@@ -106,16 +112,16 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                         </aside>
 
                         {/* Main Content */}
-                        <div className="w-full lg:w-3/4 order-1 lg:order-2">
-                            <div className="mb-12">
+                        <div className="w-full min-w-0 lg:w-3/4 order-1 lg:order-2">
+                            <div className="mb-6 sm:mb-12">
                                 <div className="inline-flex items-center gap-x-2 px-3 py-1 rounded-full bg-zenith-orange/10 border border-zenith-orange/10 mb-6">
                                     <span className="h-1.5 w-1.5 rounded-full bg-zenith-orange animate-pulse"></span>
                                     <span className="text-[10px] font-bold text-zenith-orange tracking-[0.2em] uppercase">{blog.type_package || t.wellnessInsight}</span>
                                 </div>
-                                <h1 className="text-3xl md:text-5xl font-serif text-zenith-charcoal leading-tight mb-8">
+                                <h1 className="text-2xl sm:text-3xl md:text-5xl font-serif text-zenith-charcoal leading-tight mb-4 sm:mb-8 [overflow-wrap:anywhere]">
                                     {blog.title}
                                 </h1>
-                                <div className="flex items-center gap-x-6 text-[10px] font-bold uppercase tracking-[0.2em] text-zenith-charcoal/40 border-b border-zenith-orange/5 pb-8">
+                                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[10px] font-bold uppercase tracking-[0.2em] text-zenith-charcoal/40 border-b border-zenith-orange/5 pb-4 sm:pb-8">
                                     <div className="flex items-center gap-x-2">
                                         <span aria-hidden="true" className="material-symbols-outlined text-[14px]">calendar_today</span>
                                         {new Date(blog.created_at).toLocaleDateString(lang === 'EN' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -127,18 +133,18 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                                 </div>
                             </div>
 
-                            <div className="relative h-[40vh] md:h-[60vh] rounded-3xl overflow-hidden shadow-2xl mb-12">
+                            <div className="relative h-[40vh] md:h-[60vh] rounded-3xl overflow-hidden shadow-2xl mb-6 sm:mb-12">
                                 <img src={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/services.jpg'} className="w-full h-full object-cover" alt={blog.title} />
                             </div>
 
-                            <div className="max-w-none text-zenith-charcoal/70 leading-relaxed font-sans text-lg">
+                            <div className="blog-article min-w-0 max-w-full text-zenith-charcoal/70 leading-relaxed font-sans text-lg">
                                 <div className="ql-container ql-snow" style={{ border: 'none' }}>
-                                    <div className="ql-editor" dangerouslySetInnerHTML={{ __html: blog.description }} />
+                                    <div className="ql-editor" dangerouslySetInnerHTML={{ __html: articleHtml }} />
                                 </div>
                             </div>
 
                             {/* Share & Tags */}
-                            <div className="mt-16 pt-8 border-t border-zenith-orange/10 flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="mt-8 pt-4 sm:mt-16 sm:pt-8 border-t border-zenith-orange/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                                 <div className="flex gap-x-4 items-center">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-zenith-charcoal/30">{t.share}</span>
                                     <div className="flex gap-x-2">
@@ -149,10 +155,10 @@ export default function Show({ auth, blog, suggestions, signaturePackages = [] }
                                         ))}
                                     </div>
                                 </div>
-                                <div className="flex gap-x-2">
-                                    {blog.tag?.split(',').map(tag => (
-                                        <span key={tag} className="px-4 py-1 rounded-full bg-zenith-surface border border-zenith-orange/5 text-[8px] font-bold text-zenith-charcoal/40 uppercase tracking-widest italic">
-                                            #{tag.trim()}
+                                <div className="flex min-w-0 max-w-full flex-wrap gap-2">
+                                    {blog.tag?.split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
+                                        <span key={`${tag}-${index}`} className="max-w-full px-4 py-1 rounded-full bg-zenith-surface border border-zenith-orange/5 text-[8px] font-bold text-zenith-charcoal/40 uppercase tracking-widest italic [overflow-wrap:anywhere]">
+                                            #{tag}
                                         </span>
                                     ))}
                                 </div>

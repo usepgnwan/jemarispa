@@ -538,6 +538,7 @@ class TransactionController extends Controller
             'dp_amount' => 'nullable|numeric|required_if:payment_type,dp',
             'is_pelunasan_paid' => 'nullable|boolean',
             'status' => 'nullable|in:pending,send_terapis,invoice,success,failed',
+            'invoice_sent' => 'sometimes|boolean',
             'payment_method' => 'nullable|string',
             'new_items' => 'nullable|array',
             'items' => 'nullable|array',
@@ -545,7 +546,11 @@ class TransactionController extends Controller
         ]);
 
         return DB::transaction(function() use ($validated, $transaction) {
-            $transaction->update(collect($validated)->except(['new_items', 'items', 'deleted_items'])->toArray());
+            if (!empty($validated['invoice_sent'])) {
+                $transaction = Transaction::whereKey($transaction->id)->lockForUpdate()->firstOrFail();
+                $validated['status'] = $transaction->status === 'success' ? 'success' : 'invoice';
+            }
+            $transaction->update(collect($validated)->except(['new_items', 'items', 'deleted_items', 'invoice_sent'])->toArray());
 
             // Handle deletions
             if (!empty($validated['deleted_items'])) {
