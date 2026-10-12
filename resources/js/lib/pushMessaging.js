@@ -2,6 +2,14 @@ import axios from 'axios';
 
 let messagingPromise;
 
+export function getPushDeviceId(userId) {
+    try {
+        return Number(localStorage.getItem(`jemari-push-device-${userId}`)) || null;
+    } catch {
+        return null;
+    }
+}
+
 export function isPushConfigured(config) {
     return Boolean(config?.firebase?.apiKey && config?.firebase?.projectId
         && config?.firebase?.messagingSenderId && config?.firebase?.appId && config?.vapidKey);
@@ -71,11 +79,11 @@ export async function disablePushDevice(id, config, userId) {
     await axios.delete(`/api/push/devices/${id}`);
     try {
         const key = `jemari-push-device-${userId}`;
-        if (Number(localStorage.getItem(key)) === id) {
+        if (getPushDeviceId(userId) === Number(id)) {
             localStorage.setItem(`jemari-push-disabled-${userId}`, 'true');
+            localStorage.removeItem(key);
             const { sdk, messaging } = await messagingClient(config);
             await sdk.deleteToken(messaging);
-            localStorage.removeItem(key);
         }
     } finally {
         window.dispatchEvent(new Event('jemari:push-devices'));

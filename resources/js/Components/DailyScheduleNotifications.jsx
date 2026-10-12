@@ -5,7 +5,7 @@ import PushNotificationLogs from '@/Components/PushNotificationLogs';
 import SchedulerTimeline from '@/Components/SchedulerTimeline';
 import Modal from '@/Components/Modal';
 import { DialogTitle } from '@headlessui/react';
-import { disablePushDevice, isPushConfigured, registerPushDevice } from '@/lib/pushMessaging';
+import { disablePushDevice, getPushDeviceId, isPushConfigured, registerPushDevice } from '@/lib/pushMessaging';
 
 const buttonClass = 'rounded-lg border px-3 py-2 text-sm disabled:opacity-50 hover:bg-gray-50';
 const statusLabels = {
@@ -143,6 +143,9 @@ export default function DailyScheduleNotifications() {
         timeZone: timezone, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
     }).format(new Date(value)) : '—';
     const selectedDevice = result.devices.find((device) => String(device.id) === String(deviceId));
+    const currentDeviceId = getPushDeviceId(auth.user.id);
+    const currentDevice = result.devices.find((device) => Number(device.id) === currentDeviceId
+        && Number(device.user_id) === Number(auth.user.id));
 
     return (
         <section className="mb-6 rounded-2xl border bg-white p-4 sm:p-6" aria-label="Jadwal harian dan push notification">
@@ -153,103 +156,106 @@ export default function DailyScheduleNotifications() {
                 ))}
             </nav>
             {tab === 'logs' ? <PushNotificationLogs formatTime={formatTime} /> : <>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h3 className="text-lg font-bold">{tab === 'settings' ? 'Setting Push' : 'Jadwal harian'}</h3>
-                    <p className="text-xs text-gray-500">Data transaksi • {timezone} • reminder untuk akun Anda</p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 className="text-lg font-bold">{tab === 'settings' ? 'Setting Push' : 'Jadwal harian'}</h3>
+                        <p className="text-xs text-gray-500">Data transaksi • {timezone} • reminder untuk akun Anda</p>
+                    </div>
+                    {tab === 'schedules' && <div className="flex flex-wrap items-center gap-2">
+                        <button className={buttonClass} onClick={() => changeDay(-1)} aria-label="Hari sebelumnya">←</button>
+                        <input aria-label="Tanggal jadwal" className="rounded-lg border-gray-300 text-sm" type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />
+                        <button className={buttonClass} onClick={() => changeDay(1)} aria-label="Hari berikutnya">→</button>
+                        <button className={buttonClass} onClick={() => setDate(dateInTimezone(timezone))}>Hari ini</button>
+                    </div>}
                 </div>
-                {tab === 'schedules' && <div className="flex flex-wrap items-center gap-2">
-                    <button className={buttonClass} onClick={() => changeDay(-1)} aria-label="Hari sebelumnya">←</button>
-                    <input aria-label="Tanggal jadwal" className="rounded-lg border-gray-300 text-sm" type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />
-                    <button className={buttonClass} onClick={() => changeDay(1)} aria-label="Hari berikutnya">→</button>
-                    <button className={buttonClass} onClick={() => setDate(dateInTimezone(timezone))}>Hari ini</button>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {tab === 'settings' && <button disabled={busy || loading || (!currentDevice && !isPushConfigured(config))} className={buttonClass}
+                        onClick={() => currentDevice
+                            ? run(() => disablePushDevice(currentDevice.id, config, auth.user.id).then(() => 'Push dinonaktifkan di device ini.'))
+                            : openDeviceModal()}>{currentDevice ? 'Nonaktifkan Push di Device Ini' : 'Aktifkan Push di Device Ini'}</button>}
+                    <select aria-label="Device untuk tes dan filter jadwal" className="max-w-xs rounded-lg border-gray-300 text-sm" value={deviceId} onChange={(e) => { setLoading(true); setDeviceId(e.target.value); }}>
+                        <option value="">{result.devices.length ? 'Pilih device aktif' : 'Tidak ada device aktif'}</option>
+                        {result.devices.map((device) => <option key={device.id} value={device.id}>{device.device_label || `Device ${device.id}`} — {device.user?.name || `User ${device.user_id}`}</option>)}
+                    </select>
+                    {tab === 'settings' && <><button disabled={busy || !deviceId} className={buttonClass} onClick={() => run(async () => {
+                        const { data } = await axios.post('/api/notifications/test-now', { device_id: Number(deviceId) });
+                        return data.message;
+                    })}>Send Push Now</button>
+                        <select aria-label="Delay Test Scheduler" className="rounded-lg border-gray-300 text-sm" value={delay} onChange={(e) => setDelay(Number(e.target.value))}>
+                            {[1, 2, 5].map((minutes) => <option key={minutes} value={minutes}>{minutes} menit</option>)}
+                        </select>
+                        <button disabled={busy || !result.devices.some((device) => device.user_id === auth.user.id)} className={buttonClass} onClick={() => run(async () => {
+                            const { data } = await axios.post('/api/notifications/test-schedule', { delay_minutes: delay });
+                            return `Tes #${data.notification.id} pending sampai ${formatTime(data.notification.notify_at)}. Menunggu scheduler dan queue worker.`;
+                        })}>Test Scheduler</button></>}
+                </div>
+                {!isPushConfigured(config) && <p className="mt-2 text-sm text-amber-700">Firebase Web config dan VAPID key perlu diisi di server.</p>}
+                {tab === 'schedules' && <p className="mt-2 text-xs text-gray-500">Pilih device, lalu klik Tes Push untuk kirim sekarang. Simpan reminder tiap jadwal dalam menit (1–10080). Jika waktu pengingat sudah lewat, scheduler mengirim pada proses berikutnya.</p>}
+                {tab === 'schedules' && <p className="mt-2 text-sm text-gray-600">{selectedDevice?.user?.role === 'terapis'
+                    ? `Menampilkan jadwal yang men-tag ${selectedDevice.user.name}.`
+                    : 'Menampilkan semua jadwal.'}</p>}
+                {tab === 'schedules' && !result.devices.length && <button className="mt-2 text-sm text-zenith-orange" onClick={() => setTab('settings')}>Aktifkan device di tab Setting</button>}
+                {feedback && <p role="status" className="mt-3 text-sm text-green-700">{feedback}</p>}
+                {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
+                {busy && <p role="status" className="mt-2 text-sm">Memproses…</p>}
+
+                {tab === 'schedules' && <div className="mt-5 grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,85fr)_minmax(240px,25fr)]">
+                    <div className="min-w-0 overflow-hidden rounded-xl border border-gray-200">
+                        <div className="border-b bg-gray-50/60 px-4 py-3">
+                            <h3 className="text-sm font-semibold text-gray-900">Jadwal harian</h3>
+                            <p className="mt-1 text-xs text-gray-500">{date} · {result.schedules.length} jadwal</p>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead><tr className="border-b text-gray-500"><th className="p-2">Pesan transaksi</th><th className="p-2">Jadwal</th><th className="p-2">Reminder sebelum</th><th className="p-2">Notify at</th><th className="p-2">Status push</th><th className="p-2">Tes notifikasi</th></tr></thead>
+                                <tbody>
+                                    {!loading && result.schedules.map((schedule) => <tr key={schedule.id} className="border-b">
+                                        <td className="p-2"><p className="whitespace-pre-line">{schedule.push_message}</p><span className="text-xs text-gray-500">{schedule.status}</span></td>
+                                        <td className="whitespace-nowrap p-2">{formatTime(schedule.schedule_at)}</td>
+                                        <td className="p-2"><ReminderEditor schedule={schedule} busy={busy} run={run} /></td>
+                                        <td className="whitespace-nowrap p-2">{formatTime(schedule.notification.notify_at)}</td>
+                                        <td className="p-2">{statusLabels[schedule.notification.status] || schedule.notification.status}
+                                            {schedule.notification.error_message && <p className="max-w-xs text-xs text-red-600">{schedule.notification.error_message}</p>}</td>
+                                        <td className="p-2"><button className={`${buttonClass} whitespace-nowrap`} disabled={busy || !deviceId}
+                                            aria-label={`Tes push ${schedule.order_number}`}
+                                            onClick={() => run(async () => {
+                                                const { data } = await axios.post('/api/notifications/test-now', {
+                                                    device_id: Number(deviceId), schedule_id: schedule.id,
+                                                });
+                                                return data.message;
+                                            })}>Tes Push</button></td>
+                                    </tr>)}
+                                    <tr><td colSpan={6} className="p-2 text-gray-500">{loading ? 'Memuat jadwal…' : !result.schedules.length ? 'Tidak ada jadwal pada tanggal ini.' : ''}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <SchedulerTimeline timeline={result.scheduler_timeline} loading={loading} formatTime={formatTime} />
                 </div>}
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-                {tab === 'settings' && <button disabled={busy || !isPushConfigured(config)} className={buttonClass}
-                    onClick={() => openDeviceModal()}>Aktifkan Push di Device Ini</button>}
-                <select aria-label="Device untuk tes dan filter jadwal" className="max-w-xs rounded-lg border-gray-300 text-sm" value={deviceId} onChange={(e) => { setLoading(true); setDeviceId(e.target.value); }}>
-                    <option value="">{result.devices.length ? 'Pilih device aktif' : 'Tidak ada device aktif'}</option>
-                    {result.devices.map((device) => <option key={device.id} value={device.id}>{device.device_label || `Device ${device.id}`} — {device.user?.name || `User ${device.user_id}`}</option>)}
-                </select>
-                {tab === 'settings' && <><button disabled={busy || !deviceId} className={buttonClass} onClick={() => run(async () => {
-                    const { data } = await axios.post('/api/notifications/test-now', { device_id: Number(deviceId) });
-                    return data.message;
-                })}>Send Push Now</button>
-                <select aria-label="Delay Test Scheduler" className="rounded-lg border-gray-300 text-sm" value={delay} onChange={(e) => setDelay(Number(e.target.value))}>
-                    {[1, 2, 5].map((minutes) => <option key={minutes} value={minutes}>{minutes} menit</option>)}
-                </select>
-                <button disabled={busy || !result.devices.some((device) => device.user_id === auth.user.id)} className={buttonClass} onClick={() => run(async () => {
-                    const { data } = await axios.post('/api/notifications/test-schedule', { delay_minutes: delay });
-                    return `Tes #${data.notification.id} pending sampai ${formatTime(data.notification.notify_at)}. Menunggu scheduler dan queue worker.`;
-                })}>Test Scheduler</button></>}
-            </div>
-            {!isPushConfigured(config) && <p className="mt-2 text-sm text-amber-700">Firebase Web config dan VAPID key perlu diisi di server.</p>}
-            {tab === 'schedules' && <p className="mt-2 text-xs text-gray-500">Pilih device, lalu klik Tes Push untuk kirim sekarang. Simpan reminder tiap jadwal dalam menit (1–10080). Jika waktu pengingat sudah lewat, scheduler mengirim pada proses berikutnya.</p>}
-            {tab === 'schedules' && <p className="mt-2 text-sm text-gray-600">{selectedDevice?.user?.role === 'terapis'
-                ? `Menampilkan jadwal yang men-tag ${selectedDevice.user.name}.`
-                : 'Menampilkan semua jadwal.'}</p>}
-            {tab === 'schedules' && !result.devices.length && <button className="mt-2 text-sm text-zenith-orange" onClick={() => setTab('settings')}>Aktifkan device di tab Setting</button>}
-            {feedback && <p role="status" className="mt-3 text-sm text-green-700">{feedback}</p>}
-            {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
-            {busy && <p role="status" className="mt-2 text-sm">Memproses…</p>}
-
-            {tab === 'schedules' && <div className="mt-5 grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,85fr)_minmax(240px,25fr)]">
-                <div className="min-w-0 overflow-hidden rounded-xl border border-gray-200">
-                    <div className="border-b bg-gray-50/60 px-4 py-3">
-                        <h3 className="text-sm font-semibold text-gray-900">Jadwal harian</h3>
-                        <p className="mt-1 text-xs text-gray-500">{date} · {result.schedules.length} jadwal</p>
+                {tab === 'settings' && !!result.tests.length && <div className="mt-4 text-sm"><strong>Antrean Tes Scheduler</strong>
+                    {result.tests.map((test) => <p key={test.id} className="mt-1">#{test.id} • {formatTime(test.notify_at)} • {statusLabels[test.status]}{test.sent_at && ` • FCM ${formatTime(test.sent_at)}`}
+                        {test.error_message && <span className="text-red-600"> • {test.error_message}</span>}</p>)}
+                </div>}
+                {tab === 'settings' && !!result.active_devices?.total && <details open className="mt-4 text-sm"><summary>Device aktif ({result.active_devices.total})</summary>
+                    {loading ? <p className="mt-3 text-gray-500">Memuat device…</p> : result.active_devices.data.map((device) => <div key={device.id} className="mt-2 flex flex-wrap items-center justify-between gap-2"><div className="min-w-0 flex-1 break-all">
+                        {currentDevice && Number(device.id) === Number(currentDevice.id) && <span className="mb-1 inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Device saat ini</span>}
+                        {device.device_label && <p className="font-semibold">{device.device_label}</p>}
+                        <p className="text-xs text-gray-500">{device.device_name || `Device ${device.id}`}</p>
+                        <p className="text-xs text-gray-500">Akun: {device.user?.name || `User ${device.user_id}`}</p>
                     </div>
-                    <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                    <thead><tr className="border-b text-gray-500"><th className="p-2">Pesan transaksi</th><th className="p-2">Jadwal</th><th className="p-2">Reminder sebelum</th><th className="p-2">Notify at</th><th className="p-2">Status push</th><th className="p-2">Tes notifikasi</th></tr></thead>
-                    <tbody>
-                        {!loading && result.schedules.map((schedule) => <tr key={schedule.id} className="border-b">
-                            <td className="p-2"><p className="whitespace-pre-line">{schedule.push_message}</p><span className="text-xs text-gray-500">{schedule.status}</span></td>
-                            <td className="whitespace-nowrap p-2">{formatTime(schedule.schedule_at)}</td>
-                            <td className="p-2"><ReminderEditor schedule={schedule} busy={busy} run={run} /></td>
-                            <td className="whitespace-nowrap p-2">{formatTime(schedule.notification.notify_at)}</td>
-                            <td className="p-2">{statusLabels[schedule.notification.status] || schedule.notification.status}
-                                {schedule.notification.error_message && <p className="max-w-xs text-xs text-red-600">{schedule.notification.error_message}</p>}</td>
-                            <td className="p-2"><button className={`${buttonClass} whitespace-nowrap`} disabled={busy || !deviceId}
-                                aria-label={`Tes push ${schedule.order_number}`}
-                                onClick={() => run(async () => {
-                                    const { data } = await axios.post('/api/notifications/test-now', {
-                                        device_id: Number(deviceId), schedule_id: schedule.id,
-                                    });
-                                    return data.message;
-                                })}>Tes Push</button></td>
-                        </tr>)}
-                        <tr><td colSpan={6} className="p-2 text-gray-500">{loading ? 'Memuat jadwal…' : !result.schedules.length ? 'Tidak ada jadwal pada tanggal ini.' : ''}</td></tr>
-                    </tbody>
-                </table>
-                    </div>
-                </div>
-                <SchedulerTimeline timeline={result.scheduler_timeline} loading={loading} formatTime={formatTime} />
-            </div>}
-            {tab === 'settings' && !!result.tests.length && <div className="mt-4 text-sm"><strong>Antrean Tes Scheduler</strong>
-                {result.tests.map((test) => <p key={test.id} className="mt-1">#{test.id} • {formatTime(test.notify_at)} • {statusLabels[test.status]}{test.sent_at && ` • FCM ${formatTime(test.sent_at)}`}
-                    {test.error_message && <span className="text-red-600"> • {test.error_message}</span>}</p>)}
-            </div>}
-            {tab === 'settings' && !!result.active_devices?.total && <details open className="mt-4 text-sm"><summary>Device aktif ({result.active_devices.total})</summary>
-                {loading ? <p className="mt-3 text-gray-500">Memuat device…</p> : result.active_devices.data.map((device) => <div key={device.id} className="mt-2 flex flex-wrap items-center justify-between gap-2"><div className="min-w-0 flex-1 break-all">
-                    {device.device_label && <p className="font-semibold">{device.device_label}</p>}
-                    <p className="text-xs text-gray-500">{device.device_name || `Device ${device.id}`}</p>
-                    <p className="text-xs text-gray-500">Akun: {device.user?.name || `User ${device.user_id}`}</p>
-                </div>
-                    {(auth.user.role === 'admin' || device.user_id === auth.user.id) && <div className="flex shrink-0 gap-2">
-                        <button disabled={busy} className={buttonClass} onClick={() => openDeviceModal(device)}>Edit Label</button>
-                        <button disabled={busy} className={buttonClass} onClick={() => run(() => disablePushDevice(device.id, config, auth.user.id).then(() => 'Device dinonaktifkan.'))}>Nonaktifkan</button>
-                    </div>}</div>)}
-                <nav aria-label="Pagination device aktif" className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-                    <span className="text-gray-500">{result.active_devices.from}–{result.active_devices.to} dari {result.active_devices.total} device · Halaman {result.active_devices.current_page} / {result.active_devices.last_page}</span>
-                    <div className="flex gap-2">
-                        <button className={buttonClass} disabled={busy || loading || devicePage <= 1} onClick={() => { setLoading(true); setDevicePage((page) => page - 1); }}>Sebelumnya</button>
-                        <button className={buttonClass} disabled={busy || loading || devicePage >= result.active_devices.last_page} onClick={() => { setLoading(true); setDevicePage((page) => page + 1); }}>Berikutnya</button>
-                    </div>
-                </nav>
-            </details>}
+                        {(auth.user.role === 'admin' || device.user_id === auth.user.id) && <div className="flex shrink-0 gap-2">
+                            <button disabled={busy} className={buttonClass} onClick={() => openDeviceModal(device)}>Edit Label</button>
+                            <button disabled={busy} className={buttonClass} onClick={() => run(() => disablePushDevice(device.id, config, auth.user.id).then(() => 'Device dinonaktifkan.'))}>Nonaktifkan</button>
+                        </div>}</div>)}
+                    <nav aria-label="Pagination device aktif" className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+                        <span className="text-gray-500">{result.active_devices.from}–{result.active_devices.to} dari {result.active_devices.total} device · Halaman {result.active_devices.current_page} / {result.active_devices.last_page}</span>
+                        <div className="flex gap-2">
+                            <button className={buttonClass} disabled={busy || loading || devicePage <= 1} onClick={() => { setLoading(true); setDevicePage((page) => page - 1); }}>Sebelumnya</button>
+                            <button className={buttonClass} disabled={busy || loading || devicePage >= result.active_devices.last_page} onClick={() => { setLoading(true); setDevicePage((page) => page + 1); }}>Berikutnya</button>
+                        </div>
+                    </nav>
+                </details>}
             </>}
             <Modal show={deviceModal !== null} maxWidth="md" closeable={!busy} onClose={() => setDeviceModal(null)}>
                 <form onSubmit={saveDevice} className="p-6">
