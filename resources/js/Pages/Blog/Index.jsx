@@ -161,13 +161,6 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                                         <img src={blog.thumbnail ? `/storage/${blog.thumbnail}` : '/images/services.jpg'} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={blog.title} />
                                     </div>
                                     <div className="p-8 flex flex-col flex-1">
-                                        <div className="mb-4 flex flex-wrap gap-2">
-                                            {(blog.tag || blog.type_package || 'Article').split(',').map(tag => tag.trim()).filter(Boolean).map((tag, index) => (
-                                                <span key={`${tag}-${index}`} className="max-w-full rounded-full bg-white/90 px-4 py-1.5 text-[10px] font-bold text-zenith-orange uppercase tracking-wider [overflow-wrap:anywhere]">
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
                                         <p className="text-zenith-charcoal/30 text-[10px] font-bold uppercase tracking-widest mb-4">
                                             {new Date(blog.created_at).toLocaleDateString(lang === 'EN' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </p>
@@ -191,7 +184,21 @@ export default function Index({ auth, blogs, filters, signaturePackages = [] }) 
                         </div>
 
                         {/* Pagination */}
-                        <div className="flex justify-center items-center gap-x-2 mt-16 overflow-x-auto pb-4">
+                        <nav aria-label="Pagination blog" className="mt-8 grid grid-cols-2 gap-3 sm:hidden">
+                            {[
+                                { label: 'Prev', url: blogs.prev_page_url },
+                                { label: 'Next', url: blogs.next_page_url },
+                            ].map(({ label, url }) => url ? (
+                                <Link key={label} href={url} className="flex min-h-11 items-center justify-center rounded-full border border-zenith-orange/20 px-3 py-2 text-sm font-bold text-zenith-orange hover:bg-zenith-orange/5">
+                                    {label}
+                                </Link>
+                            ) : (
+                                <button key={label} type="button" disabled className="min-h-11 rounded-full border border-zenith-orange/10 px-3 py-2 text-sm font-bold text-zenith-charcoal/40 opacity-50">
+                                    {label}
+                                </button>
+                            ))}
+                        </nav>
+                        <div className="hidden sm:flex flex-wrap justify-center items-center gap-2 mt-16 pb-4">
                             {blogs.links.map((link, i) => (
                                 <Link
                                     key={i}
