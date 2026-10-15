@@ -96,6 +96,15 @@ jemarihomespa.com`;
     };
     const formatPackagePrice = (price) => `Rp ${Math.round(parseFloat(price || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 
+    const formatIDR = (value) => {
+        const num = parseInt(String(value).replace(/\D/g, '')) || 0;
+        return num === 0 ? '' : num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    };
+
+    const parseIDR = (formatted) => {
+        return parseInt(String(formatted).replace(/\D/g, '')) || 0;
+    };
+
     const handlePaxChange = (newPax) => {
         const count = parseInt(newPax);
         setPax(count);
@@ -432,6 +441,21 @@ jemarihomespa.com`;
         return message;
     };
 
+    const markAsInvoiceSent = async (transaction) => {
+        try {
+            await axios.patch(route('admin.transaction.update', transaction.id), {
+                invoice_sent: true,
+            });
+            // Update local state so UI reflects new status
+            if (lastTransaction && lastTransaction.id === transaction.id) {
+                setLastTransaction(prev => ({ ...prev, status: prev.status === 'success' ? 'success' : 'invoice' }));
+            }
+            router.reload({ only: ['todayTransactions'] });
+        } catch (err) {
+            console.error('Failed to update status to invoice:', err);
+        }
+    };
+
     const copyInvoiceText = async (transaction) => {
         const target = transaction || lastTransaction;
         if (!target) return;
@@ -439,6 +463,7 @@ jemarihomespa.com`;
 
         navigator.clipboard.writeText(message).then(() => {
             showToast('Teks invoice berhasil disalin!');
+            markAsInvoiceSent(target);
         }).catch(err => {
             console.error('Failed to copy: ', err);
             showToast('Gagal menyalin teks.');
@@ -474,6 +499,7 @@ jemarihomespa.com`;
             : `https://web.whatsapp.com/send?phone=${waPhone}&text=${encodedMessage}`;
 
         window.open(waUrl, '_blank');
+        markAsInvoiceSent(transaction);
     };
 
     const sendWhatsApp = () => {
@@ -866,10 +892,12 @@ jemarihomespa.com`;
                                                 <div className="relative">
                                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-300">Rp</span>
                                                     <input
-                                                        type="number"
+                                                        type="text"
+                                                        inputMode="numeric"
                                                         className="w-full bg-gray-50 border-gray-100 rounded-2xl py-3 pl-8 pr-3 text-xs font-bold text-gray-700 focus:ring-zenith-orange"
-                                                        value={formData.transport_fee}
-                                                        onChange={(e) => setFormData({ ...formData, transport_fee: e.target.value })}
+                                                        value={formatIDR(formData.transport_fee)}
+                                                        onChange={(e) => setFormData({ ...formData, transport_fee: parseIDR(e.target.value) })}
+                                                        placeholder="0"
                                                     />
                                                 </div>
                                             </div>
