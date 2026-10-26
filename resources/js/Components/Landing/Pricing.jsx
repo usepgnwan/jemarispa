@@ -5,7 +5,8 @@ const translations = {
     'ID': {
         tagline: '',
         title: 'Pilih Perawatan Terbaik',
-        durationLabel: 'Durasi:',
+        durationLabel: 'Durasi & Harga:',
+        chooseOne: 'Pilih salah satu',
         bookBtn: 'Pesan Paket',
         seeAll: 'Lihat Semua Paket',
         minute: 'Menit',
@@ -17,7 +18,7 @@ const translations = {
     'EN': {
         tagline: '',
         title: 'Choose Our Best Treatment',
-        durationLabel: 'Duration:',
+        durationLabel: 'Duration & Price:',
         bookBtn: 'Book This Package',
         seeAll: 'See All Packages',
         minute: 'Minutes',
@@ -36,15 +37,15 @@ export default function Pricing({ packages = [], lang = 'ID', activeService = 'D
     // Filter packages based on activeService
     const filteredPackages = useMemo(() => {
         if (!activeService || activeService === 'Default') return packages;
-        
+
         // Find matching signature package by title
-        const matchingSignature = signaturePackages.find(s => 
+        const matchingSignature = signaturePackages.find(s =>
             s.title_id.toLowerCase() === activeService.toLowerCase() ||
             (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
         );
 
         const search = activeService.toLowerCase();
-        
+
         return packages.filter(pkg => {
             // If we found a matching Signature Ritual (Main Service), 
             // filter EXCLUSIVELY by parent_id for maximum precision.
@@ -58,19 +59,19 @@ export default function Pricing({ packages = [], lang = 'ID', activeService = 'D
             const catEn = (pkg.category_en || '').toLowerCase();
             const titleId = (pkg.title_id || '').toLowerCase();
             const titleEn = (pkg.title_en || '').toLowerCase();
-            
-            return catId.includes(search) || 
-                   catEn.includes(search) || 
-                   titleId.includes(search) || 
-                   titleEn.includes(search);
+
+            return catId.includes(search) ||
+                catEn.includes(search) ||
+                titleId.includes(search) ||
+                titleEn.includes(search);
         });
     }, [packages, activeService, signaturePackages]);
 
     // Get reactive display name for the active service
     const displayService = useMemo(() => {
         if (!activeService || activeService === 'Default') return '';
-        
-        const matchingSignature = signaturePackages.find(s => 
+
+        const matchingSignature = signaturePackages.find(s =>
             s.title_id.toLowerCase() === activeService.toLowerCase() ||
             (s.title_en && s.title_en.toLowerCase() === activeService.toLowerCase())
         );
@@ -214,30 +215,65 @@ export default function Pricing({ packages = [], lang = 'ID', activeService = 'D
                 <h3 className="text-[7px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-zenith-orange mb-3 md:mb-8">{category || (lang === 'EN' ? 'Package' : 'Paket')}</h3>
 
                 <div className="mb-4 md:mb-6">
-                    <div className="flex items-baseline gap-1 mb-1 md:mb-3">
+                    <div className="flex items-baseline gap-1 mb-1 md:mb-2">
                         <span className="text-[10px] md:text-sm font-bold text-gray-400">Rp</span>
-                        <span className="text-3xl md:text-5xl lg:text-6xl font-bold text-zenith-charcoal">
+                        <span className="text-3xl md:text-5xl lg:text-6xl font-bold text-zenith-charcoal transition-all">
                             {(parseFloat(currentVariant.price) / 1000).toFixed(0)}k
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-x-2 mt-1 md:mt-2">
-                        <span className="text-[7px] md:text-[10px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{t.durationLabel}</span>
-                        {pkg.durations?.length > 1 ? (
-                            <select
-                                className="bg-zenith-surface border-none rounded-lg px-2 py-1 md:px-3 md:py-1.5 text-[8px] md:text-[10px] font-bold text-zenith-charcoal focus:ring-1 focus:ring-zenith-orange appearance-none cursor-pointer"
-                                value={durationIndex}
-                                onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
-                            >
-                                {pkg.durations.map((v, i) => (
-                                    <option key={i} value={i}>{formatDuration(v.duration)}</option>
-                                ))}
-                            </select>
-                        ) : (
-                            <span className="text-[8px] md:text-[10px] font-bold text-zenith-charcoal/60 uppercase tracking-widest">
-                                {formatDuration(currentVariant.duration)}
+                    <div className="mt-2 md:mt-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[7px] md:text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest">
+                                {t.durationLabel}
                             </span>
-                        )}
+
+                        </div>
+
+                        {/* Flex Cards per item harga - cuman bisa pilih salah satu */}
+                        <div className="flex flex-wrap gap-2">
+                            {pkg.durations && pkg.durations.length > 0 ? (
+                                pkg.durations.map((v, i) => {
+                                    const isSelected = durationIndex === i;
+                                    return (
+                                        <button
+                                            key={v.id || i}
+                                            type="button"
+                                            onClick={() => handleDurationChange(pkg.id, i)}
+                                            className={`flex-1 min-w-[80px] p-2 md:p-2.5 rounded-xl md:rounded-2xl border text-left transition-all duration-300 relative cursor-pointer group ${isSelected
+                                                ? 'bg-zenith-orange/10 border-zenith-orange shadow-sm ring-1 md:ring-2 ring-zenith-orange/30 -translate-y-0.5'
+                                                : 'bg-white/70 border-gray-200/80 hover:border-zenith-orange/40 hover:bg-white text-gray-600'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between gap-1 mb-0.5">
+                                                <span className={`text-[8px] md:text-[9px] font-bold uppercase tracking-wider ${isSelected ? 'text-zenith-orange' : 'text-gray-500 group-hover:text-zenith-charcoal'
+                                                    }`}>
+                                                    {formatDuration(v.duration)}
+                                                </span>
+                                                <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-all ${isSelected
+                                                    ? 'bg-zenith-orange border-zenith-orange text-white shadow-xs'
+                                                    : 'border-gray-300 bg-white group-hover:border-zenith-orange/50'
+                                                    }`}>
+                                                    {isSelected && (
+                                                        <span className="material-symbols-outlined text-[9px] md:text-[10px] font-bold leading-none">check</span>
+                                                    )}
+                                                </span>
+                                            </div>
+
+                                            {v.description && (
+                                                <p className="mt-0.5 text-[8px] text-gray-400 italic line-clamp-1">
+                                                    *{v.description}
+                                                </p>
+                                            )}
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                <span className="text-[8px] md:text-[10px] font-bold text-zenith-charcoal/60 uppercase tracking-widest">
+                                    {formatDuration(currentVariant.duration)}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -267,14 +303,14 @@ export default function Pricing({ packages = [], lang = 'ID', activeService = 'D
             <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center mb-12 md:mb-20">
                 <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.tagline}</span>
                 <h2 className="text-4xl md:text-5xl font-bold text-zenith-charcoal">{t.title}</h2>
-                
+
                 {/* Filter Status */}
                 {activeService !== 'Default' && (
                     <div className="mt-8 flex items-center justify-center gap-4">
                         <span className="px-4 py-2 rounded-full bg-zenith-orange/10 text-zenith-orange text-[10px] font-bold uppercase tracking-widest border border-zenith-orange/20">
                             {t.filterLabel}: {displayService}
                         </span>
-                        <button 
+                        <button
                             onClick={handleClearFilter}
                             className="text-[10px] font-bold text-gray-400 hover:text-zenith-orange transition-colors uppercase tracking-widest flex items-center gap-1"
                         >
