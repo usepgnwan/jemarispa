@@ -23,7 +23,8 @@ const translations = {
         selected: 'Selected',
         minute: 'Menit',
         filterLabel: 'Filter',
-        clearLabel: 'Hapus'
+        clearLabel: 'Hapus',
+        bookBtn: 'Pesan Paket'
     },
     'EN': {
         metaTitle: 'Pricing & Packages Home Service Massage Bandung - Jemari Spa',
@@ -42,7 +43,8 @@ const translations = {
         selected: 'Selected',
         minute: 'Minutes',
         filterLabel: 'Filter',
-        clearLabel: 'Clear'
+        clearLabel: 'Clear',
+        bookBtn: 'Book This Package'
     }
 };
 
@@ -299,7 +301,7 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
             )}
 
             <main className={activeService !== 'Default' ? "pb-20 px-6 -mt-20 md:-mt-32 lg:-mt-48 relative z-20" : "pt-32 md:pt-40 pb-20 px-6"}>
-                <div className="max-w-5xl mx-auto">
+                <div className="max-w-7xl mx-auto">
                     {activeService === 'Default' && (
                         <div className="text-center mb-12 md:mb-16">
                             <span className="text-zenith-orange font-bold tracking-[0.3em] uppercase text-[8px] md:text-[10px] mb-3 md:mb-4 block">{t.badge}</span>
@@ -308,132 +310,231 @@ export default function Index({ auth, packages = [], signaturePackages = [], ini
                         </div>
                     )}
 
-                    <div className="bg-white rounded-[3rem] shadow-2xl shadow-zenith-orange/5 overflow-hidden border border-zenith-orange/5">
-                        {activeService !== 'Default' && (
-                            <div className="bg-zenith-orange/5 px-6 md:px-10 py-5 flex items-center justify-between border-b border-zenith-orange/10">
-                                <span className="text-zenith-orange text-[10px] md:text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-sm md:text-base">filter_list</span>
-                                    {t.filterLabel}: {displayService}
-                                </span>
-                                <button
-                                    onClick={() => handleSetActiveService('Default')}
-                                    className="text-[10px] font-bold text-gray-500 hover:text-white transition-all uppercase tracking-widest flex items-center gap-1 bg-white hover:bg-zenith-orange px-4 py-2 rounded-full shadow-sm border border-gray-100"
-                                >
-                                    <span className="material-symbols-outlined text-sm">close</span>
-                                    {t.clearLabel}
-                                </button>
-                            </div>
-                        )}
-                        <div className="divide-y divide-zenith-orange/5">
-                            {/* Table Header */}
-                            <div className="hidden md:flex items-center px-8 md:px-10 py-4 bg-zenith-surface/30">
-                                <span className="flex-1 text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{t.pkgName}</span>
-                                <span className="w-48 text-center text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest">{t.duration}</span>
-                                <span className="w-40 text-right text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-widest pr-20">{t.price}</span>
-                            </div>
+                    {activeService !== 'Default' && (
+                        <div className="flex items-center justify-center gap-4 mb-8 md:mb-12">
+                            <span className="px-4 py-2 rounded-full bg-zenith-orange/10 text-zenith-orange text-[10px] font-bold uppercase tracking-widest border border-zenith-orange/20">
+                                {t.filterLabel}: {displayService}
+                            </span>
+                            <button
+                                onClick={() => handleSetActiveService('Default')}
+                                className="text-[10px] font-bold text-gray-500 hover:text-white transition-all uppercase tracking-widest flex items-center gap-1 bg-white hover:bg-zenith-orange px-4 py-2 rounded-full shadow-sm border border-gray-100"
+                            >
+                                <span className="material-symbols-outlined text-sm">close</span>
+                                {t.clearLabel}
+                            </button>
+                        </div>
+                    )}
 
-                            {filteredPackages.length > 0 ? (
-                                filteredPackages.map((pkg) => {
-                                    const durationIndex = selectedDurations[pkg.id] || 0;
-                                    const currentDuration = pkg.durations[durationIndex] || { duration: '-', price: 0 };
+                    {/* Mobile View: 2-Row Slider */}
+                    <div className="md:hidden flex overflow-x-auto gap-4 pb-8 snap-x snap-mandatory scrollbar-hide no-scrollbar">
+                        {(() => {
+                            const pairs = [];
+                            for (let i = 0; i < filteredPackages.length; i += 2) {
+                                pairs.push(filteredPackages.slice(i, i + 2));
+                            }
+                            return pairs.map((pair, pIdx) => (
+                                <div key={pIdx} className="flex flex-col gap-4 w-[85%] shrink-0 snap-center">
+                                    {pair.map((pkg, idx) => {
+                                        const durationIndex = selectedDurations[pkg.id] || 0;
+                                        const currentVariant = pkg.durations[durationIndex] || { duration: '-', price: 0 };
+                                        const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
+                                        const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
+                                        const description = lang === 'EN' ? (pkg.description_en || pkg.description_id) : pkg.description_id;
 
-                                    const primaryTitle = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
-                                    const secondaryTitle = lang === 'EN' ? pkg.title_id : pkg.title_en;
-                                    const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
-                                    const description = lang === 'EN' ? (pkg.description_en || pkg.description_id) : pkg.description_id;
+                                        return (
+                                            <div
+                                                key={pkg.id}
+                                                className="snap-center shrink-0 w-full rounded-[2rem] p-5 transition-all duration-700 flex flex-col bg-white/50 border border-white hover:bg-white hover:shadow-xl"
+                                            >
+                                                <h3 className="text-[7px] font-bold uppercase tracking-[0.2em] text-zenith-orange mb-3">{category || (lang === 'EN' ? 'Package' : 'Paket')}</h3>
 
-                                    return (
-                                        <div key={pkg.id} className="p-6 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 hover:bg-zenith-orange/[0.02] transition-colors group">
-                                            <div className="flex-1 w-full text-left">
-                                                <span className="px-3 py-1 rounded-full bg-zenith-dim/10 text-[8px] font-bold text-zenith-charcoal/60 uppercase tracking-wider mb-4 inline-block">
-                                                    {category || 'Package'}
-                                                </span>
                                                 <div className="mb-4">
-                                                    <h3 className="text-xl md:text-2xl font-bold text-zenith-charcoal group-hover:text-zenith-orange transition-colors">
-                                                        {primaryTitle}
-                                                    </h3>
-                                                    {/* {secondaryTitle && (
-                                                        <p className="text-sm md:text-base text-gray-400 font-medium">
-                                                            {secondaryTitle}
-                                                        </p>
-                                                    )} */}
-                                                </div>
+                                                    <div className="flex items-baseline gap-1 mb-1">
+                                                        <span className="text-[10px] font-bold text-gray-400">Rp</span>
+                                                        <span className="text-3xl font-bold text-zenith-charcoal transition-all">
+                                                            {(parseFloat(currentVariant.price) / 1000).toFixed(0)}k
+                                                        </span>
+                                                    </div>
 
-                                                {description && (
-                                                    <div
-                                                        className="text-xs md:text-sm text-gray-500 leading-relaxed max-w-2xl prose prose-sm prose-zenith"
-                                                        dangerouslySetInnerHTML={{ __html: description }}
-                                                    />
-                                                )}
-                                            </div>
-
-                                            <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-x-12 w-full md:w-auto">
-                                                {/* Duration Selection */}
-                                                <div className="w-full md:w-32">
-                                                    <p className="text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-[0.2em] mb-2">{t.selectDuration}</p>
-                                                    {pkg.durations && pkg.durations.length > 1 ? (
-                                                        <div className="relative">
-                                                            <select
-                                                                className="w-full bg-zenith-surface border border-zenith-orange/10 rounded-xl px-4 py-3 text-[10px] font-bold text-zenith-charcoal focus:ring-1 focus:ring-zenith-orange appearance-none cursor-pointer"
-                                                                value={durationIndex}
-                                                                onChange={(e) => handleDurationChange(pkg.id, e.target.value)}
-                                                            >
-                                                                {pkg.durations.map((d, i) => (
-                                                                    <option key={d.id} value={i}>
-                                                                        {formatDuration(d.duration)} {d.description ? `${d.description}` : ''}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
-                                                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zenith-orange pointer-events-none">expand_more</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="bg-zenith-orange/5 border border-zenith-orange/10 rounded-xl px-4 py-3">
-                                                            <span className="text-[10px] font-bold text-zenith-orange uppercase tracking-wider">
-                                                                {formatDuration(currentDuration.duration)} {currentDuration.description ? `- ${currentDuration.description}` : ''}
+                                                    <div className="mt-2">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="text-[7px] font-bold text-zenith-charcoal/40 uppercase tracking-widest">
+                                                                {t.selectDuration}:
                                                             </span>
                                                         </div>
-                                                    )}
-                                                    {currentDuration.description && pkg.durations && pkg.durations.length > 1 && (
-                                                        <p className="mt-1.5 text-[9px] text-gray-500 italic leading-snug">
-                                                            * {currentDuration.description}
-                                                        </p>
-                                                    )}
-                                                </div>
 
-                                                {/* Price Display */}
-                                                <div className="text-left md:text-right md:min-w-[140px]">
-                                                    <p className="text-[8px] font-bold text-zenith-charcoal/30 uppercase tracking-[0.2em] mb-1">{t.investment}</p>
-                                                    <div className="flex items-baseline gap-1">
-                                                        <span className="text-xs font-bold text-zenith-charcoal/40">Rp</span>
-                                                        <span className="text-2xl md:text-3xl font-bold text-zenith-charcoal">
-                                                            {parseFloat(currentDuration.price).toLocaleString('id-ID')}
-                                                        </span>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {pkg.durations && pkg.durations.length > 0 ? (
+                                                                pkg.durations.map((v, i) => {
+                                                                    const isSelected = durationIndex === i;
+                                                                    return (
+                                                                        <button
+                                                                            key={v.id || i}
+                                                                            type="button"
+                                                                            onClick={() => handleDurationChange(pkg.id, i)}
+                                                                            className={`flex-1 min-w-[80px] p-2 rounded-xl border text-left transition-all duration-300 relative cursor-pointer group ${isSelected
+                                                                                ? 'bg-zenith-orange/10 border-zenith-orange shadow-sm ring-1 ring-zenith-orange/30 -translate-y-0.5'
+                                                                                : 'bg-white/70 border-gray-200/80 hover:border-zenith-orange/40 hover:bg-white text-gray-600'
+                                                                                }`}
+                                                                        >
+                                                                            <div className="flex items-center justify-between gap-1 mb-0.5">
+                                                                                <span className={`text-[8px] font-bold uppercase tracking-wider ${isSelected ? 'text-zenith-orange' : 'text-gray-500 group-hover:text-zenith-charcoal'}`}>
+                                                                                    {formatDuration(v.duration)}
+                                                                                </span>
+                                                                                <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-all ${isSelected
+                                                                                    ? 'bg-zenith-orange border-zenith-orange text-white shadow-xs'
+                                                                                    : 'border-gray-300 bg-white group-hover:border-zenith-orange/50'
+                                                                                    }`}>
+                                                                                    {isSelected && (
+                                                                                        <span className="material-symbols-outlined text-[9px] font-bold leading-none">check</span>
+                                                                                    )}
+                                                                                </span>
+                                                                            </div>
+                                                                            {v.description && (
+                                                                                <p className="mt-0.5 text-[8px] text-gray-400 italic line-clamp-1">
+                                                                                    *{v.description}
+                                                                                </p>
+                                                                            )}
+                                                                        </button>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <span className="text-[8px] font-bold text-zenith-charcoal/60 uppercase tracking-widest">
+                                                                    {formatDuration(currentVariant.duration)}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Add Button */}
+                                                <h4 className="text-sm text-zenith-charcoal mb-2 truncate">{title}</h4>
+
+                                                <div
+                                                    className="text-[10px] text-gray-500 mb-6 font-sans leading-relaxed flex-1 line-clamp-3 overflow-hidden"
+                                                    dangerouslySetInnerHTML={{ __html: description }}
+                                                />
+
                                                 <button
                                                     onClick={() => addToCart(pkg)}
-                                                    className={`w-full md:w-auto h-14 md:h-12 flex items-center justify-center px-8 rounded-2xl transition-all transform hover:scale-105 active:scale-95 shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] ${cartItems.includes(String(pkg.id))
-                                                        ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/30'
-                                                        : 'bg-white text-zenith-orange border border-zenith-orange/20 hover:bg-zenith-orange hover:text-white shadow-sm'
-                                                        }`}
-                                                >
-                                                    <span className="material-symbols-outlined text-sm mr-2">
-                                                        {cartItems.includes(String(pkg.id)) ? 'check_circle' : 'add_shopping_cart'}
-                                                    </span>
-                                                    {cartItems.includes(String(pkg.id)) ? (lang === 'EN' ? 'Added' : 'Terpilih') : (lang === 'EN' ? 'Add' : 'Pesan')}
+                                                    className={`w-full py-3 rounded-full text-[8px] font-bold uppercase tracking-[0.2em] transition-all duration-500 ${cartItems.includes(String(pkg.id))
+                                                        ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/40 hover:-translate-y-1'
+                                                        : 'bg-zenith-dim/20 text-zenith-charcoal hover:bg-zenith-orange hover:text-white shadow-lg'
+                                                        }`}>
+                                                    {cartItems.includes(String(pkg.id)) ? (lang === 'EN' ? 'Selected' : 'Terpilih') : t.bookBtn}
                                                 </button>
                                             </div>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <div className="p-20 text-center text-zenith-charcoal/40 font-bold uppercase tracking-[0.2em] text-xs">
-                                    {t.noData}
+                                        );
+                                    })}
                                 </div>
-                            )}
-                        </div>
+                            ));
+                        })()}
+                    </div>
+
+                    {/* Desktop View: Grid */}
+                    <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-12 items-stretch">
+                        {filteredPackages.length > 0 ? (
+                            filteredPackages.map((pkg, index) => {
+                                const durationIndex = selectedDurations[pkg.id] || 0;
+                                const currentVariant = pkg.durations[durationIndex] || { duration: '-', price: 0 };
+                                const title = lang === 'EN' ? (pkg.title_en || pkg.title_id) : pkg.title_id;
+                                const category = lang === 'EN' ? (pkg.category_en || pkg.category_id) : pkg.category_id;
+                                const description = lang === 'EN' ? (pkg.description_en || pkg.description_id) : pkg.description_id;
+                                const isFeatured = index === 1;
+
+                                return (
+                                    <div
+                                        key={pkg.id}
+                                        className={`rounded-[3rem] p-10 transition-all duration-700 flex flex-col ${isFeatured
+                                            ? 'bg-white shadow-[0_32px_64px_-16px_rgba(244,124,81,0.1)] border border-zenith-orange/10 lg:scale-105 z-10'
+                                            : 'bg-white/50 border border-white hover:bg-white hover:shadow-xl'
+                                            }`}
+                                    >
+                                        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zenith-orange mb-8">{category || (lang === 'EN' ? 'Package' : 'Paket')}</h3>
+
+                                        <div className="mb-6">
+                                            <div className="flex items-baseline gap-1 mb-2">
+                                                <span className="text-sm font-bold text-gray-400">Rp</span>
+                                                <span className="text-5xl lg:text-6xl font-bold text-zenith-charcoal transition-all">
+                                                    {(parseFloat(currentVariant.price) / 1000).toFixed(0)}k
+                                                </span>
+                                            </div>
+
+                                            <div className="mt-3">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[9px] font-bold text-zenith-charcoal/40 uppercase tracking-widest">
+                                                        {t.selectDuration}:
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2">
+                                                    {pkg.durations && pkg.durations.length > 0 ? (
+                                                        pkg.durations.map((v, i) => {
+                                                            const isSelected = durationIndex === i;
+                                                            return (
+                                                                <button
+                                                                    key={v.id || i}
+                                                                    type="button"
+                                                                    onClick={() => handleDurationChange(pkg.id, i)}
+                                                                    className={`flex-1 min-w-[80px] p-2.5 rounded-2xl border text-left transition-all duration-300 relative cursor-pointer group ${isSelected
+                                                                        ? 'bg-zenith-orange/10 border-zenith-orange shadow-sm ring-2 ring-zenith-orange/30 -translate-y-0.5'
+                                                                        : 'bg-white/70 border-gray-200/80 hover:border-zenith-orange/40 hover:bg-white text-gray-600'
+                                                                        }`}
+                                                                >
+                                                                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                                                                        <span className={`text-[9px] font-bold uppercase tracking-wider ${isSelected ? 'text-zenith-orange' : 'text-gray-500 group-hover:text-zenith-charcoal'}`}>
+                                                                            {formatDuration(v.duration)}
+                                                                        </span>
+                                                                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-all ${isSelected
+                                                                            ? 'bg-zenith-orange border-zenith-orange text-white shadow-xs'
+                                                                            : 'border-gray-300 bg-white group-hover:border-zenith-orange/50'
+                                                                            }`}>
+                                                                            {isSelected && (
+                                                                                <span className="material-symbols-outlined text-[10px] font-bold leading-none">check</span>
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
+                                                                    {v.description && (
+                                                                        <p className="mt-0.5 text-[8px] text-gray-400 italic line-clamp-1">
+                                                                            *{v.description}
+                                                                        </p>
+                                                                    )}
+                                                                </button>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <span className="text-[10px] font-bold text-zenith-charcoal/60 uppercase tracking-widest">
+                                                            {formatDuration(currentVariant.duration)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h4 className="text-xl text-zenith-charcoal mb-4 truncate">{title}</h4>
+
+                                        <div
+                                            className="text-xs text-gray-500 mb-10 font-sans leading-relaxed flex-1 line-clamp-4 overflow-hidden"
+                                            dangerouslySetInnerHTML={{ __html: description }}
+                                        />
+
+                                        <button
+                                            onClick={() => addToCart(pkg)}
+                                            className={`w-full py-5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 ${cartItems.includes(String(pkg.id))
+                                                ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/40 hover:-translate-y-1'
+                                                : isFeatured
+                                                    ? 'bg-zenith-orange text-white shadow-xl shadow-zenith-orange/40 hover:bg-zenith-charcoal hover:-translate-y-1'
+                                                    : 'bg-zenith-dim/20 text-zenith-charcoal hover:bg-zenith-orange hover:text-white shadow-lg'
+                                                }`}>
+                                            {cartItems.includes(String(pkg.id)) ? (lang === 'EN' ? 'Selected' : 'Terpilih') : t.bookBtn}
+                                        </button>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="col-span-full p-20 text-center text-zenith-charcoal/40 font-bold uppercase tracking-[0.2em] text-xs">
+                                {t.noData}
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>
