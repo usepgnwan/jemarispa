@@ -180,28 +180,6 @@ class TransactionController extends Controller
                 }
 
                 foreach ($validated['guests'] as $index => $guest) {
-                    $guestCommission = 0;
-                    // Calculate total commission for this guest from DB
-                    foreach ($guest['packages'] as $package) {
-                        // Use groupName (base title) for accurate lookup
-                        $pName = $package['groupName'] ?? $package['name'];
-                        // Ensure duration string matches DB format ("90 Menit")
-                        $pDuration = $package['duration'];
-                        if (is_numeric($pDuration)) {
-                            $pDuration .= ' Menit';
-                        }
-
-                        $commission = DB::table('package_durations')
-                            ->join('packages', 'packages.id', '=', 'package_durations.package_id')
-                            ->where('packages.title_id', $pName)
-                            ->where('package_durations.duration', $pDuration)
-                            ->value('commission') ?? 0;
-                        $guestCommission += $commission;
-                    }
-
-                    // If frontend didn't send commission, or it's 0, use calculated
-                    $finalCommission = (!empty($guest['therapist_commission']) && $guest['therapist_commission'] > 0) ? $guest['therapist_commission'] : $guestCommission;
-
                     foreach ($guest['packages'] as $package) {
                         $pName = $package['groupName'] ?? $package['name'];
                         $pDuration = $package['duration'];
@@ -236,6 +214,15 @@ class TransactionController extends Controller
                             ->where('duration', 'like', $durNum . '%')
                             ->first() : null)) : null;
 
+                        $itemCommission = 0;
+                        if ($durationRow && isset($durationRow->commission)) {
+                            $itemCommission = (float) $durationRow->commission;
+                        } elseif (isset($package['commission']) && is_numeric($package['commission'])) {
+                            $itemCommission = (float) $package['commission'];
+                        } elseif (count($guest['packages']) === 1 && !empty($guest['therapist_commission'])) {
+                            $itemCommission = (float) $guest['therapist_commission'];
+                        }
+
                         TransactionItem::create([
                             'transaction_id'           => $transaction->id,
                             'guest_index'              => $index + 1,
@@ -247,7 +234,7 @@ class TransactionController extends Controller
                             'package_duration_id'      => $durationRow?->id,
                             'price'                    => $package['price'],
                             'employee_id'              => !empty($guest['employee_id']) ? $guest['employee_id'] : null,
-                            'therapist_commission'     => $finalCommission,
+                            'therapist_commission'     => $itemCommission,
                         ]);
                     }
                 }
@@ -339,24 +326,6 @@ class TransactionController extends Controller
                     }
 
                     foreach ($validated['guests'] as $i => $guest) {
-                        $guestCommission = 0;
-                        foreach ($guest['packages'] as $package) {
-                            $pName = $package['groupName'] ?? $package['name'];
-                            $pDuration = $package['duration'];
-                            // Strip extra "Menit" if it's already there before appending or normalizing
-                            if (str_contains($pDuration, ' Menit')) {
-                                $pDuration = str_replace(' Menit', '', $pDuration);
-                            }
-                            $pDuration .= ' Menit';
-
-                            $commission = DB::table('package_durations')
-                                ->join('packages', 'packages.id', '=', 'package_durations.package_id')
-                                ->where('packages.title_id', $pName)
-                                ->where('package_durations.duration', $pDuration)
-                                ->value('commission') ?? 0;
-                            $guestCommission += $commission;
-                        }
-
                         foreach ($guest['packages'] as $package) {
                             $pName = $package['groupName'] ?? $package['name'];
                             $pDuration = $package['duration'];
@@ -392,6 +361,13 @@ class TransactionController extends Controller
                                 ->where('duration', 'like', $durNum . '%')
                                 ->first() : null)) : null;
 
+                            $itemCommission = 0;
+                            if ($durationRow && isset($durationRow->commission)) {
+                                $itemCommission = (float) $durationRow->commission;
+                            } elseif (isset($package['commission']) && is_numeric($package['commission'])) {
+                                $itemCommission = (float) $package['commission'];
+                            }
+
                             TransactionItem::create([
                                 'transaction_id'           => $transaction->id,
                                 'guest_index'              => $i + 1,
@@ -402,7 +378,7 @@ class TransactionController extends Controller
                                 'package_id'               => $pkgId,
                                 'package_duration_id'      => $durationRow?->id,
                                 'price'                    => $package['price'],
-                                'therapist_commission'     => $guestCommission,
+                                'therapist_commission'     => $itemCommission,
                             ]);
                         }
                     }
